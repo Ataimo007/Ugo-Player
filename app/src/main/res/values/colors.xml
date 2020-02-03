@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--<color name="colorPrimary">#FFD54F</color>-->
+    <!--<color name="colorPrimaryDark">#FFB74D</color>-->
+    <!--<color name="colorAccent">#FFF176</color>-->
+
+    <color name="colorPrimary">#2962FF</color>
+    <color name="colorPrimaryDark">#304FFE</color>
+    <color name="colorAccent">#2979FF</color>
+
+    <color name="videoPrimary">#00000000</color>
+    <color name="videoPrimaryDark">#00000000</color>
+    <color name="videoAccent">#00000000</color>
+
+    <color name="colorAccent2">#000000</color>
+    <color name="colorAccent2Fade">#969696</color>
+    <color name="no_buffer_color">#00ffffff</color>
+    <color name="black_overlay">#00000000</color>
+    <color name="player_control_background">#a0000000</color>
+    <color name="video_popup">#64000000</color>
+
+    <color name="video_duration">#80000000</color>
+    <color name="player_background">#AAFFFFFF</color>
+    <color name="music_fragment_color">#DC000000</color>
+    <color name="music_control_background">#DCFFDCC3</color>
+    <color name="app_shade_white">#BDBDBD</color>
+
+</resources>

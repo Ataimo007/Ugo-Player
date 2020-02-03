@@ -1,0 +1,13 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item>
+        <shape
+            android:shape="rectangle"
+            android:tint="@color/colorPrimaryDark"/>
+    </item>
+
+    <item>
+        <bitmap
+            android:gravity="clip_horizontal|clip_vertical"
+            android:src="@drawable/exo_icon_play" />
+    </item>
+</layer-list>

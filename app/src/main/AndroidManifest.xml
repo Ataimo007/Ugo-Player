@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.gcodes.iplayer">
+
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name=".music.artist.ArtistActivity"
+            android:label="@string/title_activity_artist"/>
+        <activity
+            android:name=".music.album.AlbumActivity"
+            android:label="@string/title_activity_album"/>
+        <activity
+            android:name=".music.artist.ArtistOnlyActivity"
+            android:label="@string/title_activity_artist_only"/>
+        <activity
+            android:name=".music.genre.GenreActivity"
+            android:label="@string/title_activity_genre"/>
+        <activity
+            android:name=".music.player.MusicPlayerActivity"
+            android:label="@string/title_activity_music_player" />
+
+        <service
+            android:name="com.novoda.merlin.MerlinService"
+            android:exported="false" />
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".video.player.VideoPlayerActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize|layoutDirection"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="sensor"
+            android:theme="@style/FullscreenTheme" /> <!-- <activity -->
+        <!-- android:name=".backup.ExoPlayerActivity" -->
+        <!-- android:configChanges="keyboardHidden|orientation|screenSize|layoutDirection" -->
+        <!-- android:parentActivityName=".MainActivity" -->
+        <!-- android:screenOrientation="sensor" -->
+        <!-- android:theme="@style/FullscreenTheme" /> -->
+        <service android:name=".music.player.MusicPlayerService" />
+
+        <service android:name=".player.PlayerDownloadService" android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.android.exoplayer.downloadService.action.RESTART"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </service>
+
+    </application>
+
+</manifest>

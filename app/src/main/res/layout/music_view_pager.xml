@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/music_viewpager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+    </androidx.viewpager.widget.ViewPager>
+
+    <!--<FrameLayout-->
+        <!--android:id="@+id/music_control"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="80dp"-->
+        <!--android:visibility="gone"-->
+        <!--app:layout_constraintBottom_toBottomOf="parent"-->
+        <!--app:layout_constraintEnd_toEndOf="parent"-->
+        <!--app:layout_constraintStart_toStartOf="parent">-->
+
+    <!--</FrameLayout>-->
+
+    <!--<com.google.android.material.floatingactionbutton.FloatingActionButton-->
+        <!--android:id="@+id/action_floating"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="bottom|end"-->
+        <!--android:layout_margin="16dp"-->
+        <!--android:clickable="true"-->
+        <!--android:focusable="true"-->
+        <!--android:tint="@color/colorAccent"-->
+        <!--app:backgroundTint="@color/music_control_background"-->
+        <!--app:elevation="10dp"-->
+        <!--app:fabSize="auto"-->
+        <!--app:hideMotionSpec="@android:anim/fade_out"-->
+        <!--app:layout_constraintBottom_toTopOf="@+id/music_control"-->
+        <!--app:layout_constraintEnd_toEndOf="@+id/music_viewpager"-->
+        <!--app:rippleColor="@android:color/white"-->
+        <!--app:showMotionSpec="@android:anim/fade_in"-->
+        <!--app:srcCompat="@drawable/exo_controls_shuffle" />-->
+
+</androidx.constraintlayout.widget.ConstraintLayout>

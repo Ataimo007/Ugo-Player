@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/control_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom"
+    android:layout_marginLeft="10dp"
+    android:layout_marginRight="10dp"
+    android:background="@color/player_control_background"
+    android:maxHeight="100dp">
+
+    <com.google.android.exoplayer2.ui.DefaultTimeBar
+        android:id="@+id/exo_player_progress"
+        android:layout_width="0dp"
+        android:layout_height="13dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        app:bar_height="0.5dp"
+        app:buffered_color="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.100000024"
+        app:played_color="@color/colorPrimaryDark"
+        app:unplayed_color="@android:color/white" />
+
+    <com.github.siyamed.shapeimageview.CircularImageView
+        android:id="@+id/exo_player_pause"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/exo_icon_pause"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.8"
+        app:siBorderColor="@color/black_overlay"
+        app:siBorderWidth="1dp" />
+
+    <com.github.siyamed.shapeimageview.CircularImageView
+        android:id="@+id/exo_player_play"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/exo_icon_play"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.8"
+        app:siBorderColor="@color/black_overlay"
+        app:siBorderWidth="1dp" />
+
+    <com.github.siyamed.shapeimageview.CircularImageView
+        android:id="@+id/exo_player_enter_fullscreen"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/exo_icon_fullscreen"
+        android:tint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/exo_rew"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/exo_rew"
+        app:siBorderColor="@color/black_overlay"
+        app:siBorderWidth="1dp" />
+
+    <com.github.siyamed.shapeimageview.CircularImageView
+        android:id="@+id/exo_subtitle"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/exo_icon_subtitle"
+        android:tint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/exo_ffwd"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/exo_ffwd"
+        app:siBorderColor="@color/black_overlay"
+        app:siBorderWidth="1dp" />
+
+    <com.github.siyamed.shapeimageview.CircularImageView
+        android:id="@+id/exo_rew"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:src="@drawable/exo_icon_rewind"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.8"
+        app:siBorderColor="@color/black_overlay"
+        app:siBorderWidth="1dp" />
+
+    <com.github.siyamed.shapeimageview.CircularImageView
+        android:id="@+id/exo_ffwd"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:src="@drawable/exo_icon_fastforward"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.7"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.8"
+        app:siBorderColor="@color/black_overlay"
+        app:siBorderWidth="1dp" />
+
+    <TextView
+        android:id="@+id/exo_player_position"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="position"
+        android:textColor="@android:color/white"
+        app:layout_constraintStart_toStartOf="@+id/exo_player_progress"
+        app:layout_constraintTop_toBottomOf="@+id/exo_player_progress" />
+
+    <TextView
+        android:id="@+id/exo_player_duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="duration"
+        android:textColor="@android:color/white"
+        app:layout_constraintEnd_toEndOf="@+id/exo_player_progress"
+        app:layout_constraintTop_toBottomOf="@+id/exo_player_progress" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

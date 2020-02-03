@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".music.player.MusicPlayerActivity">
+
+    <com.google.android.exoplayer2.ui.AspectRatioFrameLayout
+        android:id="@id/exo_player_content_frame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:keepScreenOn="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Video surface will be inserted as the first child of the content frame. -->
+
+        <!--<View-->
+        <!--android:id="@id/exo_player_shutter"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:background="@android:color/black" />-->
+
+        <!--<ImageView-->
+        <!--android:id="@id/exo_player_artwork"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:contentDescription="@null"-->
+        <!--android:scaleType="fitXY" />-->
+
+        <!--<com.google.android.exoplayer2.ui.SubtitleView-->
+        <!--android:id="@id/exo_player_subtitles"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent" />-->
+
+    </com.google.android.exoplayer2.ui.AspectRatioFrameLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/player_art_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/exo_controller"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/exo_artwork"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:adjustViewBounds="true"
+            android:cropToPadding="true"
+            android:elevation="10dp"
+            android:fadingEdgeLength="10dp"
+            android:paddingLeft="20dp"
+            android:paddingTop="40dp"
+            android:paddingRight="20dp"
+            android:paddingBottom="40dp"
+            android:scaleType="fitCenter"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@android:color/white"
+            tools:srcCompat="@drawable/ic_music_black_24dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <ImageButton
+        android:id="@+id/player_show_lyrics"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
+        android:adjustViewBounds="true"
+        android:background="@android:color/transparent"
+        android:clickable="true"
+        android:cropToPadding="true"
+        android:onClick="showLyrics"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@+id/player_playlist"
+        app:layout_constraintEnd_toEndOf="@+id/player_playlist"
+        app:srcCompat="@drawable/ic_lyrics_black_24dp" />
+
+    <ImageButton
+        android:id="@+id/player_show_video"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginEnd="10dp"
+        android:adjustViewBounds="true"
+        android:background="@android:color/transparent"
+        android:cropToPadding="true"
+        android:onClick="showMusicVideo"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@+id/player_show_lyrics"
+        app:layout_constraintEnd_toStartOf="@+id/player_show_lyrics"
+        app:layout_constraintTop_toTopOf="@+id/player_show_lyrics"
+        app:srcCompat="@drawable/ic_music_video_black_24dp" />
+
+    <FrameLayout
+        android:id="@+id/player_lyrics"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/music_fragment_color"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/exo_controller"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/player_playlist"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/exo_controller"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+    </FrameLayout>
+
+    <com.google.android.exoplayer2.ui.PlayerControlView
+        android:id="@+id/exo_controller"
+        id="@+id/view2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:controller_layout_id="@layout/music_control_view"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/player_art_view"
+        app:repeat_toggle_modes="one|all"
+        app:show_shuffle_button="true" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

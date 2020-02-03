@@ -1,0 +1,124 @@
+package com.gcodes.iplayer.music.player;
+
+import android.content.Context;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.gcodes.iplayer.R;
+import com.gcodes.iplayer.music.Music;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+//import android.support.annotation.NonNull;
+//import androidx.core.app.Fragment;
+//import androidx.core.content.CursorLoader;
+//import androidx.core.widget.SimpleCursorAdapter;
+//
+//import android.support.v7.widget.RecyclerView;
+
+public class PlaylistFragment extends Fragment
+{
+    public PlaylistFragment() {
+    }
+
+    // try joining audio column to media column
+    @Override
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.playlist_list, container, false);
+        CustomAdapter adapter = new CustomAdapter();
+        RecyclerView listView = (RecyclerView) view;
+        listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
+        listView.setAdapter(adapter);
+        return view;
+    }
+
+    public static void hide( FragmentManager fragmentManager ) {
+        Fragment playlist = fragmentManager.findFragmentByTag("Playlist_View");
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.remove( playlist );
+        transaction.commit();
+    }
+
+    public static void show(FragmentManager fragmentManager) {
+
+
+//        VideoTabFragment tabFragment = VideoTabFragment.InitTab(manager, R.layout.video_tabs);
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        PlaylistFragment musicFragment = new PlaylistFragment();
+        transaction.add( R.id.player_playlist, musicFragment, "Playlist_View" );
+        transaction.commit();
+    }
+
+    public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+    {
+        @NonNull
+        @Override
+        public ItemHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.playlist_item_view_white, parent, false);
+            return new ItemHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+            Music music = MusicPlayer.getInstance().getMusic(position);
+            holder.setTitle( music.getName() );
+            holder.setSubtitle( music.getArtist() );
+        }
+
+        @Override
+        public int getItemCount() {
+            return MusicPlayer.getInstance().getMusicsCount();
+        }
+    }
+
+    public class ItemHolder extends RecyclerView.ViewHolder
+    {
+
+        private TextView title;
+        private TextView subtitle;
+
+        public ItemHolder(@NonNull View itemView) {
+            super(itemView);
+            title = itemView.findViewById(R.id.item_title);
+            subtitle = itemView.findViewById(R.id.item_subtitle);
+        }
+
+        public String getTitle() {
+            return title.getText().toString();
+        }
+
+        public void setTitle(String name) {
+            this.title.setText( name );
+        }
+
+        public String getSubtitle() {
+            return subtitle.getText().toString();
+        }
+
+        public void setSubtitle(String subtitle) {
+            this.subtitle.setText(subtitle);
+        }
+    }
+
+}
