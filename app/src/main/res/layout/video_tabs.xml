@@ -5,41 +5,35 @@
     android:id="@+id/app_tabs"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:tabBackground="@color/colorPrimary"
+    app:tabBackground="@android:color/white"
+    app:tabGravity="fill"
+    app:tabIconTint="@drawable/tab_icon_selector"
     app:tabIndicatorColor="@color/colorAccent"
     app:tabIndicatorFullWidth="true"
-    app:tabIndicatorHeight="5dp"
+    app:tabIndicatorHeight="1dp"
     app:tabInlineLabel="true"
-    app:tabMaxWidth="250dp"
-    app:tabMinWidth="200dp"
-    app:tabMode="scrollable"
+    app:tabMode="fixed"
     app:tabRippleColor="@color/colorAccent"
     app:tabSelectedTextColor="@color/colorAccent"
     app:tabTextColor="@color/colorAccent2"
     app:tabUnboundedRipple="true">
 
     <com.google.android.material.tabs.TabItem
-        android:id="@+id/video_review"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Review" />
-
-    <com.google.android.material.tabs.TabItem
         android:id="@+id/video_folders"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Folders" />
+        android:icon="@drawable/u_movie_folder" />
 
     <com.google.android.material.tabs.TabItem
         android:id="@+id/video_series"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Series" />
+        android:icon="@drawable/u_series" />
 
     <com.google.android.material.tabs.TabItem
         android:id="@+id/video_all"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="All" />
+        android:icon="@drawable/u_all" />
 
 </com.google.android.material.tabs.TabLayout>

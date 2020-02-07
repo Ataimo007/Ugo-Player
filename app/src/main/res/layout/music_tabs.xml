@@ -5,14 +5,14 @@
     android:id="@+id/app_tabs"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:tabBackground="@color/colorPrimary"
+    app:tabBackground="@android:color/white"
+    app:tabGravity="fill"
+    app:tabIconTint="@drawable/tab_icon_selector"
     app:tabIndicatorColor="@color/colorAccent"
     app:tabIndicatorFullWidth="true"
-    app:tabIndicatorHeight="5dp"
+    app:tabIndicatorHeight="1dp"
     app:tabInlineLabel="true"
-    app:tabMaxWidth="250dp"
-    app:tabMinWidth="200dp"
-    app:tabMode="scrollable"
+    app:tabMode="fixed"
     app:tabRippleColor="@color/colorAccent"
     app:tabSelectedTextColor="@color/colorAccent"
     app:tabTextColor="@color/colorAccent2"
@@ -22,35 +22,29 @@
         android:id="@+id/music_albums"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Albums" />
+        android:icon="@drawable/u_album" />
 
     <com.google.android.material.tabs.TabItem
         android:id="@+id/music_artists"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Artists" />
+        android:icon="@drawable/u_artist" />
 
     <com.google.android.material.tabs.TabItem
         android:id="@+id/music_tracks"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tracks" />
+        android:icon="@drawable/u_song" />
 
     <com.google.android.material.tabs.TabItem
         android:id="@+id/music_genres"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Genres" />
-
-    <com.google.android.material.tabs.TabItem
-        android:id="@+id/music_playlist"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Playlist" />
+        android:icon="@drawable/u_genre" />
 
     <com.google.android.material.tabs.TabItem
         android:id="@+id/music_folder"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Folder" />
+        android:icon="@drawable/u_music_folder" />
 </com.google.android.material.tabs.TabLayout>

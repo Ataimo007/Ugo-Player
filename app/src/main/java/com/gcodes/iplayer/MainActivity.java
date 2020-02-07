@@ -95,15 +95,15 @@ public class MainActivity extends AppCompatActivity
         navigation.setSelectedItemId( R.id.navigation_music );
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        this.menu = menu;
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        prepareSearchMenu();
-//        return super.onCreateOptionsMenu(menu);
-        return true;
-    }
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        // Inflate the menu; this adds items to the action bar if it is present.
+//        this.menu = menu;
+//        getMenuInflater().inflate(R.menu.main_menu, menu);
+//        prepareSearchMenu();
+////        return super.onCreateOptionsMenu(menu);
+//        return true;
+//    }
 
     private void prepareSearchMenu() {
         MenuItem searchItem = menu.findItem(R.id.action_search);
