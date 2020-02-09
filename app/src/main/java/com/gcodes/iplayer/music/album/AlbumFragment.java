@@ -15,12 +15,17 @@ import android.widget.TextView;
 import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
+import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
+import com.gcodes.iplayer.music.track.TrackFragment;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 //import android.support.annotation.NonNull;
 //import androidx.core.app.Fragment;
@@ -94,12 +99,13 @@ public class AlbumFragment extends Fragment {
         {
             String albumName = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM));
             String albumKey = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_KEY));
-//            String albumId = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums._ID));
+            String albumId = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums._ID));
             String albumArt = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
 
             holder.setTitle(albumName);
             holder.setSubtitle( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Albums.ARTIST)));
-            holder.setImage(albumArt);
+//            holder.setImage(albumArt);
+            holder.setImage(albumId);
 
             holder.itemView.setOnClickListener(v -> {
 //                AlbumSession album = new AlbumSession();
@@ -128,7 +134,6 @@ public class AlbumFragment extends Fragment {
 
     public class ItemHolder extends RecyclerView.ViewHolder
     {
-
         private TextView title;
         private TextView subtitle;
         private ImageView image;
@@ -160,20 +165,26 @@ public class AlbumFragment extends Fragment {
             return image.getDrawingCache();
         }
 
-        public void setImage( String path )
+//        public void setImage( String path )
+//        {
+//            if ( path != null )
+//            {
+//                Bitmap bitmap = BitmapFactory.decodeFile(path);
+//                if ( bitmap != null )
+//                {
+//                    image.setImageBitmap( bitmap );
+//                    return;
+//                }
+//            }
+//            int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
+//                    getContext().getPackageName());
+//            this.image.setImageResource( resId );
+//        }
+
+        public void setImage( String id )
         {
-            if ( path != null )
-            {
-                Bitmap bitmap = BitmapFactory.decodeFile(path);
-                if ( bitmap != null )
-                {
-                    image.setImageBitmap( bitmap );
-                    return;
-                }
-            }
-            int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-                    getContext().getPackageName());
-            this.image.setImageResource( resId );
+            GlideApp.with( AlbumFragment.this ).load( new ProcessModelLoaderFactory.AlbumProcessFetcher( AlbumFragment.this, id ) )
+                    .placeholder( R.drawable.u_album_solid ).apply( circleCropTransform() ).into( image );
         }
     }
 

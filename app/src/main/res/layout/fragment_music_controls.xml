@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/music_controller"
     android:layout_width="match_parent"
-    android:layout_height="80dp"
+    android:layout_height="wrap_content"
     android:layout_gravity="bottom"
     tools:context=".music.player.FragmentMusic">
 
@@ -15,81 +15,86 @@
         android:layout_marginStart="10dp"
         android:layout_marginEnd="10dp"
         app:bar_height="0.5dp"
-        app:buffered_color="@color/music_fragment_color"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:buffered_color="@color/colorAccent3"
+        app:color="@color/colorAccent3"
+        app:layout_constraintEnd_toStartOf="@+id/exo_position"
+        app:layout_constraintStart_toEndOf="@+id/exo_album_art"
+        app:layout_constraintTop_toBottomOf="@+id/exo_track"
         app:played_color="@color/colorPrimaryDark"
-        app:unplayed_color="@color/music_fragment_color" />
+        app:unplayed_color="@color/colorAccent3" />
 
     <ImageView
         android:id="@+id/exo_album_art"
-        android:layout_width="100dp"
-        android:layout_height="0dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_marginStart="10dp"
         android:layout_marginTop="5dp"
         android:layout_marginBottom="5dp"
-        android:src="@drawable/ic_music_black_24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/exo_progress" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/u_song_solid" />
 
     <TextView
         android:id="@+id/exo_track"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="10dp"
         android:lines="1"
         android:overScrollMode="ifContentScrolls"
+        android:singleLine="true"
         android:text="Track"
         android:textColor="@android:color/black"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toTopOf="@+id/exo_artist"
-        app:layout_constraintEnd_toStartOf="@+id/exo_position"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/constraintLayout"
         app:layout_constraintStart_toEndOf="@+id/exo_album_art"
         app:layout_constraintTop_toTopOf="@+id/exo_album_art" />
-
-    <TextView
-        android:id="@+id/exo_artist"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:lines="1"
-        android:overScrollMode="ifContentScrolls"
-        android:text="Artist"
-        android:textColor="@color/music_fragment_color"
-        app:layout_constraintBottom_toBottomOf="@+id/exo_album_art"
-        app:layout_constraintEnd_toStartOf="@+id/exo_play"
-        app:layout_constraintStart_toStartOf="@+id/exo_track"
-        app:layout_constraintTop_toBottomOf="@+id/exo_track" />
 
     <TextView
         android:id="@+id/exo_position"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
         android:text="0:00"
         android:textColor="@android:color/black"
-        app:layout_constraintEnd_toEndOf="@+id/exo_progress"
-        app:layout_constraintTop_toTopOf="@+id/exo_track" />
+        app:layout_constraintBottom_toBottomOf="@+id/exo_progress"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <ImageView
-        android:id="@+id/exo_play"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:src="@drawable/exo_icon_play"
-        android:tint="@android:color/black"
-        app:layout_constraintBottom_toBottomOf="@+id/exo_artist"
-        app:layout_constraintEnd_toEndOf="@+id/exo_position"
-        app:layout_constraintTop_toBottomOf="@+id/exo_position" />
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout"
+        android:layout_width="26dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="10dp"
+        app:layout_constraintBottom_toBottomOf="@+id/exo_track"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/exo_track">
 
-    <ImageView
-        android:id="@+id/exo_pause"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:src="@drawable/exo_icon_pause"
-        android:tint="@android:color/black"
-        app:layout_constraintBottom_toBottomOf="@+id/exo_artist"
-        app:layout_constraintEnd_toEndOf="@+id/exo_position"
-        app:layout_constraintTop_toBottomOf="@+id/exo_position" />
+        <ImageView
+            android:id="@+id/exo_pause"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:src="@drawable/u_pause"
+            android:tint="@android:color/black"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/exo_play"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:adjustViewBounds="false"
+            android:cropToPadding="false"
+            android:src="@drawable/u_play"
+            android:tint="@android:color/black"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

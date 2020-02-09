@@ -3,10 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="80dp"
+    android:layout_height="wrap_content"
     android:layout_gravity="bottom"
-    android:background="@color/music_control_background"
-    android:minHeight="80dp"
+    android:background="@color/colorAccent"
     tools:context=".music.player.FragmentMusic">
 
 
@@ -14,7 +13,7 @@
         android:id="@+id/music_control_view"
         id="@+id/view3"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         app:controller_layout_id="@layout/fragment_music_controls"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

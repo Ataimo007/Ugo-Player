@@ -2,13 +2,18 @@ package com.gcodes.iplayer.music.player;
 
 import android.net.Uri;
 import android.util.Log;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.player.PlayerManager;
 
 import com.gcodes.iplayer.music.Music;
 import com.google.android.exoplayer2.ExoPlaybackException;
 //import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
@@ -115,11 +120,32 @@ public class MusicPlayer
                 Log.d("Music_Player_Track", "track has changed");
                 consumeTrack(playing);
             }
-
-
         };
         player.addListener( trackListenr );
         return trackListenr;
+    }
+
+    public static void onStateChange( ImageView view )
+    {
+        MusicPlayer musicPlayer = getInstance();
+        Animation rotate = AnimationUtils.loadAnimation(musicPlayer.getMainPlayerManager().getContext(), R.anim.u_rotate);
+        rotate.setFillAfter( true );
+        musicPlayer.getPlayerManager().addListener( new com.google.android.exoplayer2.Player.EventListener() {
+
+            @Override
+            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+                if ( playWhenReady && playbackState == Player.STATE_READY )
+                {
+                    Log.d("Animation_View", "playing music" );
+                    view.startAnimation( rotate );
+                }
+                else
+                {
+                    Log.d("Animation_View", "music paused" );
+                    view.clearAnimation();
+                }
+            }
+        } );
     }
 
     public static void unRegisterOnTrackChange(com.google.android.exoplayer2.Player.EventListener trackListener)
@@ -148,6 +174,11 @@ public class MusicPlayer
     public SimpleExoPlayer getPlayerManager()
     {
         return playerManager.getPlayer();
+    }
+
+    public PlayerManager getMainPlayerManager()
+    {
+        return playerManager;
     }
 
 //    public void setPlayer(SimpleExoPlayer player)

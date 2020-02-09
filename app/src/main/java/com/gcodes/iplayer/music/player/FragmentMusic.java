@@ -1,8 +1,6 @@
 package com.gcodes.iplayer.music.player;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +8,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.GlideRequests;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
@@ -20,6 +21,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
+
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment
@@ -27,7 +30,7 @@ import androidx.fragment.app.FragmentTransaction;
 public class FragmentMusic extends Fragment {
 
     private View controlView;
-    private int trackShutterId;
+    private GlideRequests request;
 //    private SimpleExoPlayer player;
 //    private DefaultDataSourceFactory factory;
 
@@ -79,8 +82,7 @@ public class FragmentMusic extends Fragment {
     }
 
     private void init() {
-        trackShutterId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-                getContext().getPackageName());
+        request = GlideApp.with(FragmentMusic.this);
     }
 
 //    private void initSources()
@@ -112,6 +114,12 @@ public class FragmentMusic extends Fragment {
         controlView.setOnClickListener( v -> {
             showMusicPlayer();
         });
+        initRotateAnim();
+    }
+
+    private void initRotateAnim() {
+        ImageView art = controlView.findViewById(R.id.exo_album_art);
+        MusicPlayer.onStateChange( art );
     }
 
     private void showMusicPlayer()
@@ -124,25 +132,16 @@ public class FragmentMusic extends Fragment {
     {
         TextView trackName = controlView.findViewById(R.id.exo_track);
         trackName.setText( music.getName() );
-        TextView artistName = controlView.findViewById(R.id.exo_artist);
-        artistName.setText( music.getArtist() );
+//        TextView artistName = controlView.findViewById(R.id.exo_artist);
+//        artistName.setText( music.getArtist() );
         ImageView art = controlView.findViewById(R.id.exo_album_art);
-        setImage( music.getArtPath(), art);
+        setImage( music, art);
     }
 
-    public void setImage(String path, ImageView image)
+    public void setImage(Music music, ImageView image)
     {
-        if ( path != null )
-        {
-            Bitmap bitmap = BitmapFactory.decodeFile(path);
-            if ( bitmap != null )
-            {
-                image.setImageBitmap( bitmap );
-                return;
-            }
-        }
-
-        image.setImageResource( trackShutterId );
+        request.load( new ProcessModelLoaderFactory.MusicProcessFetcher( FragmentMusic.this, music ) )
+                .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
     }
 
 

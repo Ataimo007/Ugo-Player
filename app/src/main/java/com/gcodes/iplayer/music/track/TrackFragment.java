@@ -1,10 +1,13 @@
 package com.gcodes.iplayer.music.track;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.media.MediaMetadataRetriever;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -16,17 +19,24 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
+import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.MusicPlayer;
+import com.gcodes.iplayer.video.Video;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import static com.gcodes.iplayer.helpers.GlideOptions.centerCropTransform;
+import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 //import android.support.annotation.NonNull;
 //import androidx.core.app.Fragment;
@@ -48,7 +58,7 @@ public class TrackFragment extends Fragment
             MediaStore.Audio.Media.ALBUM_KEY,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.TITLE,
-            MediaStore.Audio.Media.ALBUM_ID
+            MediaStore.Audio.Media.ALBUM_ID,
     };
 
     private static Cursor cursor;
@@ -118,9 +128,13 @@ public class TrackFragment extends Fragment
         listView.addItemDecoration(new RecyclerView.ItemDecoration() {
             @Override
             public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-//                outRect.top = 10;
+                outRect.top = 10;
                 outRect.bottom = 10;
-                super.getItemOffsets(outRect, view, parent, state);
+
+                if (parent.getChildAdapterPosition(view) == 0 )
+                    outRect.top = 20;
+                if (parent.getChildAdapterPosition(view) == parent.getChildCount() - 1 )
+                    outRect.bottom = 20;
             }
         });
 
@@ -142,7 +156,8 @@ public class TrackFragment extends Fragment
             Music music = musics.get( position );
             holder.setTitle( music.getName() );
             holder.setSubtitle( music.getArtist() );
-            holder.setImage( music.getArtPath() );
+            holder.setImage( music );
+//            holder.setImage( music.getArtPath() );
 //            holder.setImage( music.toUri() );
             Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
 //            holder.setImage( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)));
@@ -203,18 +218,16 @@ public class TrackFragment extends Fragment
                     return;
                 }
             }
-            int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
+            int resId = getResources().getIdentifier("u_song", "drawable",
                     getContext().getPackageName());
             this.image.setImageResource( resId );
         }
 
-        public void setImage(Uri uri)
+        public void setImage(Music music)
         {
-            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-            retriever.setDataSource( TrackFragment.this.getContext(), uri);
-            byte[] picture = retriever.getEmbeddedPicture();
-            Bitmap albumArt = BitmapFactory.decodeByteArray(picture, 0, picture.length);
-            image.setImageBitmap( albumArt );
+//            getResources().getDrawable()
+            GlideApp.with( TrackFragment.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( TrackFragment.this.getContext(), music ) )
+                    .placeholder( R.drawable.u_song ).apply( circleCropTransform() ).into( image );
         }
     }
 

@@ -217,18 +217,21 @@ public class MusicPlayerActivity extends AppCompatActivity{
 
     public void imageToToolbar(String path)
     {
-        if ( path != null )
+        if ( path != null && !path.isEmpty() )
         {
             Bitmap bitmap = BitmapFactory.decodeFile(path);
-            Bitmap smallBitmap = Bitmap.createScaledBitmap(bitmap, 70, 70, true);
             if ( bitmap != null )
             {
-                BitmapDrawable art = new BitmapDrawable(getResources(), smallBitmap);
-                Glide.with( this ).load( bitmap )
-                        .apply( RequestOptions.bitmapTransform(new BlurTransformation( 10, 1 ) ) )
-                        .into( ( ImageView ) findViewById(R.id.music_background) );
-                toolbar.setLogo( art );
-                return;
+                Bitmap smallBitmap = Bitmap.createScaledBitmap(bitmap, 70, 70, true);
+                if ( bitmap != null )
+                {
+                    BitmapDrawable art = new BitmapDrawable(getResources(), smallBitmap);
+                    Glide.with( this ).load( bitmap )
+                            .apply( RequestOptions.bitmapTransform(new BlurTransformation( 10, 1 ) ) )
+                            .into( ( ImageView ) findViewById(R.id.music_background) );
+                    toolbar.setLogo( art );
+                    return;
+                }
             }
         }
         int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable", getPackageName());
