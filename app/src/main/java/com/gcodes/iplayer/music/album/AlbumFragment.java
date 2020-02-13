@@ -3,7 +3,6 @@ package com.gcodes.iplayer.music.album;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -13,12 +12,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.track.TrackFragment;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -198,7 +195,7 @@ public class AlbumFragment extends Fragment {
 
         public void setImage( String id )
         {
-            GlideApp.with( AlbumFragment.this ).load( new ProcessModelLoaderFactory.AlbumProcessFetcher( AlbumFragment.this, id ) )
+            GlideApp.with( AlbumFragment.this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( AlbumFragment.this, id, MediaStore.Audio.Media.ALBUM_ID ) )
                     .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
         }
     }

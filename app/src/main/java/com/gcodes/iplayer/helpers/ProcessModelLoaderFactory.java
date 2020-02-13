@@ -20,7 +20,6 @@ import com.bumptech.glide.load.model.ModelLoaderFactory;
 import com.bumptech.glide.load.model.MultiModelLoaderFactory;
 import com.bumptech.glide.signature.ObjectKey;
 import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.player.PlayerManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -155,23 +154,30 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
         }
     }
 
-    public static class AlbumProcessFetcher implements ProcessModelLoaderFactory.ProcessFetcher
+    public static class MusicCategoryProcessFetcher implements ProcessModelLoaderFactory.ProcessFetcher
     {
 //        private final static MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         private final Context context;
         private final String id;
+        private final String cat;
         private byte[] picture;
 
-        public AlbumProcessFetcher(Context context, String id )
+        public MusicCategoryProcessFetcher(Context context, String id, String cat )
         {
             this.id = id;
             this.context = context;
+            this.cat = cat;
             getAMusic();
         }
 
-        public AlbumProcessFetcher(Fragment fragment, String id )
+        public boolean hasPicture()
         {
-            this(fragment.getContext(), id);
+            return picture != null;
+        }
+
+        public MusicCategoryProcessFetcher(Fragment fragment, String id, String cat )
+        {
+            this(fragment.getContext(), id, cat);
         }
 
         @Override
@@ -183,18 +189,21 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
         {
             CursorLoader loader = new CursorLoader( context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     new String[]{MediaStore.Audio.Media._ID},
-                    String.format( "%s != ? and %s = ?", MediaStore.Audio.Media.IS_MUSIC, MediaStore.Audio.Media.ALBUM_ID ),
+                    String.format( "%s != ? and %s = ?", MediaStore.Audio.Media.IS_MUSIC, cat ),
                     new String[]{ "0", String.valueOf(id) }, MediaStore.Audio.Media._ID + " asc" );
             Cursor cursor = loader.loadInBackground();
             cursor.moveToFirst();
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
             do{
                 Uri uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media._ID) )));
-                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-                retriever.setDataSource( context, uri);
-                picture = retriever.getEmbeddedPicture();
-                Log.d("Glide_Load", "loading " + uri );
-                if ( picture != null )
-                    break;
+                try {
+                    retriever.setDataSource( context, uri);
+                    picture = retriever.getEmbeddedPicture();
+                    Log.d("Glide_Load", "loading " + uri );
+                    if ( picture != null )
+                        break;
+                }
+                catch (Exception ignored){}
             } while ( cursor.moveToNext() );
         }
 
@@ -207,56 +216,4 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
         }
     }
 
-    public static class ArtistProcessFetcher implements ProcessModelLoaderFactory.ProcessFetcher
-    {
-//        private final static MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        private final Context context;
-        private final String id;
-        private byte[] picture;
-
-        public ArtistProcessFetcher(Context context, String id )
-        {
-            this.id = id;
-            this.context = context;
-            getAMusic();
-        }
-
-        public ArtistProcessFetcher(Fragment fragment, String id )
-        {
-            this(fragment.getContext(), id);
-        }
-
-        @Override
-        public Object getKey() {
-            return "artist " + id;
-        }
-
-        private void getAMusic()
-        {
-            CursorLoader loader = new CursorLoader( context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    new String[]{MediaStore.Audio.Media._ID},
-                    String.format( "%s != ? and %s = ?", MediaStore.Audio.Media.IS_MUSIC, MediaStore.Audio.Media.ARTIST_ID ),
-                    new String[]{ "0", String.valueOf(id) }, MediaStore.Audio.Media._ID + " asc" );
-            Cursor cursor = loader.loadInBackground();
-            cursor.moveToFirst();
-            do{
-                Uri uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media._ID) )));
-                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-                retriever.setDataSource( context, uri);
-                picture = retriever.getEmbeddedPicture();
-                Log.d("Glide_Load", "loading " + uri );
-                if ( picture != null )
-                    break;
-            } while ( cursor.moveToNext() );
-        }
-
-        @Override
-        public Bitmap load()
-        {
-            if ( picture != null )
-                return BitmapFactory.decodeByteArray(picture, 0, picture.length);
-            return null;
-        }
-
-    }
 }

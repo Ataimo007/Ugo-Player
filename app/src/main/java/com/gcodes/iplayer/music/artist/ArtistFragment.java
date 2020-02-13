@@ -212,7 +212,7 @@ public class ArtistFragment extends Fragment {
 
         public void setImage( String id )
         {
-            GlideApp.with( ArtistFragment.this ).load( new ProcessModelLoaderFactory.ArtistProcessFetcher( ArtistFragment.this, id ) )
+            GlideApp.with( ArtistFragment.this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( ArtistFragment.this, id, MediaStore.Audio.Media.ARTIST_ID ) )
                     .placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
         }
 

@@ -16,7 +16,7 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.album.AlbumFragment;
+import com.gcodes.iplayer.music.artist.ArtistFragment;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -104,7 +104,7 @@ public class GenreFragment extends Fragment
         @Override
         public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_card, parent, false);
+                    .inflate(R.layout.item_card_full, parent, false);
             return new ItemHolder(view);
         }
 
@@ -114,7 +114,7 @@ public class GenreFragment extends Fragment
             String genre = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.NAME));
             long genreId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres._ID));
             holder.setTitle(genre);
-            String albumArt = bindHolder(cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Genres._ID)), holder);
+            bindHolder(cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Genres._ID)), holder);
 
 //            String artistKey = genreCursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ARTIST_KEY));
 
@@ -127,7 +127,7 @@ public class GenreFragment extends Fragment
 //                    intent.putExtra( "artist_key", artistKey );
                     intent.putExtra( "genre_id", genreId );
                     intent.putExtra( "genre", genre );
-                    intent.putExtra( "album_art", albumArt );
+//                    intent.putExtra( "album_art", albumArt );
                     GenreFragment.this.startActivity( intent );
                 }
             });
@@ -154,7 +154,7 @@ public class GenreFragment extends Fragment
             return path;
         }
 
-        public String bindHolder(int id, ItemHolder holder )
+        public void bindHolder(int id, ItemHolder holder )
         {
             CursorLoader loader = new CursorLoader( GenreFragment.this.getContext(),
                     MediaStore.Audio.Genres.Members.getContentUri("external", id ), mediaProjection,
@@ -164,24 +164,21 @@ public class GenreFragment extends Fragment
             holder.setSubtitle( String.format( "%d %s", count, count > 1 ? "Tracks" : "Track" ) );
 
             // set album art
-            if ( cursor.moveToFirst() )
+            cursor.moveToFirst();
+            ProcessModelLoaderFactory.MusicCategoryProcessFetcher fetcher;
+
+            if ( cursor.getCount() > 0 )
             {
                 do {
-//                    String path = getArtPath( cursor.getLong( cursor.getColumnIndex( MediaStore.Audio.Genres.Members.ALBUM_ID ) ) );
-//                    if ( path != null )
-//                    {
-//                        boolean success = holder.setAbsuluteImage(path);
-//                        if ( success )
-//                            return path;
-//                    }
-                    String path = getArtPath( cursor.getLong( cursor.getColumnIndex( MediaStore.Audio.Genres.Members.ALBUM_ID ) ) );
+                    fetcher = new ProcessModelLoaderFactory.MusicCategoryProcessFetcher(GenreFragment.this,
+                            String.valueOf(cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM_ID))), MediaStore.Audio.Media.ALBUM_ID);
+                    if ( fetcher.hasPicture() )
+                        break;
                 }
                 while ( cursor.moveToNext() );
-            }
-            else
-                holder.setDefualtImage();
 
-            return null;
+                holder.setImage( fetcher );
+            }
         }
     }
 
@@ -244,8 +241,13 @@ public class GenreFragment extends Fragment
 
         public void setImage( String id )
         {
-            GlideApp.with( GenreFragment.this ).load( new ProcessModelLoaderFactory.AlbumProcessFetcher( GenreFragment.this, id ) )
+            GlideApp.with( GenreFragment.this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( GenreFragment.this, id, MediaStore.Audio.Media.ALBUM_ID ) )
                     .placeholder( R.drawable.u_genre_solid ).apply( centerCropTransform() ).into( image );
+        }
+
+        public void setImage( ProcessModelLoaderFactory.MusicCategoryProcessFetcher fetcher )
+        {
+            GlideApp.with( GenreFragment.this ).load( fetcher ).placeholder( R.drawable.u_genre_solid ).apply( centerCropTransform() ).into( image );
         }
 
         public boolean setAbsuluteImage( String path )

@@ -86,13 +86,12 @@ public class MusicFragment extends Fragment
 
         public void init()
         {
-            views = new Fragment[ 6 ];
+            views = new Fragment[ 5 ];
             views[ 0 ] = new AlbumFragment();
             views[ 1 ] = new ArtistFragment();
             views[ 2 ] = new TrackFragment();
             views[ 3 ] = new GenreFragment();
-            views[ 4 ] = new Fragment();
-            views[ 5 ] = new FolderFragment();
+            views[ 4 ] = new FolderFragment();
         }
 
         @Override
@@ -103,7 +102,7 @@ public class MusicFragment extends Fragment
 
         @Override
         public int getCount() {
-            return 6;
+            return 5;
         }
 
         public int getDefaultTabPos() {
