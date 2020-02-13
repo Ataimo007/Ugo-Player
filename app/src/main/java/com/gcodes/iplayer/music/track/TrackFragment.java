@@ -131,10 +131,10 @@ public class TrackFragment extends Fragment
                 outRect.top = 10;
                 outRect.bottom = 10;
 
-                if (parent.getChildAdapterPosition(view) == 0 )
-                    outRect.top = 20;
-                if (parent.getChildAdapterPosition(view) == parent.getChildCount() - 1 )
-                    outRect.bottom = 20;
+//                if (parent.getChildAdapterPosition(view) == 0 )
+//                    outRect.top = 20;
+//                if (parent.getChildAdapterPosition(view) == parent.getChildCount() - 1 )
+//                    outRect.bottom = 20;
             }
         });
 

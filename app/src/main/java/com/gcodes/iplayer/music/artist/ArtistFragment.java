@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
@@ -14,12 +15,17 @@ import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
+import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
+import com.gcodes.iplayer.music.album.AlbumFragment;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 //import android.support.annotation.NonNull;
 //import androidx.core.app.Fragment;
@@ -74,6 +80,19 @@ public class ArtistFragment extends Fragment {
         GridLayoutManager layout = new GridLayoutManager(getContext(), 2);
         listView.setLayoutManager( layout );
         listView.setAdapter(adapter);
+
+        listView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                outRect.top = 10;
+                outRect.bottom = 10;
+
+//                if (parent.getChildAdapterPosition(view) == 0 )
+//                    outRect.top = 20;
+//                if (parent.getChildAdapterPosition(view) == parent.getChildCount() - 1 )
+//                    outRect.bottom = 20;
+            }
+        });
         return view;
     }
 
@@ -98,7 +117,7 @@ public class ArtistFragment extends Fragment {
             String artist = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.ARTIST));
             String artistKey = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.ARTIST_KEY));
             long artistId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Artists._ID));
-            String albumArt = getArtPath(artist);
+//            String albumArt = getArtPath(artist);
             int albums = cursor.getInt( cursor.getColumnIndex(MediaStore.Audio.Artists.NUMBER_OF_ALBUMS));
             int tracks = cursor.getInt( cursor.getColumnIndex(MediaStore.Audio.Artists.NUMBER_OF_TRACKS));
 
@@ -107,7 +126,8 @@ public class ArtistFragment extends Fragment {
 
             holder.setTitle(artist);
             holder.setSubtitle( subtitle );
-            holder.setImage( albumArt );
+//            holder.setImage( albumArt );
+            holder.setImage( String.valueOf(artistId) );
 
             holder.itemView.setOnClickListener(new View.OnClickListener()
             {
@@ -118,7 +138,7 @@ public class ArtistFragment extends Fragment {
                     intent.putExtra( "artist_key", artistKey );
                     intent.putExtra( "artist_id", artistId );
                     intent.putExtra( "artist", artist );
-                    intent.putExtra( "album_art", albumArt );
+//                    intent.putExtra( "album_art", albumArt );
                     ArtistFragment.this.startActivity( intent );
                 }
             });
@@ -183,27 +203,33 @@ public class ArtistFragment extends Fragment {
             return image.getDrawingCache();
         }
 
-        public void setImage( int id )
+//        public void setImage( int id )
+//        {
+//            String path = getPath( id );
+//            setImage( path );
+//        }
+
+        public void setImage( String id )
         {
-            String path = getPath( id );
-            setImage( path );
+            GlideApp.with( ArtistFragment.this ).load( new ProcessModelLoaderFactory.ArtistProcessFetcher( ArtistFragment.this, id ) )
+                    .placeholder( R.drawable.u_album_solid ).apply( circleCropTransform() ).into( image );
         }
 
-        public void setImage( String path )
-        {
-            if ( path != null )
-            {
-                Bitmap bitmap = BitmapFactory.decodeFile(path);
-                if ( bitmap != null )
-                {
-                    image.setImageBitmap( bitmap );
-                    return;
-                }
-            }
-            int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-                    getContext().getPackageName());
-            this.image.setImageResource( resId );
-        }
+//        public void setImage( String path )
+//        {
+//            if ( path != null )
+//            {
+//                Bitmap bitmap = BitmapFactory.decodeFile(path);
+//                if ( bitmap != null )
+//                {
+//                    image.setImageBitmap( bitmap );
+//                    return;
+//                }
+//            }
+//            int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
+//                    getContext().getPackageName());
+//            this.image.setImageResource( resId );
+//        }
 
         public String getPath( int id )
         {

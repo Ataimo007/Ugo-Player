@@ -202,4 +202,52 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
             return null;
         }
     }
+
+    public static class ArtistProcessFetcher implements ProcessModelLoaderFactory.ProcessFetcher
+    {
+//        private final static MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        private final Context context;
+        private final String id;
+        private Uri uri;
+
+        public ArtistProcessFetcher(Context context, String id )
+        {
+            this.id = id;
+            this.context = context;
+            getAMusic();
+        }
+
+        public ArtistProcessFetcher(Fragment fragment, String id )
+        {
+            this(fragment.getContext(), id);
+        }
+
+        @Override
+        public Object getKey() {
+            return "album " + id;
+        }
+
+        private void getAMusic()
+        {
+            CursorLoader loader = new CursorLoader( context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    new String[]{MediaStore.Audio.Media._ID},
+                    String.format( "%s != ? and %s = ?", MediaStore.Audio.Media.IS_MUSIC, MediaStore.Audio.Media.ARTIST_ID ),
+                    new String[]{ "0", String.valueOf(id) }, MediaStore.Audio.Media._ID + " asc limit 1" );
+            Cursor cursor = loader.loadInBackground();
+            cursor.moveToFirst();
+            uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media._ID) )));
+        }
+
+        @Override
+        public Bitmap load()
+        {
+            Log.d("Glide_Load", "loading " + uri );
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+            retriever.setDataSource( context, uri);
+            byte[] picture = retriever.getEmbeddedPicture();
+            if ( picture != null )
+                return BitmapFactory.decodeByteArray(picture, 0, picture.length);
+            return null;
+        }
+    }
 }

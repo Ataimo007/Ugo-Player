@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
@@ -76,6 +77,20 @@ public class AlbumFragment extends Fragment {
         GridLayoutManager layout = new GridLayoutManager(getContext(), 2);
         listView.setLayoutManager( layout );
         listView.setAdapter(adapter);
+
+        listView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                outRect.top = 10;
+                outRect.bottom = 10;
+
+//                if (parent.getChildAdapterPosition(view) == 0 )
+//                    outRect.top = 20;
+//                if (parent.getChildAdapterPosition(view) == parent.getChildCount() - 1 )
+//                    outRect.bottom = 20;
+            }
+        });
+
         return view;
     }
 
@@ -184,7 +199,7 @@ public class AlbumFragment extends Fragment {
         public void setImage( String id )
         {
             GlideApp.with( AlbumFragment.this ).load( new ProcessModelLoaderFactory.AlbumProcessFetcher( AlbumFragment.this, id ) )
-                    .placeholder( R.drawable.u_album_solid ).apply( circleCropTransform() ).into( image );
+                    .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
         }
     }
 
