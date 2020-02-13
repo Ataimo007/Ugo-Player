@@ -128,7 +128,7 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
 
         @Override
         public Object getKey() {
-            return music.toUri();
+            return "music " + music.toUri();
         }
 
         @Override
@@ -160,7 +160,7 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
 //        private final static MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         private final Context context;
         private final String id;
-        private Uri uri;
+        private byte[] picture;
 
         public AlbumProcessFetcher(Context context, String id )
         {
@@ -184,19 +184,23 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
             CursorLoader loader = new CursorLoader( context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     new String[]{MediaStore.Audio.Media._ID},
                     String.format( "%s != ? and %s = ?", MediaStore.Audio.Media.IS_MUSIC, MediaStore.Audio.Media.ALBUM_ID ),
-                    new String[]{ "0", String.valueOf(id) }, MediaStore.Audio.Media._ID + " asc limit 1" );
+                    new String[]{ "0", String.valueOf(id) }, MediaStore.Audio.Media._ID + " asc" );
             Cursor cursor = loader.loadInBackground();
             cursor.moveToFirst();
-            uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media._ID) )));
+            do{
+                Uri uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media._ID) )));
+                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                retriever.setDataSource( context, uri);
+                picture = retriever.getEmbeddedPicture();
+                Log.d("Glide_Load", "loading " + uri );
+                if ( picture != null )
+                    break;
+            } while ( cursor.moveToNext() );
         }
 
         @Override
         public Bitmap load()
         {
-            Log.d("Glide_Load", "loading " + uri );
-            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-            retriever.setDataSource( context, uri);
-            byte[] picture = retriever.getEmbeddedPicture();
             if ( picture != null )
                 return BitmapFactory.decodeByteArray(picture, 0, picture.length);
             return null;
@@ -208,7 +212,7 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
 //        private final static MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         private final Context context;
         private final String id;
-        private Uri uri;
+        private byte[] picture;
 
         public ArtistProcessFetcher(Context context, String id )
         {
@@ -224,7 +228,7 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
 
         @Override
         public Object getKey() {
-            return "album " + id;
+            return "artist " + id;
         }
 
         private void getAMusic()
@@ -232,22 +236,27 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
             CursorLoader loader = new CursorLoader( context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     new String[]{MediaStore.Audio.Media._ID},
                     String.format( "%s != ? and %s = ?", MediaStore.Audio.Media.IS_MUSIC, MediaStore.Audio.Media.ARTIST_ID ),
-                    new String[]{ "0", String.valueOf(id) }, MediaStore.Audio.Media._ID + " asc limit 1" );
+                    new String[]{ "0", String.valueOf(id) }, MediaStore.Audio.Media._ID + " asc" );
             Cursor cursor = loader.loadInBackground();
             cursor.moveToFirst();
-            uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media._ID) )));
+            do{
+                Uri uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media._ID) )));
+                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                retriever.setDataSource( context, uri);
+                picture = retriever.getEmbeddedPicture();
+                Log.d("Glide_Load", "loading " + uri );
+                if ( picture != null )
+                    break;
+            } while ( cursor.moveToNext() );
         }
 
         @Override
         public Bitmap load()
         {
-            Log.d("Glide_Load", "loading " + uri );
-            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-            retriever.setDataSource( context, uri);
-            byte[] picture = retriever.getEmbeddedPicture();
             if ( picture != null )
                 return BitmapFactory.decodeByteArray(picture, 0, picture.length);
             return null;
         }
+
     }
 }
