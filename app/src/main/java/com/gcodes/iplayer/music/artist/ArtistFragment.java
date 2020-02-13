@@ -25,6 +25,7 @@ import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import static com.gcodes.iplayer.helpers.GlideOptions.centerCropTransform;
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 //import android.support.annotation.NonNull;
@@ -107,7 +108,7 @@ public class ArtistFragment extends Fragment {
         @Override
         public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_card, parent, false);
+                    .inflate(R.layout.item_card_full, parent, false);
             return new ItemHolder(view);
         }
 
@@ -212,7 +213,7 @@ public class ArtistFragment extends Fragment {
         public void setImage( String id )
         {
             GlideApp.with( ArtistFragment.this ).load( new ProcessModelLoaderFactory.ArtistProcessFetcher( ArtistFragment.this, id ) )
-                    .placeholder( R.drawable.u_album_solid ).apply( circleCropTransform() ).into( image );
+                    .placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
         }
 
 //        public void setImage( String path )

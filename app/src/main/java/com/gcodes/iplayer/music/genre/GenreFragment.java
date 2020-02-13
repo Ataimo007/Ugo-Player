@@ -14,12 +14,18 @@ import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
+import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
+import com.gcodes.iplayer.music.album.AlbumFragment;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import static com.gcodes.iplayer.helpers.GlideOptions.centerCropTransform;
+import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 //import android.support.annotation.NonNull;
 //import androidx.core.app.Fragment;
@@ -161,13 +167,14 @@ public class GenreFragment extends Fragment
             if ( cursor.moveToFirst() )
             {
                 do {
+//                    String path = getArtPath( cursor.getLong( cursor.getColumnIndex( MediaStore.Audio.Genres.Members.ALBUM_ID ) ) );
+//                    if ( path != null )
+//                    {
+//                        boolean success = holder.setAbsuluteImage(path);
+//                        if ( success )
+//                            return path;
+//                    }
                     String path = getArtPath( cursor.getLong( cursor.getColumnIndex( MediaStore.Audio.Genres.Members.ALBUM_ID ) ) );
-                    if ( path != null )
-                    {
-                        boolean success = holder.setAbsuluteImage(path);
-                        if ( success )
-                            return path;
-                    }
                 }
                 while ( cursor.moveToNext() );
             }
@@ -212,27 +219,33 @@ public class GenreFragment extends Fragment
             return image.getDrawingCache();
         }
 
-        public void setImage( String path )
-        {
-            if ( path != null )
-            {
-                Bitmap bitmap = BitmapFactory.decodeFile(path);
-                if ( bitmap != null )
-                {
-                    image.setImageBitmap( bitmap );
-                    return;
-                }
-            }
-            int resId = getResources().getIdentifier("ic_playlist_black_24dp", "drawable",
-                    getContext().getPackageName());
-            this.image.setImageResource( resId );
-        }
+//        public void setImage( String path )
+//        {
+//            if ( path != null )
+//            {
+//                Bitmap bitmap = BitmapFactory.decodeFile(path);
+//                if ( bitmap != null )
+//                {
+//                    image.setImageBitmap( bitmap );
+//                    return;
+//                }
+//            }
+//            int resId = getResources().getIdentifier("ic_playlist_black_24dp", "drawable",
+//                    getContext().getPackageName());
+//            this.image.setImageResource( resId );
+//        }
 
         public void setDefualtImage()
         {
             int resId = getResources().getIdentifier("ic_playlist_black_24dp", "drawable",
                     getContext().getPackageName());
             this.image.setImageResource( resId );
+        }
+
+        public void setImage( String id )
+        {
+            GlideApp.with( GenreFragment.this ).load( new ProcessModelLoaderFactory.AlbumProcessFetcher( GenreFragment.this, id ) )
+                    .placeholder( R.drawable.u_genre_solid ).apply( centerCropTransform() ).into( image );
         }
 
         public boolean setAbsuluteImage( String path )
