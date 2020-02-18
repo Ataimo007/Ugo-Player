@@ -23,17 +23,26 @@
         app:played_color="@color/colorPrimaryDark"
         app:unplayed_color="@color/colorAccent3" />
 
-    <ImageView
+    <androidx.cardview.widget.CardView
         android:id="@+id/exo_album_art"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginTop="5dp"
         android:layout_marginBottom="5dp"
+        app:cardCornerRadius="25dp"
+        app:cardElevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/u_song_solid" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/exo_album"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            app:srcCompat="@drawable/u_song_solid" />
+
+    </androidx.cardview.widget.CardView>
 
     <TextView
         android:id="@+id/exo_track"

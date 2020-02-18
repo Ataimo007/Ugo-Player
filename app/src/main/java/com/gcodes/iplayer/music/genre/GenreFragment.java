@@ -154,6 +154,33 @@ public class GenreFragment extends Fragment
             return path;
         }
 
+//        public void bindHolder(int id, ItemHolder holder )
+//        {
+//            CursorLoader loader = new CursorLoader( GenreFragment.this.getContext(),
+//                    MediaStore.Audio.Genres.Members.getContentUri("external", id ), mediaProjection,
+//                    null, null, null );
+//            Cursor cursor = loader.loadInBackground();
+//            int count = cursor.getCount();
+//            holder.setSubtitle( String.format( "%d %s", count, count > 1 ? "Tracks" : "Track" ) );
+//
+//            // set album art
+//            cursor.moveToFirst();
+//            ProcessModelLoaderFactory.MusicCategoryProcessFetcher fetcher;
+//
+//            if ( cursor.getCount() > 0 )
+//            {
+//                do {
+//                    fetcher = new ProcessModelLoaderFactory.MusicCategoryProcessFetcher(GenreFragment.this,
+//                            String.valueOf(cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM_ID))), MediaStore.Audio.Media.ALBUM_ID);
+//                    if ( fetcher.hasPicture() )
+//                        break;
+//                }
+//                while ( cursor.moveToNext() );
+//
+//                holder.setImage( fetcher );
+//            }
+//        }
+
         public void bindHolder(int id, ItemHolder holder )
         {
             CursorLoader loader = new CursorLoader( GenreFragment.this.getContext(),
@@ -164,21 +191,7 @@ public class GenreFragment extends Fragment
             holder.setSubtitle( String.format( "%d %s", count, count > 1 ? "Tracks" : "Track" ) );
 
             // set album art
-            cursor.moveToFirst();
-            ProcessModelLoaderFactory.MusicCategoryProcessFetcher fetcher;
-
-            if ( cursor.getCount() > 0 )
-            {
-                do {
-                    fetcher = new ProcessModelLoaderFactory.MusicCategoryProcessFetcher(GenreFragment.this,
-                            String.valueOf(cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM_ID))), MediaStore.Audio.Media.ALBUM_ID);
-                    if ( fetcher.hasPicture() )
-                        break;
-                }
-                while ( cursor.moveToNext() );
-
-                holder.setImage( fetcher );
-            }
+            holder.setImage( id );
         }
     }
 
@@ -239,15 +252,15 @@ public class GenreFragment extends Fragment
             this.image.setImageResource( resId );
         }
 
-        public void setImage( String id )
-        {
-            GlideApp.with( GenreFragment.this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( GenreFragment.this, id, MediaStore.Audio.Media.ALBUM_ID ) )
-                    .placeholder( R.drawable.u_genre_solid ).apply( centerCropTransform() ).into( image );
-        }
+//        public void setImage( String id )
+//        {
+//            GlideApp.with( GenreFragment.this ).load( new ProcessModelLoaderFactory.GenreProcessFetcher( GenreFragment.this, id ) )
+//                    .placeholder( R.drawable.u_genre_solid ).apply( centerCropTransform() ).into( image );
+//        }
 
-        public void setImage( ProcessModelLoaderFactory.MusicCategoryProcessFetcher fetcher )
+        public void setImage( long id )
         {
-            GlideApp.with( GenreFragment.this ).load( fetcher ).placeholder( R.drawable.u_genre_solid ).apply( centerCropTransform() ).into( image );
+            GlideApp.with( GenreFragment.this ).load( new ProcessModelLoaderFactory.GenreProcessFetcher( GenreFragment.this, id ) ).placeholder( R.drawable.u_genre_solid ).apply( centerCropTransform() ).into( image );
         }
 
         public boolean setAbsuluteImage( String path )

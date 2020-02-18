@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.util.Consumer;
 
 public class MusicPlayer
@@ -125,7 +126,7 @@ public class MusicPlayer
         return trackListenr;
     }
 
-    public static void onStateChange( ImageView view )
+    public static void onStateChange( CardView view )
     {
         MusicPlayer musicPlayer = getInstance();
         Animation rotate = AnimationUtils.loadAnimation(musicPlayer.getMainPlayerManager().getContext(), R.anim.u_rotate);

@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
@@ -20,6 +21,7 @@ import com.bumptech.glide.load.model.ModelLoaderFactory;
 import com.bumptech.glide.load.model.MultiModelLoaderFactory;
 import com.bumptech.glide.signature.ObjectKey;
 import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.genre.GenreFragment;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +29,7 @@ import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import static com.gcodes.iplayer.helpers.ProcessModelLoaderFactory.*;
 
@@ -135,39 +138,45 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
         {
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
             retriever.setDataSource( context, music.toUri());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                try {
-                    Log.d("Content_Resolver", "load: content resolver thumbnail");
-                    return context.getContentResolver().loadThumbnail( music.toUri(), new Size( 640, 480), null );
-                } catch (IOException e) {
-                    return null;
-                }
-            }
-            else
-            {
-                Log.d("Content_Resolver", "load: old content resolver thumbnail");
-                byte[] picture = retriever.getEmbeddedPicture();
-                if ( picture != null )
-                    return BitmapFactory.decodeByteArray(picture, 0, picture.length);
-                return null;
-            }
+
+            Log.d("Content_Resolver", "load: old content resolver thumbnail");
+            byte[] picture = retriever.getEmbeddedPicture();
+            if ( picture != null )
+                return BitmapFactory.decodeByteArray(picture, 0, picture.length);
+            return null;
+
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//                try {
+//                    Log.d("Content_Resolver", "load: content resolver thumbnail");
+//                    return context.getContentResolver().loadThumbnail( music.toUri(), new Size( 640, 480), null );
+//                } catch (IOException e) {
+//                    return null;
+//                }
+//            }
+//            else
+//            {
+//                Log.d("Content_Resolver", "load: old content resolver thumbnail");
+//                byte[] picture = retriever.getEmbeddedPicture();
+//                if ( picture != null )
+//                    return BitmapFactory.decodeByteArray(picture, 0, picture.length);
+//                return null;
+//            }
         }
     }
 
     public static class MusicCategoryProcessFetcher implements ProcessModelLoaderFactory.ProcessFetcher
     {
 //        private final static MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        private final Context context;
-        private final String id;
-        private final String cat;
-        private byte[] picture;
+        protected final Context context;
+        protected final String id;
+        protected final String cat;
+        protected byte[] picture;
 
         public MusicCategoryProcessFetcher(Context context, String id, String cat )
         {
             this.id = id;
             this.context = context;
             this.cat = cat;
-            getAMusic();
         }
 
         public boolean hasPicture()
@@ -182,18 +191,28 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
 
         @Override
         public Object getKey() {
-            return "album " + id;
+            return cat + " " + id;
         }
 
-        private void getAMusic()
+        private void initMusic()
+        {
+            if  ( Looper.myLooper() == null || Looper.myLooper().getThread() != Thread.currentThread() )
+                Looper.prepare();
+            picture = getPicture( id, cat );
+        }
+
+        protected byte[] getPicture(String id, String cat )
         {
             CursorLoader loader = new CursorLoader( context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     new String[]{MediaStore.Audio.Media._ID},
                     String.format( "%s != ? and %s = ?", MediaStore.Audio.Media.IS_MUSIC, cat ),
-                    new String[]{ "0", String.valueOf(id) }, MediaStore.Audio.Media._ID + " asc" );
+                    new String[]{ "0", id }, MediaStore.Audio.Media._ID + " asc" );
             Cursor cursor = loader.loadInBackground();
             cursor.moveToFirst();
+
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+
+            byte[] picture;
             do{
                 Uri uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media._ID) )));
                 try {
@@ -201,17 +220,93 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
                     picture = retriever.getEmbeddedPicture();
                     Log.d("Glide_Load", "loading " + uri );
                     if ( picture != null )
-                        break;
+                        return picture;
                 }
                 catch (Exception ignored){}
             } while ( cursor.moveToNext() );
+            return null;
         }
 
         @Override
         public Bitmap load()
         {
+            initMusic();
             if ( picture != null )
                 return BitmapFactory.decodeByteArray(picture, 0, picture.length);
+            return null;
+        }
+    }
+
+    public static class GenreProcessFetcher extends MusicCategoryProcessFetcher
+    {
+
+        private final long genreId;
+
+        public GenreProcessFetcher(Fragment fragment, long genreId) {
+            super(fragment, null, null);
+            this.genreId = genreId;
+        }
+
+        @Override
+        public Object getKey() {
+            return "genre " + genreId;
+        }
+
+//        @Override
+//        public Bitmap load() {
+//            Looper.prepare();
+//
+//            CursorLoader loader = new CursorLoader( context,
+//                    MediaStore.Audio.Genres.Members.getContentUri("external", genreId ), new String[]{MediaStore.Audio.Genres.Members.ALBUM_ID},
+//                    null, null, null );
+//            Cursor cursor = loader.loadInBackground();
+//
+//            // set album art
+//            cursor.moveToFirst();
+//            ProcessModelLoaderFactory.MusicCategoryProcessFetcher fetcher;
+//
+//            byte[] picture = null;
+//            if ( cursor.getCount() > 0 )
+//            {
+//                do {
+//                    picture = getPicture( String.valueOf(cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM_ID))), MediaStore.Audio.Media.ALBUM_ID);
+//                    if ( picture != null )
+//                        break;
+//                }
+//                while ( cursor.moveToNext() );
+//            }
+//
+//            super.picture = picture;
+//            if ( picture != null )
+//                return BitmapFactory.decodeByteArray(picture, 0, picture.length);
+//            return null;
+//        }
+
+        @Override
+        public Bitmap load() {
+
+            if  ( Looper.myLooper() == null || Looper.myLooper().getThread() != Thread.currentThread() )
+                Looper.prepare();
+
+            CursorLoader loader = new CursorLoader( context,
+                    MediaStore.Audio.Genres.Members.getContentUri( "external", genreId ), new String[]{MediaStore.Audio.Genres.Members._ID},
+                    null, null, MediaStore.Audio.Media._ID + " COLLATE LOCALIZED ASC" );
+            Cursor cursor = loader.loadInBackground();
+
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+
+            if  ( cursor.moveToFirst() )
+            {
+                do
+                {
+                    Uri uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf( cursor.getLong( cursor.getColumnIndex( MediaStore.Audio.Genres.Members._ID ) ) ) );
+                    retriever.setDataSource( context, uri );
+                    byte[] picture = retriever.getEmbeddedPicture();
+                    if ( picture != null )
+                        return BitmapFactory.decodeByteArray(picture, 0, picture.length);
+                } while ( cursor.moveToNext() );
+            }
+
             return null;
         }
     }

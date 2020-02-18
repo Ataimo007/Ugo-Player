@@ -17,6 +17,7 @@ import com.gcodes.iplayer.music.Music;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -118,7 +119,7 @@ public class FragmentMusic extends Fragment {
     }
 
     private void initRotateAnim() {
-        ImageView art = controlView.findViewById(R.id.exo_album_art);
+        CardView art = controlView.findViewById(R.id.exo_album_art);
         MusicPlayer.onStateChange( art );
     }
 
@@ -134,7 +135,7 @@ public class FragmentMusic extends Fragment {
         trackName.setText( music.getName() );
 //        TextView artistName = controlView.findViewById(R.id.exo_artist);
 //        artistName.setText( music.getArtist() );
-        ImageView art = controlView.findViewById(R.id.exo_album_art);
+        ImageView art = controlView.findViewById(R.id.exo_album);
         setImage( music, art);
     }
 
