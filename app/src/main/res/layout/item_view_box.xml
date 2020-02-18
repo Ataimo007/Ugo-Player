@@ -24,8 +24,8 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/item_subtitle"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/item_card"
-        app:layout_constraintTop_toTopOf="@+id/item_card" />
+        app:layout_constraintStart_toEndOf="@+id/item_image"
+        app:layout_constraintTop_toTopOf="@+id/item_image" />
 
     <TextView
         android:id="@+id/item_subtitle"
@@ -43,30 +43,37 @@
         app:layout_constraintStart_toStartOf="@+id/item_title"
         app:layout_constraintTop_toBottomOf="@+id/item_title" />
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/item_card"
+    <ImageView
+        android:id="@+id/item_image"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginStart="10dp"
-        android:transitionGroup="false"
-        app:cardCornerRadius="25dp"
-        app:cardElevation="4dp"
-        app:cardPreventCornerOverlap="true"
-        app:cardUseCompatPadding="false"
+        android:adjustViewBounds="true"
+        android:cropToPadding="true"
+        android:paddingStart="4dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/u_folder_art" />
 
-        <ImageView
-            android:id="@+id/item_image"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:adjustViewBounds="true"
-            android:cropToPadding="true"
-            android:elevation="10dp"
-            android:padding="10dp"
-            app:srcCompat="@drawable/u_song_art" />
-    </androidx.cardview.widget.CardView>
+
+<!--    <androidx.cardview.widget.CardView-->
+<!--        android:id="@+id/item_image"-->
+<!--        android:layout_width="50dp"-->
+<!--        android:layout_height="50dp"-->
+<!--        android:layout_marginStart="10dp"-->
+<!--        android:background="@drawable/u_folder_art"-->
+<!--        android:transitionGroup="false"-->
+<!--        app:cardCornerRadius="4dp"-->
+<!--        app:cardElevation="0dp"-->
+<!--        app:cardPreventCornerOverlap="true"-->
+<!--        app:cardUseCompatPadding="false"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="parent">-->
+
+<!--    </androidx.cardview.widget.CardView>-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

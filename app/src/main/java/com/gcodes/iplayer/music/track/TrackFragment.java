@@ -18,6 +18,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
@@ -30,6 +34,7 @@ import java.util.ArrayList;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -226,8 +231,19 @@ public class TrackFragment extends Fragment
         public void setImage(Music music)
         {
 //            getResources().getDrawable()
-            GlideApp.with( TrackFragment.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( TrackFragment.this.getContext(), music ) )
-                    .placeholder( R.drawable.u_song ).apply( circleCropTransform() ).into( image );
+            GlideApp.with( TrackFragment.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( TrackFragment.this.getContext(), music ) ).listener(new RequestListener<Drawable>() {
+                @Override
+                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                    image.setPadding( 10, 10, 10, 10 );
+                    return false;
+                }
+
+                @Override
+                public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                    image.setPadding( 0, 0, 0, 0 );
+                    return false;
+                }
+            }).placeholder( R.drawable.u_song_art ).apply( circleCropTransform() ).into( image );
         }
     }
 

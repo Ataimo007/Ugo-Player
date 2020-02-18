@@ -44,6 +44,16 @@
         <item name="android:letterSpacing">0.0333333333</item>
     </style>
 
+    <style name="BottomNav2" parent="TextAppearance.AppCompat.Caption">
+        <item name="fontFamily">sans-serif</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:letterSpacing">0.0333333333</item>
+    </style>
+
     <!--<style name="FullscreenActionBarStyle" parent="android:Widget.Holo.ActionBar">-->
     <style name="FullscreenActionBarStyle" parent="android:Widget.Material.ActionBar">
         <item name="android:background">@color/black_overlay</item>

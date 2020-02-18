@@ -1,29 +1,39 @@
 package com.gcodes.iplayer.music.folder;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
+import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.TreeMap;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 public class FolderFragment extends Fragment
 {
@@ -60,6 +70,7 @@ public class FolderFragment extends Fragment
     private CustomAdapter adapter;
     private String[] entryFiles;
     private CursorLoader artLoader;
+    private MainActivity backActivity;
 
     public FolderFragment() {
     }
@@ -73,7 +84,23 @@ public class FolderFragment extends Fragment
         load( false );
     }
 
-    public void load( boolean notify )
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if ( context instanceof MainActivity )
+        {
+            backActivity = (MainActivity) context;
+            backActivity.register( this::back );
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        backActivity.unregister();
+    }
+
+    public void load(boolean notify )
     {
         CursorLoader loader = new CursorLoader( this.getContext(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                 projection, selection, selectionArgs, sort );
@@ -134,6 +161,19 @@ public class FolderFragment extends Fragment
         load( true );
     }
 
+    public boolean back()
+    {
+        String parent = this.parent.getParent();
+        if ( parent == null )
+            return false;
+
+        this.parent = new File( parent );
+        setPath( this.parent.getAbsolutePath() );
+        --level;
+        load( true );
+        return true;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -150,9 +190,23 @@ public class FolderFragment extends Fragment
     {
         @Override
         public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_view, parent, false);
+            View view;
+            if ( viewType == 0 )
+                view = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.item_view_box, parent, false);
+            else
+                view = LayoutInflater.from(parent.getContext())
+                            .inflate(R.layout.item_view, parent, false);
             return new ItemHolder(view);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            String key = entryFiles[ position ];
+            if ( !key.startsWith( "-" ) )
+                return 0;
+            else
+                return 1;
         }
 
         @Override
@@ -161,9 +215,10 @@ public class FolderFragment extends Fragment
             String path = key.substring( 1 );
             String info = entry.get(key);
             holder.setTitle( path );
-            holder.setSubtitle( info );
+
             if ( key.startsWith( "-" ) )
             {
+                holder.setSubtitle( info );
                 Music music = entryMusic.get(key);
                 holder.setFileImage(music);
                 holder.itemView.setOnClickListener( null );
@@ -173,12 +228,12 @@ public class FolderFragment extends Fragment
             }
             else
             {
+                holder.setSubtitle( info + " Songs" );
                 holder.setFolderImage();
                 holder.itemView.setOnClickListener(v -> {
                     enter( path );
                 });
             }
-
         }
 
         @Override
@@ -228,22 +283,40 @@ public class FolderFragment extends Fragment
             this.image.setImageResource( resId );
         }
 
-        public void setFileImage( Music music )
+//        public void setFileImage( Music music )
+//        {
+//            Bitmap artBitmap = music.getArtBitmap(FolderFragment.this.getContext());
+//            if ( artBitmap != null )
+//                this.image.setImageBitmap( artBitmap );
+//            else
+//            {
+//                int resId = getResources().getIdentifier("ic_music_black_24dp", "drawable",
+//                        getContext().getPackageName());
+//                this.image.setImageResource( resId );
+//            }
+//        }
+
+        public void setFileImage(Music music)
         {
-            Bitmap artBitmap = music.getArtBitmap(FolderFragment.this.getContext());
-            if ( artBitmap != null )
-                this.image.setImageBitmap( artBitmap );
-            else
-            {
-                int resId = getResources().getIdentifier("ic_music_black_24dp", "drawable",
-                        getContext().getPackageName());
-                this.image.setImageResource( resId );
-            }
+//            getResources().getDrawable()
+            GlideApp.with( FolderFragment.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( FolderFragment.this, music ) ).listener(new RequestListener<Drawable>() {
+                @Override
+                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                    image.setPadding( 10, 10, 10, 10 );
+                    return false;
+                }
+
+                @Override
+                public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                    image.setPadding( 0, 0, 0, 0 );
+                    return false;
+                }
+            }).placeholder( R.drawable.u_song_art ).apply( circleCropTransform() ).into( image );
         }
 
         public void setFolderImage()
         {
-            int resId = getResources().getIdentifier("ic_folder_black_24dp", "drawable",
+            int resId = getResources().getIdentifier("u_folder_art", "drawable",
                     getContext().getPackageName());
             this.image.setImageResource( resId );
         }

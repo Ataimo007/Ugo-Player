@@ -27,6 +27,8 @@ import org.jmusixmatch.subtitle.Subtitle;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -42,6 +44,7 @@ public class MainActivity extends AppCompatActivity
 {
     private int requestCode = 0;
     private static AppCompatActivity application;
+    Supplier<Boolean> action;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = item -> {
@@ -56,11 +59,19 @@ public class MainActivity extends AppCompatActivity
                 return false;
             };
     private Menu menu;
+    private BackManager backAction;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         begin();
+    }
+
+    @Override
+    public void onBackPressed() {
+        boolean back = backAction.goBack();
+        if ( !back )
+            super.onBackPressed();
     }
 
     private void begin()
@@ -267,7 +278,19 @@ public class MainActivity extends AppCompatActivity
             }
             return () -> {};
         });
-
     }
+
+    public void register(BackManager action) {
+        backAction = action;
+    }
+
+    public void unregister() {
+        backAction = null;
+    }
+
+    public interface BackManager {
+        boolean goBack();
+    }
+
 
 }
