@@ -11,6 +11,7 @@ import android.widget.TextView;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.GlideRequests;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
+import com.gcodes.iplayer.music.folder.FolderFragment;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
@@ -141,8 +142,8 @@ public class FragmentMusic extends Fragment {
 
     public void setImage(Music music, ImageView image)
     {
-        request.load( new ProcessModelLoaderFactory.MusicProcessFetcher( FragmentMusic.this, music ) )
-                .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
+        GlideApp.with( FragmentMusic.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( FragmentMusic.this.getContext(), music ) )
+                .placeholder( R.drawable.u_song_art_padded ).apply( circleCropTransform() ).into( image );
     }
 
 

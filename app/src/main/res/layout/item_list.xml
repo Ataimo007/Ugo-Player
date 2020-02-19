@@ -8,8 +8,6 @@
     android:background="@color/colorAccent2"
     android:clipChildren="true"
     android:clipToPadding="true"
-    android:padding="5dp"
-    android:paddingBottom="10dp"
     tools:listitem="@layout/item_view">
 
 </androidx.recyclerview.widget.RecyclerView>

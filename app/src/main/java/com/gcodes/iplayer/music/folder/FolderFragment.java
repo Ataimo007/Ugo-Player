@@ -3,6 +3,7 @@ package com.gcodes.iplayer.music.folder;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -22,6 +23,7 @@ import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.MusicPlayer;
+import com.gcodes.iplayer.ui.UIConstance;
 
 import java.io.File;
 import java.util.TreeMap;
@@ -182,6 +184,9 @@ public class FolderFragment extends Fragment
         RecyclerView listView = (RecyclerView) view;
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
+
+        listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
+
         return view;
     }
 
@@ -201,7 +206,7 @@ public class FolderFragment extends Fragment
         }
 
         @Override
-        public long getItemId(int position) {
+        public int getItemViewType(int position) {
             String key = entryFiles[ position ];
             if ( !key.startsWith( "-" ) )
                 return 0;
@@ -299,19 +304,8 @@ public class FolderFragment extends Fragment
         public void setFileImage(Music music)
         {
 //            getResources().getDrawable()
-            GlideApp.with( FolderFragment.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( FolderFragment.this, music ) ).listener(new RequestListener<Drawable>() {
-                @Override
-                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                    image.setPadding( 10, 10, 10, 10 );
-                    return false;
-                }
-
-                @Override
-                public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                    image.setPadding( 0, 0, 0, 0 );
-                    return false;
-                }
-            }).placeholder( R.drawable.u_song_art ).apply( circleCropTransform() ).into( image );
+            GlideApp.with( FolderFragment.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( FolderFragment.this.getContext(), music ) )
+                    .placeholder( R.drawable.u_song_art_padded ).apply( circleCropTransform() ).into( image );
         }
 
         public void setFolderImage()

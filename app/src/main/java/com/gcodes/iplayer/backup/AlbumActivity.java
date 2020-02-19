@@ -232,17 +232,17 @@
 //    }
 //
 //
-//    public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+//    public class CustomAdapter extends RecyclerView.Adapter<ArtistItemHolder>
 //    {
 //        @Override
-//        public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+//        public ArtistItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 //            View view = LayoutInflater.from(parent.getContext())
 //                    .inflate(R.layout.playlist_item_view, parent, false);
-//            return new ItemHolder(view);
+//            return new ArtistItemHolder(view);
 //        }
 //
 //        @Override
-//        public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+//        public void onBindViewHolder(@NonNull ArtistItemHolder holder, int position) {
 //            Music music = musics.get( position );
 //            holder.setTitle( music.getName() );
 //            holder.setSubtitle( music.getArtist() );
@@ -261,12 +261,12 @@
 //        }
 //    }
 //
-//    public class ItemHolder extends RecyclerView.ViewHolder
+//    public class ArtistItemHolder extends RecyclerView.ViewHolder
 //    {
 //        private TextView title;
 //        private TextView subtitle;
 //
-//        public ItemHolder(@NonNull View itemView) {
+//        public ArtistItemHolder(@NonNull View itemView) {
 //            super(itemView);
 //            title = itemView.findViewById(R.id.item_title);
 //            subtitle = itemView.findViewById(R.id.item_subtitle);

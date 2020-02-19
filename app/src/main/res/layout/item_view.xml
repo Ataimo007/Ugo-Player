@@ -65,8 +65,7 @@
             android:adjustViewBounds="true"
             android:cropToPadding="true"
             android:elevation="10dp"
-            android:padding="10dp"
-            app:srcCompat="@drawable/u_song_art" />
+            app:srcCompat="@drawable/u_song_art_padded" />
     </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

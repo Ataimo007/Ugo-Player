@@ -30,8 +30,7 @@
                 app:expandedTitleMarginBottom="18dp"
                 app:expandedTitleMarginEnd="20dp"
                 app:expandedTitleTextAppearance="@style/BottomNav2"
-                app:layout_scrollFlags="scroll|exitUntilCollapsed"
-                app:layout_scrollInterpolator="@android:anim/decelerate_interpolator"
+                app:layout_scrollFlags="scroll|enterAlwaysCollapsed|exitUntilCollapsed"
                 app:titleEnabled="true"
                 app:toolbarId="@+id/toolbar">
 
@@ -44,7 +43,6 @@
                     android:cropToPadding="true"
                     android:foreground="@drawable/nav_foreground"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/ic_track_black_24dp"
                     app:srcCompat="@drawable/u_artist_avatar" />
 
                 <androidx.appcompat.widget.Toolbar

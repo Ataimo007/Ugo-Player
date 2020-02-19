@@ -18,7 +18,10 @@ import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.backup.AlbumSession;
 import com.gcodes.iplayer.music.album.AlbumActivity;
+import com.gcodes.iplayer.music.album.AlbumItemHolder;
 import com.gcodes.iplayer.music.player.MusicPlayer;
+import com.gcodes.iplayer.music.track.TrackFragment;
+import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
@@ -271,20 +274,21 @@ public class ArtistActivity extends AppCompatActivity
             this.activity = activity;
         }
 
-        public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+        public class CustomAdapter extends RecyclerView.Adapter<TrackItemHolder>
         {
             @Override
-            public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            public TrackItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
                 View view = LayoutInflater.from(parent.getContext())
-                        .inflate(R.layout.playlist_item_view, parent, false);
-                return new ItemHolder(view);
+                        .inflate(R.layout.item_view, parent, false);
+                return new TrackItemHolder(view);
             }
 
             @Override
-            public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+            public void onBindViewHolder(@NonNull TrackItemHolder holder, int position) {
                 Music music = musics.get( position );
                 holder.setTitle( music.getName() );
                 holder.setSubtitle( music.getArtist() );
+                holder.setImage( getContext(), music );
 //            holder.setImage( music.toUri() );
                 Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
 //            holder.setImage( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)));
@@ -298,36 +302,6 @@ public class ArtistActivity extends AppCompatActivity
             public int getItemCount() {
                 return musics.size();
             }
-        }
-
-        public class ItemHolder extends RecyclerView.ViewHolder
-        {
-
-            private TextView title;
-            private TextView subtitle;
-
-            public ItemHolder(@NonNull View itemView) {
-                super(itemView);
-                title = itemView.findViewById(R.id.item_title);
-                subtitle = itemView.findViewById(R.id.item_subtitle);
-            }
-
-            public String getTitle() {
-                return title.getText().toString();
-            }
-
-            public void setTitle(String name) {
-                this.title.setText( name );
-            }
-
-            public String getSubtitle() {
-                return subtitle.getText().toString();
-            }
-
-            public void setSubtitle(String subtitle) {
-                this.subtitle.setText(subtitle);
-            }
-
         }
     }
 
@@ -354,21 +328,21 @@ public class ArtistActivity extends AppCompatActivity
             this.artistKey = artistKey;
         }
 
-        public class CustomAdapter extends CursorRecyclerViewAdapter< ItemHolder >
+        public class CustomAdapter extends CursorRecyclerViewAdapter< AlbumItemHolder >
         {
             public CustomAdapter() {
                 super(ArtistAlbumFragment.this.getContext(), albums);
             }
 
             @Override
-            public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            public AlbumItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
                 View view = LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.item_card, parent, false);
-                return new ItemHolder(view);
+                return new AlbumItemHolder(view);
             }
 
             @Override
-            public void onBindViewHolder(ItemHolder holder, Cursor cursor)
+            public void onBindViewHolder(AlbumItemHolder holder, Cursor cursor)
             {
                 String albumName = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ALBUM));
                 String albumKey = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ALBUM_KEY));
@@ -377,7 +351,7 @@ public class ArtistActivity extends AppCompatActivity
 
                 holder.setTitle(albumName);
                 holder.setSubtitle( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ARTIST)));
-                holder.setImage(albumArt);
+                holder.setImage(getContext(), albumArt);
 
                 holder.itemView.setOnClickListener(v -> {
                     Intent intent = new Intent( ArtistAlbumFragment.this.getContext(), AlbumActivity.class );
@@ -391,56 +365,6 @@ public class ArtistActivity extends AppCompatActivity
             }
         }
 
-        public class ItemHolder extends RecyclerView.ViewHolder
-        {
-            private final ImageView image;
-            private final TextView title;
-            private final TextView subtitle;
-
-            public ItemHolder(@NonNull View itemView) {
-                super(itemView);
-                title = itemView.findViewById(R.id.item_title);
-                subtitle = itemView.findViewById(R.id.item_subtitle);
-                image = itemView.findViewById(R.id.item_image);
-            }
-
-            public String getTitle() {
-                return title.getText().toString();
-            }
-
-            public void setTitle(String name) {
-                this.title.setText( name );
-            }
-
-            public String getSubtitle() {
-                return subtitle.getText().toString();
-            }
-
-            public void setSubtitle(String subtitle) {
-                this.subtitle.setText(subtitle);
-            }
-
-            public Bitmap getImage() {
-                return image.getDrawingCache();
-            }
-
-            public void setImage( String path )
-            {
-                if ( path != null )
-                {
-                    Bitmap bitmap = BitmapFactory.decodeFile(path);
-                    if ( bitmap != null )
-                    {
-                        image.setImageBitmap( bitmap );
-                        return;
-                    }
-                }
-                int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-                        getContext().getPackageName());
-                this.image.setImageResource( resId );
-            }
-
-        }
     }
 
 }

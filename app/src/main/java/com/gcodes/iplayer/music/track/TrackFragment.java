@@ -1,40 +1,23 @@
 package com.gcodes.iplayer.music.track;
 
-import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
-import android.media.MediaMetadataRetriever;
-import android.media.ThumbnailUtils;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.helpers.GlideApp;
-import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.MusicPlayer;
-import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 
-import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -130,38 +113,27 @@ public class TrackFragment extends Fragment
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
 
-        listView.addItemDecoration(new RecyclerView.ItemDecoration() {
-            @Override
-            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-                outRect.top = 10;
-                outRect.bottom = 10;
-
-//                if (parent.getChildAdapterPosition(view) == 0 )
-//                    outRect.top = 20;
-//                if (parent.getChildAdapterPosition(view) == parent.getChildCount() - 1 )
-//                    outRect.bottom = 20;
-            }
-        });
+        listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
 
         return view;
     }
 
 
-    public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+    public class CustomAdapter extends RecyclerView.Adapter<TrackItemHolder>
     {
         @Override
-        public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public TrackItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_view, parent, false);
-            return new ItemHolder(view);
+            return new TrackItemHolder(view);
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+        public void onBindViewHolder(@NonNull TrackItemHolder holder, int position) {
             Music music = musics.get( position );
             holder.setTitle( music.getName() );
             holder.setSubtitle( music.getArtist() );
-            holder.setImage( music );
+            holder.setImage( TrackFragment.this, music );
 //            holder.setImage( music.getArtPath() );
 //            holder.setImage( music.toUri() );
             Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
@@ -178,73 +150,6 @@ public class TrackFragment extends Fragment
         }
     }
 
-    public class ItemHolder extends RecyclerView.ViewHolder
-    {
 
-        private TextView title;
-        private TextView subtitle;
-        private ImageView image;
-
-        public ItemHolder(@NonNull View itemView) {
-            super(itemView);
-            title = itemView.findViewById(R.id.item_title);
-            subtitle = itemView.findViewById(R.id.item_subtitle);
-            image = itemView.findViewById(R.id.item_image);
-        }
-
-        public String getTitle() {
-            return title.getText().toString();
-        }
-
-        public void setTitle(String name) {
-            this.title.setText( name );
-        }
-
-        public String getSubtitle() {
-            return subtitle.getText().toString();
-        }
-
-        public void setSubtitle(String subtitle) {
-            this.subtitle.setText(subtitle);
-        }
-
-        public Bitmap getImage() {
-            return image.getDrawingCache();
-        }
-
-        public void setImage( String path )
-        {
-            if ( path != null )
-            {
-                Bitmap bitmap = BitmapFactory.decodeFile(path);
-                if ( bitmap != null )
-                {
-                    image.setImageBitmap( bitmap );
-                    return;
-                }
-            }
-            int resId = getResources().getIdentifier("u_song", "drawable",
-                    getContext().getPackageName());
-            this.image.setImageResource( resId );
-        }
-
-        public void setImage(Music music)
-        {
-//            getResources().getDrawable()
-            GlideApp.with( TrackFragment.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( TrackFragment.this.getContext(), music ) ).listener(new RequestListener<Drawable>() {
-                @Override
-                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                    image.setPadding( 10, 10, 10, 10 );
-                    return false;
-                }
-
-                @Override
-                public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                    image.setPadding( 0, 0, 0, 0 );
-                    return false;
-                }
-            }).placeholder( R.drawable.u_song_art ).apply( circleCropTransform() ).into( image );
-        }
-    }
 
 }

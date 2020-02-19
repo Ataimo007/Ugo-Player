@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
@@ -17,6 +18,7 @@ import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.artist.ArtistFragment;
+import com.gcodes.iplayer.ui.UIConstance;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -87,10 +89,17 @@ public class GenreFragment extends Fragment
         View view = inflater.inflate(R.layout.item_list, container, false);
         CustomAdapter adapter = new CustomAdapter();
         RecyclerView listView = (RecyclerView) view;
-        GridLayoutManager layout = new GridLayoutManager(getContext(), 2);
+        GridLayoutManager layout = new GridLayoutManager(getContext(), getSpan() );
         listView.setLayoutManager( layout );
         listView.setAdapter(adapter);
+
+        listView.addItemDecoration(new UIConstance.AppItemDecorator( getSpan()));
+
         return view;
+    }
+
+    private int getSpan() {
+        return 2;
     }
 
 
@@ -154,7 +163,7 @@ public class GenreFragment extends Fragment
             return path;
         }
 
-//        public void bindHolder(int id, ItemHolder holder )
+//        public void bindHolder(int id, ArtistItemHolder holder )
 //        {
 //            CursorLoader loader = new CursorLoader( GenreFragment.this.getContext(),
 //                    MediaStore.Audio.Genres.Members.getContentUri("external", id ), mediaProjection,

@@ -2,20 +2,16 @@ package com.gcodes.iplayer.music.album;
 
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
-import com.gcodes.iplayer.helpers.GlideApp;
-import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
+import com.gcodes.iplayer.ui.UIConstance;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -65,34 +61,28 @@ public class AlbumFragment extends Fragment {
         }
     }
 
+    private int getSpan()
+    {
+        return 2;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.item_list, container, false);
         CustomAdapter adapter = new CustomAdapter();
         RecyclerView listView = (RecyclerView) view;
-        GridLayoutManager layout = new GridLayoutManager(getContext(), 2);
+        GridLayoutManager layout = new GridLayoutManager(getContext(), getSpan() );
         listView.setLayoutManager( layout );
         listView.setAdapter(adapter);
 
-        listView.addItemDecoration(new RecyclerView.ItemDecoration() {
-            @Override
-            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-                outRect.top = 10;
-                outRect.bottom = 10;
-
-//                if (parent.getChildAdapterPosition(view) == 0 )
-//                    outRect.top = 20;
-//                if (parent.getChildAdapterPosition(view) == parent.getChildCount() - 1 )
-//                    outRect.bottom = 20;
-            }
-        });
+        listView.addItemDecoration(new UIConstance.AppItemDecorator( getSpan()));
 
         return view;
     }
 
 
-    public class CustomAdapter extends CursorRecyclerViewAdapter< ItemHolder >
+    public class CustomAdapter extends CursorRecyclerViewAdapter<AlbumItemHolder>
     {
         public CustomAdapter()
         {
@@ -100,14 +90,14 @@ public class AlbumFragment extends Fragment {
         }
 
         @Override
-        public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public AlbumItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_card, parent, false);
-            return new ItemHolder(view);
+            return new AlbumItemHolder(view);
         }
 
         @Override
-        public void onBindViewHolder(final ItemHolder holder, Cursor cursor)
+        public void onBindViewHolder(final AlbumItemHolder holder, Cursor cursor)
         {
             String albumName = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM));
             String albumKey = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_KEY));
@@ -117,7 +107,7 @@ public class AlbumFragment extends Fragment {
             holder.setTitle(albumName);
             holder.setSubtitle( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Albums.ARTIST)));
 //            holder.setImage(albumArt);
-            holder.setImage(albumId);
+            holder.setImage(AlbumFragment.this, albumId);
 
             holder.itemView.setOnClickListener(v -> {
 //                AlbumSession album = new AlbumSession();
@@ -143,61 +133,4 @@ public class AlbumFragment extends Fragment {
         }
 
     }
-
-    public class ItemHolder extends RecyclerView.ViewHolder
-    {
-        private TextView title;
-        private TextView subtitle;
-        private ImageView image;
-
-        public ItemHolder(@NonNull View itemView) {
-            super(itemView);
-            title = itemView.findViewById(R.id.item_title);
-            subtitle = itemView.findViewById(R.id.item_subtitle);
-            image = itemView.findViewById(R.id.item_image);
-        }
-
-        public String getTitle() {
-            return title.getText().toString();
-        }
-
-        public void setTitle(String name) {
-            this.title.setText( name );
-        }
-
-        public String getSubtitle() {
-            return subtitle.getText().toString();
-        }
-
-        public void setSubtitle(String subtitle) {
-            this.subtitle.setText(subtitle);
-        }
-
-        public Bitmap getImage() {
-            return image.getDrawingCache();
-        }
-
-//        public void setImage( String path )
-//        {
-//            if ( path != null )
-//            {
-//                Bitmap bitmap = BitmapFactory.decodeFile(path);
-//                if ( bitmap != null )
-//                {
-//                    image.setImageBitmap( bitmap );
-//                    return;
-//                }
-//            }
-//            int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-//                    getContext().getPackageName());
-//            this.image.setImageResource( resId );
-//        }
-
-        public void setImage( String id )
-        {
-            GlideApp.with( AlbumFragment.this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( AlbumFragment.this, id, MediaStore.Audio.Media.ALBUM_ID ) )
-                    .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
-        }
-    }
-
 }
