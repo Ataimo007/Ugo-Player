@@ -14,11 +14,20 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
+import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.backup.AlbumSession;
 import com.gcodes.iplayer.music.album.AlbumActivity;
+import com.gcodes.iplayer.music.album.AlbumFragment;
+import com.gcodes.iplayer.music.album.AlbumItemHolder;
+import com.gcodes.iplayer.music.artist.ArtistFragment;
+import com.gcodes.iplayer.music.artist.ArtistItemHolder;
 import com.gcodes.iplayer.music.artist.ArtistOnlyActivity;
 import com.gcodes.iplayer.music.player.MusicPlayer;
+import com.gcodes.iplayer.music.track.TrackFragment;
+import com.gcodes.iplayer.music.track.TrackItemHolder;
+import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
@@ -35,6 +44,8 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
+
+import static com.gcodes.iplayer.helpers.GlideOptions.centerCropTransform;
 import static com.gcodes.iplayer.music.Music.*;
 
 public class GenreActivity extends AppCompatActivity
@@ -200,26 +211,6 @@ public class GenreActivity extends AppCompatActivity
         return albums.toArray( new Album[]{} );
     }
 
-//    public Cursor getAlbums()
-//    {
-//        String selection = String.format( "'true' ) GROUP BY ( %s", MediaStore.Audio.Genres.Members.ALBUM );
-//        CursorLoader loader = new CursorLoader( this,
-//                MediaStore.Audio.Genres.Members.getContentUri( "external", genreId ), albumProjection,
-//                selection, null, MediaStore.Audio.Genres.Members.ALBUM_KEY );
-//        Cursor cursor = loader.loadInBackground();
-//
-//        Log.d("Genre_Activity", "Genre Album View" );
-//        if  ( cursor.moveToFirst() )
-//        {
-//            do
-//            {
-//                Log.d("Genre_Activity", "Genre " + cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM)));
-//            } while ( cursor.moveToNext() );
-//        }
-//
-//        return cursor;
-//    }
-
     public void initView() {
         initToolbar();
         initPager();
@@ -237,18 +228,7 @@ public class GenreActivity extends AppCompatActivity
     public void setToolbarImage()
     {
         ImageView image = findViewById(R.id.album_art);
-        if ( albumArt != null )
-        {
-            Bitmap bitmap = BitmapFactory.decodeFile(albumArt);
-            if ( bitmap != null )
-            {
-                image.setImageBitmap( bitmap );
-                return;
-            }
-        }
-        int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-                GenreActivity.this.getPackageName());
-        image.setImageResource( resId );
+        GlideApp.with( this ).load( new ProcessModelLoaderFactory.GenreProcessFetcher( this, genreId ) ).placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
     }
 
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
@@ -281,16 +261,16 @@ public class GenreActivity extends AppCompatActivity
                     return genreTracks;
 
                 case 1:
-                    GenreAlbumFragment genreAlbum = new GenreAlbumFragment();
-                    genreAlbum.setAlbums( albums );
-                    genreAlbum.setGenreId( genreId );
-                    return genreAlbum;
-
-                case 2:
                     GenreArtistFragment genreArtist = new GenreArtistFragment();
                     genreArtist.setArtist( artist );
                     genreArtist.setGenreId( genreId );
                     return genreArtist;
+
+                case 2:
+                    GenreAlbumFragment genreAlbum = new GenreAlbumFragment();
+                    genreAlbum.setAlbums( albums );
+                    genreAlbum.setGenreId( genreId );
+                    return genreAlbum;
 
                 default:
                     return new Fragment();
@@ -319,6 +299,7 @@ public class GenreActivity extends AppCompatActivity
             CustomAdapter adapter = new CustomAdapter();
             listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
             listView.setAdapter(adapter);
+            listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
             return listView;
         }
 
@@ -326,23 +307,22 @@ public class GenreActivity extends AppCompatActivity
             this.activity = activity;
         }
 
-        public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+        public class CustomAdapter extends RecyclerView.Adapter<TrackItemHolder>
         {
             @Override
-            public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            public TrackItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
                 View view = LayoutInflater.from(parent.getContext())
-                        .inflate(R.layout.playlist_item_view, parent, false);
-                return new ItemHolder(view);
+                        .inflate(R.layout.item_view, parent, false);
+                return new TrackItemHolder(view);
             }
 
             @Override
-            public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+            public void onBindViewHolder(@NonNull TrackItemHolder holder, int position) {
                 Music music = musics.get( position );
                 holder.setTitle( music.getName() );
                 holder.setSubtitle( music.getArtist() );
-//            holder.setImage( music.toUri() );
+                holder.setImage( getContext(), music );
                 Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
-//            holder.setImage( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)));
 
                 holder.itemView.setOnClickListener(v -> {
                     MusicPlayer.play( music, activity );
@@ -353,36 +333,6 @@ public class GenreActivity extends AppCompatActivity
             public int getItemCount() {
                 return musics.size();
             }
-        }
-
-        public class ItemHolder extends RecyclerView.ViewHolder
-        {
-
-            private TextView title;
-            private TextView subtitle;
-
-            public ItemHolder(@NonNull View itemView) {
-                super(itemView);
-                title = itemView.findViewById(R.id.item_title);
-                subtitle = itemView.findViewById(R.id.item_subtitle);
-            }
-
-            public String getTitle() {
-                return title.getText().toString();
-            }
-
-            public void setTitle(String name) {
-                this.title.setText( name );
-            }
-
-            public String getSubtitle() {
-                return subtitle.getText().toString();
-            }
-
-            public void setSubtitle(String subtitle) {
-                this.subtitle.setText(subtitle);
-            }
-
         }
     }
 
@@ -400,39 +350,38 @@ public class GenreActivity extends AppCompatActivity
                                  Bundle savedInstanceState) {
             RecyclerView listView = new RecyclerView( getContext() );
             CustomAdapter adapter = new CustomAdapter();
-            listView.setLayoutManager( new GridLayoutManager(getContext(), 2) );
+            listView.setLayoutManager( new GridLayoutManager(getContext(), getSpan()) );
             listView.setAdapter(adapter);
+            listView.addItemDecoration(new UIConstance.AppItemDecorator( getSpan()));
             return listView;
+        }
+
+        private int getSpan() {
+            return 2;
         }
 
         public void setGenreId(long genreId) {
             this.genreId = genreId;
         }
 
-        public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+        public class CustomAdapter extends RecyclerView.Adapter<AlbumItemHolder>
         {
-//            public CustomAdapter() {
-//                super(GenreAlbumFragment.this.getContext(), albums);
-//            }
 
             @Override
-            public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            public AlbumItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
                 View view = LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.item_card, parent, false);
-                return new ItemHolder(view);
+                return new AlbumItemHolder(view);
             }
 
             @Override
-            public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+            public void onBindViewHolder(@NonNull AlbumItemHolder holder, int position) {
                 Album album = albums[position];
-//                String albumName = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM));
-//                String albumKey = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM_KEY));
-//                long albumId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM_ID));
                 holder.setSubtitle( album.getArtist() );
                 String albumArt = Music.getArtPath(album.getAlbumId(), artLoader);
 
                 holder.setTitle(album.getAlbum());
-                holder.setImage(albumArt);
+                holder.setImage(GenreAlbumFragment.this, String.valueOf(album.getAlbumId()));
 
                 holder.itemView.setOnClickListener(v -> {
                     Intent intent = new Intent( GenreAlbumFragment.this.getContext(), AlbumActivity.class );
@@ -449,57 +398,6 @@ public class GenreActivity extends AppCompatActivity
             public int getItemCount() {
                 return albums.length;
             }
-        }
-
-        public class ItemHolder extends RecyclerView.ViewHolder
-        {
-            private final ImageView image;
-            private final TextView title;
-            private final TextView subtitle;
-
-            public ItemHolder(@NonNull View itemView) {
-                super(itemView);
-                title = itemView.findViewById(R.id.item_title);
-                subtitle = itemView.findViewById(R.id.item_subtitle);
-                image = itemView.findViewById(R.id.item_image);
-            }
-
-            public String getTitle() {
-                return title.getText().toString();
-            }
-
-            public void setTitle(String name) {
-                this.title.setText( name );
-            }
-
-            public String getSubtitle() {
-                return subtitle.getText().toString();
-            }
-
-            public void setSubtitle(String subtitle) {
-                this.subtitle.setText(subtitle);
-            }
-
-            public Bitmap getImage() {
-                return image.getDrawingCache();
-            }
-
-            public void setImage( String path )
-            {
-                if ( path != null )
-                {
-                    Bitmap bitmap = BitmapFactory.decodeFile(path);
-                    if ( bitmap != null )
-                    {
-                        image.setImageBitmap( bitmap );
-                        return;
-                    }
-                }
-                int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-                        getContext().getPackageName());
-                this.image.setImageResource( resId );
-            }
-
         }
     }
 
@@ -526,27 +424,23 @@ public class GenreActivity extends AppCompatActivity
             this.genreId = genreId;
         }
 
-        public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+        public class CustomAdapter extends RecyclerView.Adapter<ArtistItemHolder>
         {
-//            public CustomAdapter() {
-//                super(GenreAlbumFragment.this.getContext(), albums);
-//            }
-
             @Override
-            public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            public ArtistItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
                 View view = LayoutInflater.from(parent.getContext())
-                        .inflate(R.layout.item_card, parent, false);
-                return new ItemHolder(view);
+                        .inflate(R.layout.item_card_full, parent, false);
+                return new ArtistItemHolder(view);
             }
 
             @Override
-            public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+            public void onBindViewHolder(@NonNull ArtistItemHolder holder, int position) {
                 Artist artist = artists[position];
                 holder.setSubtitle( artist.getAlbum() );
                 String albumArt = Music.getArtPath(artist.getAlbumId(), artLoader);
 
                 holder.setTitle(artist.getArtist());
-                holder.setImage(albumArt);
+                holder.setImage( GenreArtistFragment.this, String.valueOf(artist.getArtistId()) );
 
                 holder.itemView.setOnClickListener(v -> {
                     Intent intent = new Intent( GenreArtistFragment.this.getContext(), ArtistOnlyActivity.class );
@@ -566,56 +460,6 @@ public class GenreActivity extends AppCompatActivity
             }
         }
 
-        public class ItemHolder extends RecyclerView.ViewHolder
-        {
-            private final ImageView image;
-            private final TextView title;
-            private final TextView subtitle;
-
-            public ItemHolder(@NonNull View itemView) {
-                super(itemView);
-                title = itemView.findViewById(R.id.item_title);
-                subtitle = itemView.findViewById(R.id.item_subtitle);
-                image = itemView.findViewById(R.id.item_image);
-            }
-
-            public String getTitle() {
-                return title.getText().toString();
-            }
-
-            public void setTitle(String name) {
-                this.title.setText( name );
-            }
-
-            public String getSubtitle() {
-                return subtitle.getText().toString();
-            }
-
-            public void setSubtitle(String subtitle) {
-                this.subtitle.setText(subtitle);
-            }
-
-            public Bitmap getImage() {
-                return image.getDrawingCache();
-            }
-
-            public void setImage( String path )
-            {
-                if ( path != null )
-                {
-                    Bitmap bitmap = BitmapFactory.decodeFile(path);
-                    if ( bitmap != null )
-                    {
-                        image.setImageBitmap( bitmap );
-                        return;
-                    }
-                }
-                int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-                        getContext().getPackageName());
-                this.image.setImageResource( resId );
-            }
-
-        }
     }
 
 }

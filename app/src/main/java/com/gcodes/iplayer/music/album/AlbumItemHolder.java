@@ -60,4 +60,10 @@ public class AlbumItemHolder extends RecyclerView.ViewHolder
         GlideApp.with( context ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( context, id, MediaStore.Audio.Media.ALBUM_ID ) )
                 .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
     }
+
+    public void setImageByArtist(Context context, String artistId )
+    {
+        GlideApp.with( context ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( context, artistId, MediaStore.Audio.Media.ARTIST_ID ) )
+                .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
+    }
 }

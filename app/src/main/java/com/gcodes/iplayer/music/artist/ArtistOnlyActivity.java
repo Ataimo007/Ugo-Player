@@ -1,5 +1,6 @@
 package com.gcodes.iplayer.music.artist;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,8 +14,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
+import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.MusicPlayer;
+import com.gcodes.iplayer.music.track.TrackFragment;
+import com.gcodes.iplayer.music.track.TrackItemHolder;
+import com.gcodes.iplayer.ui.UIConstance;
 
 import java.util.ArrayList;
 
@@ -24,6 +30,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 public class ArtistOnlyActivity extends AppCompatActivity
 {
@@ -172,6 +180,7 @@ public class ArtistOnlyActivity extends AppCompatActivity
         CustomAdapter adapter = new CustomAdapter();
         listView.setLayoutManager( new LinearLayoutManager( this ) );
         listView.setAdapter(adapter);
+        listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
     }
 
     private void setTitles() {
@@ -181,34 +190,25 @@ public class ArtistOnlyActivity extends AppCompatActivity
     public void setToolbarImage()
     {
         ImageView image = findViewById(R.id.album_art);
-        if ( albumArt != null )
-        {
-            Bitmap bitmap = BitmapFactory.decodeFile(albumArt);
-            if ( bitmap != null )
-            {
-                image.setImageBitmap( bitmap );
-                return;
-            }
-        }
-        int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-                ArtistOnlyActivity.this.getPackageName());
-        image.setImageResource( resId );
+        GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( this, String.valueOf(artistId), MediaStore.Audio.Media.ALBUM_ID ) )
+                .placeholder( R.drawable.u_artist_avatar ).apply( circleCropTransform() ).into( image );
     }
 
-    public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+    public class CustomAdapter extends RecyclerView.Adapter<TrackItemHolder>
     {
         @Override
-        public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public TrackItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.playlist_item_view, parent, false);
-            return new ItemHolder(view);
+                    .inflate(R.layout.item_view, parent, false);
+            return new TrackItemHolder(view);
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+        public void onBindViewHolder(@NonNull TrackItemHolder holder, int position) {
             Music music = musics.get( position );
             holder.setTitle( music.getName() );
             holder.setSubtitle( music.getArtist() );
+            holder.setImage( ArtistOnlyActivity.this, music );
             Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
 
             holder.itemView.setOnClickListener(v -> {
@@ -220,36 +220,6 @@ public class ArtistOnlyActivity extends AppCompatActivity
         public int getItemCount() {
             return musics.size();
         }
-    }
-
-    public class ItemHolder extends RecyclerView.ViewHolder
-    {
-
-        private TextView title;
-        private TextView subtitle;
-
-        public ItemHolder(@NonNull View itemView) {
-            super(itemView);
-            title = itemView.findViewById(R.id.item_title);
-            subtitle = itemView.findViewById(R.id.item_subtitle);
-        }
-
-        public String getTitle() {
-            return title.getText().toString();
-        }
-
-        public void setTitle(String name) {
-            this.title.setText( name );
-        }
-
-        public String getSubtitle() {
-            return subtitle.getText().toString();
-        }
-
-        public void setSubtitle(String subtitle) {
-            this.subtitle.setText(subtitle);
-        }
-
     }
 
 }

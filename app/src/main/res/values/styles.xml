@@ -44,14 +44,19 @@
         <item name="android:letterSpacing">0.0333333333</item>
     </style>
 
+    <style name="BottomNav3" parent="TextAppearance.MaterialComponents.Headline6">
+    <!-- Fake Roboto Medium. -->
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
     <style name="BottomNav2" parent="TextAppearance.AppCompat.Caption">
         <item name="fontFamily">sans-serif</item>
-        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textStyle">normal</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:textSize">18sp</item>
         <item name="android:textColor">@color/colorAccent</item>
-        <item name="android:letterSpacing">0.0333333333</item>
+        <item name="android:letterSpacing">0.0125</item>
     </style>
 
     <!--<style name="FullscreenActionBarStyle" parent="android:Widget.Holo.ActionBar">-->

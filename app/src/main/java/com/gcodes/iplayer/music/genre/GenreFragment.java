@@ -123,7 +123,7 @@ public class GenreFragment extends Fragment
             String genre = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.NAME));
             long genreId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres._ID));
             holder.setTitle(genre);
-            bindHolder(cursor.getInt(cursor.getColumnIndex(MediaStore.Audio.Genres._ID)), holder);
+            bindHolder(genreId, holder);
 
 //            String artistKey = genreCursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ARTIST_KEY));
 
@@ -163,34 +163,7 @@ public class GenreFragment extends Fragment
             return path;
         }
 
-//        public void bindHolder(int id, ArtistItemHolder holder )
-//        {
-//            CursorLoader loader = new CursorLoader( GenreFragment.this.getContext(),
-//                    MediaStore.Audio.Genres.Members.getContentUri("external", id ), mediaProjection,
-//                    null, null, null );
-//            Cursor cursor = loader.loadInBackground();
-//            int count = cursor.getCount();
-//            holder.setSubtitle( String.format( "%d %s", count, count > 1 ? "Tracks" : "Track" ) );
-//
-//            // set album art
-//            cursor.moveToFirst();
-//            ProcessModelLoaderFactory.MusicCategoryProcessFetcher fetcher;
-//
-//            if ( cursor.getCount() > 0 )
-//            {
-//                do {
-//                    fetcher = new ProcessModelLoaderFactory.MusicCategoryProcessFetcher(GenreFragment.this,
-//                            String.valueOf(cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM_ID))), MediaStore.Audio.Media.ALBUM_ID);
-//                    if ( fetcher.hasPicture() )
-//                        break;
-//                }
-//                while ( cursor.moveToNext() );
-//
-//                holder.setImage( fetcher );
-//            }
-//        }
-
-        public void bindHolder(int id, ItemHolder holder )
+        public void bindHolder(long id, ItemHolder holder )
         {
             CursorLoader loader = new CursorLoader( GenreFragment.this.getContext(),
                     MediaStore.Audio.Genres.Members.getContentUri("external", id ), mediaProjection,
@@ -237,35 +210,6 @@ public class GenreFragment extends Fragment
         public Bitmap getImage() {
             return image.getDrawingCache();
         }
-
-//        public void setImage( String path )
-//        {
-//            if ( path != null )
-//            {
-//                Bitmap bitmap = BitmapFactory.decodeFile(path);
-//                if ( bitmap != null )
-//                {
-//                    image.setImageBitmap( bitmap );
-//                    return;
-//                }
-//            }
-//            int resId = getResources().getIdentifier("ic_playlist_black_24dp", "drawable",
-//                    getContext().getPackageName());
-//            this.image.setImageResource( resId );
-//        }
-
-        public void setDefualtImage()
-        {
-            int resId = getResources().getIdentifier("ic_playlist_black_24dp", "drawable",
-                    getContext().getPackageName());
-            this.image.setImageResource( resId );
-        }
-
-//        public void setImage( String id )
-//        {
-//            GlideApp.with( GenreFragment.this ).load( new ProcessModelLoaderFactory.GenreProcessFetcher( GenreFragment.this, id ) )
-//                    .placeholder( R.drawable.u_genre_solid ).apply( centerCropTransform() ).into( image );
-//        }
 
         public void setImage( long id )
         {

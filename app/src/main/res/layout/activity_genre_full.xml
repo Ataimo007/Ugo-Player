@@ -8,9 +8,7 @@
     android:layout_height="match_parent"
     tools:context=".music.genre.GenreActivity">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="true">
@@ -18,7 +16,7 @@
         <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appbar"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="wrap_content"
             android:fitsSystemWindows="true"
             app:expanded="true">
 
@@ -26,73 +24,79 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:fitsSystemWindows="true"
-                app:collapsedTitleGravity="top|left"
+                app:collapsedTitleTextAppearance="@style/BottomNav3"
                 app:contentScrim="?attr/colorPrimary"
                 app:expandedTitleGravity="bottom|right"
-                app:expandedTitleMarginBottom="45dp"
-                app:expandedTitleMarginEnd="10dp"
-                app:layout_scrollFlags="scroll|exitUntilCollapsed"
-                app:layout_scrollInterpolator="@android:anim/decelerate_interpolator"
+                app:expandedTitleMarginBottom="18dp"
+                app:expandedTitleMarginEnd="20dp"
+                app:expandedTitleTextAppearance="@style/BottomNav2"
+                app:layout_scrollFlags="scroll|enterAlwaysCollapsed|exitUntilCollapsed"
                 app:titleEnabled="true"
                 app:toolbarId="@+id/toolbar">
 
                 <ImageView
                     android:id="@+id/album_art"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="220dp"
                     android:adjustViewBounds="true"
+                    android:background="@color/colorAccent"
                     android:cropToPadding="true"
+                    android:foreground="@drawable/nav_foreground"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_track_black_24dp" />
 
                 <androidx.appcompat.widget.Toolbar
                     android:id="@+id/genre_toolbar"
                     android:layout_width="match_parent"
-                    android:layout_height="70dp"
-                    android:elevation="10dp"
+                    android:layout_height="?attr/actionBarSize"
                     app:layout_collapseMode="pin"
-                    app:title="Genre"
-                    app:titleMarginTop="10dp"
-                    app:titleTextColor="@android:color/white">
+                    app:title="Genre">
 
                 </androidx.appcompat.widget.Toolbar>
 
-                <com.google.android.material.tabs.TabLayout
-                    android:id="@+id/genre_tabs"
-                    android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_gravity="bottom"
-                    android:background="@color/music_control_background"
-                    app:layout_collapseMode="pin"
-                    app:layout_scrollFlags="scroll|enterAlways"
-                    app:tabGravity="center"
-                    app:tabIndicatorFullWidth="true"
-                    app:tabInlineLabel="true"
-                    app:tabMinWidth="150dp"
-                    app:tabMode="scrollable"
-                    app:tabUnboundedRipple="true">
-
-                    <com.google.android.material.tabs.TabItem
-                        android:id="@+id/genre_tracks"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tracks" />
-
-                    <com.google.android.material.tabs.TabItem
-                        android:id="@+id/genre_albums"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Albums" />
-
-                    <com.google.android.material.tabs.TabItem
-                        android:id="@+id/genre_artists"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Artists" />
-
-                </com.google.android.material.tabs.TabLayout>
-
             </com.google.android.material.appbar.CollapsingToolbarLayout>
+
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/genre_tabs"
+                android:layout_width="match_parent"
+                android:layout_gravity="bottom"
+                app:layout_collapseMode="pin"
+                app:layout_scrollFlags="scroll|enterAlways"
+                android:layout_height="wrap_content"
+                app:tabBackground="@color/colorAccent"
+                app:tabGravity="fill"
+                app:tabIconTint="@drawable/tab_icon_selector"
+                app:tabIndicatorColor="@color/colorAccent"
+                app:tabIndicatorFullWidth="true"
+                app:tabIndicatorHeight="1dp"
+                app:tabInlineLabel="true"
+                app:tabMode="fixed"
+                app:tabRippleColor="@color/colorAccent"
+                app:tabSelectedTextColor="@color/colorAccent"
+                app:tabTextColor="@color/colorAccent2"
+
+                app:tabUnboundedRipple="true">
+
+                <com.google.android.material.tabs.TabItem
+                    android:id="@+id/music_tracks"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:icon="@drawable/u_song_selector" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:id="@+id/music_artists"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:icon="@drawable/u_artist_selector" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:id="@+id/music_albums"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:icon="@drawable/u_album_selector" />
+
+            </com.google.android.material.tabs.TabLayout>
+
         </com.google.android.material.appbar.AppBarLayout>
 
         <androidx.core.widget.NestedScrollView
@@ -100,8 +104,6 @@
             android:layout_height="match_parent"
             android:clipToPadding="true"
             android:fillViewport="true"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
             <androidx.viewpager.widget.ViewPager
@@ -116,7 +118,7 @@
     <FrameLayout
         android:id="@+id/music_control"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="wrap_content"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/navigation"
         app:layout_constraintEnd_toEndOf="parent"
@@ -132,14 +134,14 @@
         android:layout_margin="16dp"
         android:clickable="true"
         android:focusable="true"
-        android:tint="@color/colorAccent"
-        app:backgroundTint="@color/music_control_background"
+        android:tint="@color/colorPrimary"
+        app:backgroundTint="@color/colorAccent"
         app:elevation="10dp"
         app:fabSize="auto"
         app:hideMotionSpec="@android:anim/fade_out"
         app:layout_constraintBottom_toTopOf="@+id/music_control"
         app:layout_constraintEnd_toEndOf="parent"
-        app:rippleColor="@android:color/white"
+        app:rippleColor="@color/colorPrimary"
         app:showMotionSpec="@android:anim/fade_in"
         app:srcCompat="@drawable/exo_controls_shuffle" />
 

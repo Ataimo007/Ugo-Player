@@ -15,6 +15,8 @@ import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
+import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.backup.AlbumSession;
 import com.gcodes.iplayer.music.album.AlbumActivity;
@@ -22,6 +24,7 @@ import com.gcodes.iplayer.music.album.AlbumItemHolder;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.track.TrackFragment;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
+import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
@@ -37,6 +40,8 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
+
+import static com.gcodes.iplayer.helpers.GlideOptions.centerCropTransform;
 
 public class ArtistActivity extends AppCompatActivity
 {
@@ -61,20 +66,11 @@ public class ArtistActivity extends AppCompatActivity
 
     private String[] albumProjection = {
             MediaStore.Audio.Artists.Albums.ALBUM_KEY,
+            MediaStore.Audio.Artists._ID,
             MediaStore.Audio.Artists.Albums.ALBUM,
             MediaStore.Audio.Artists.Albums.ARTIST,
             MediaStore.Audio.Artists.Albums.ALBUM_ART
     };
-
-//    private String[] albumProjection = {
-//            MediaStore.Audio.Albums._ID,
-//            MediaStore.Audio.Albums.ALBUM_KEY,
-//            MediaStore.Audio.Albums.ALBUM,
-//            MediaStore.Audio.Albums.ARTIST,
-//            MediaStore.Audio.Albums.ALBUM_ART
-//    };
-
-//    private String albumSelection = String.format( "%s = ?", MediaStore.Audio.Albums.ARTIST );
 
     private String albumSort = MediaStore.Audio.Artists.Albums.ALBUM_KEY + " asc";
 
@@ -160,22 +156,6 @@ public class ArtistActivity extends AppCompatActivity
         return cursor;
     }
 
-//    public ArrayList<Music> getAlbums2()
-//    {
-//        ArrayList<Music> albums = new ArrayList<>();
-//
-//        CursorLoader loader = new CursorLoader( this, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, albumProjection,
-//                albumSelection, new String[]{ String.valueOf(artist) }, albumSort );
-//        Cursor cursor = loader.loadInBackground();
-//
-//        cursor.moveToFirst();
-//        do
-//        {
-//            albums.add( Music.getIntance(cursor, artLoader) );
-//        } while ( cursor.moveToNext() );
-//        return albums;
-//    }
-
     public void initView() {
         initToolbar();
         initPager();
@@ -193,18 +173,8 @@ public class ArtistActivity extends AppCompatActivity
     public void setToolbarImage()
     {
         ImageView image = findViewById(R.id.album_art);
-        if ( albumArt != null )
-        {
-            Bitmap bitmap = BitmapFactory.decodeFile(albumArt);
-            if ( bitmap != null )
-            {
-                image.setImageBitmap( bitmap );
-                return;
-            }
-        }
-        int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable",
-                ArtistActivity.this.getPackageName());
-        image.setImageResource( resId );
+        GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( this, String.valueOf(artistId), MediaStore.Audio.Media.ARTIST_ID ) )
+                .placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
     }
 
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
@@ -267,6 +237,8 @@ public class ArtistActivity extends AppCompatActivity
             CustomAdapter adapter = new CustomAdapter();
             listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
             listView.setAdapter(adapter);
+
+            listView.addItemDecoration( new UIConstance.AppItemDecorator( 1 ) );
             return listView;
         }
 
@@ -319,9 +291,14 @@ public class ArtistActivity extends AppCompatActivity
                                  Bundle savedInstanceState) {
             RecyclerView listView = new RecyclerView( getContext() );
             CustomAdapter adapter = new CustomAdapter();
-            listView.setLayoutManager( new GridLayoutManager(getContext(), 2) );
+            listView.setLayoutManager( new GridLayoutManager(getContext(), getSpan()) );
             listView.setAdapter(adapter);
+            listView.addItemDecoration(new UIConstance.AppItemDecorator( getSpan()));
             return listView;
+        }
+
+        private int getSpan() {
+            return 2;
         }
 
         public void setArtistKey(String artistKey) {
@@ -346,18 +323,19 @@ public class ArtistActivity extends AppCompatActivity
             {
                 String albumName = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ALBUM));
                 String albumKey = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ALBUM_KEY));
-//            String albumId = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums._ID));
+                String artistId = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists._ID));
                 String albumArt = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ALBUM_ART));
 
                 holder.setTitle(albumName);
                 holder.setSubtitle( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ARTIST)));
-                holder.setImage(getContext(), albumArt);
+                holder.setImageByArtist(getContext(), artistId);
 
                 holder.itemView.setOnClickListener(v -> {
                     Intent intent = new Intent( ArtistAlbumFragment.this.getContext(), AlbumActivity.class );
                     intent.putExtra( "from", "artist" );
                     intent.putExtra( "album_key", albumKey );
                     intent.putExtra( "artist_key", artistKey );
+                    intent.putExtra( "artist_id", artistId );
                     intent.putExtra( "album_name", albumName );
                     intent.putExtra( "album_art", albumArt );
                     ArtistAlbumFragment.this.startActivity( intent );

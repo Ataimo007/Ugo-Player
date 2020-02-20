@@ -134,10 +134,7 @@ public class TrackFragment extends Fragment
             holder.setTitle( music.getName() );
             holder.setSubtitle( music.getArtist() );
             holder.setImage( TrackFragment.this, music );
-//            holder.setImage( music.getArtPath() );
-//            holder.setImage( music.toUri() );
             Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
-//            holder.setImage( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)));
 
             holder.itemView.setOnClickListener(v -> {
                 MusicPlayer.play( music );

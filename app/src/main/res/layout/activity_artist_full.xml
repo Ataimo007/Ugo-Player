@@ -24,7 +24,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:fitsSystemWindows="true"
-                app:collapsedTitleGravity="top|left"
+                app:collapsedTitleTextAppearance="@style/BottomNav3"
                 app:contentScrim="?attr/colorPrimary"
                 app:expandedTitleGravity="bottom|right"
                 app:expandedTitleMarginBottom="18dp"
@@ -43,17 +43,15 @@
                     android:cropToPadding="true"
                     android:foreground="@drawable/nav_foreground"
                     android:scaleType="centerCrop"
-                    app:srcCompat="@drawable/u_artist_avatar" />
+                    app:srcCompat="@drawable/u_artist_avatar"
+                    />
 
                 <androidx.appcompat.widget.Toolbar
                     android:id="@+id/album_toolbar"
                     android:layout_width="match_parent"
                     android:layout_height="?attr/actionBarSize"
-                    android:elevation="10dp"
                     app:layout_collapseMode="pin"
-                    app:title="Album"
-                    app:titleMarginTop="10dp"
-                    app:titleTextColor="@android:color/white">
+                    app:title="Album">
 
                 </androidx.appcompat.widget.Toolbar>
 
@@ -101,8 +99,6 @@
             android:layout_height="match_parent"
             android:clipToPadding="true"
             android:fillViewport="true"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
             <androidx.viewpager.widget.ViewPager
@@ -117,7 +113,7 @@
     <FrameLayout
         android:id="@+id/music_control"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="wrap_content"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/navigation"
         app:layout_constraintEnd_toEndOf="parent"

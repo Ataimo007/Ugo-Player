@@ -247,40 +247,15 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
             this.genreId = genreId;
         }
 
+        public GenreProcessFetcher(Context context, long genreId) {
+            super(context, null, null);
+            this.genreId = genreId;
+        }
+
         @Override
         public Object getKey() {
             return "genre " + genreId;
         }
-
-//        @Override
-//        public Bitmap load() {
-//            Looper.prepare();
-//
-//            CursorLoader loader = new CursorLoader( context,
-//                    MediaStore.Audio.Genres.Members.getContentUri("external", genreId ), new String[]{MediaStore.Audio.Genres.Members.ALBUM_ID},
-//                    null, null, null );
-//            Cursor cursor = loader.loadInBackground();
-//
-//            // set album art
-//            cursor.moveToFirst();
-//            ProcessModelLoaderFactory.MusicCategoryProcessFetcher fetcher;
-//
-//            byte[] picture = null;
-//            if ( cursor.getCount() > 0 )
-//            {
-//                do {
-//                    picture = getPicture( String.valueOf(cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM_ID))), MediaStore.Audio.Media.ALBUM_ID);
-//                    if ( picture != null )
-//                        break;
-//                }
-//                while ( cursor.moveToNext() );
-//            }
-//
-//            super.picture = picture;
-//            if ( picture != null )
-//                return BitmapFactory.decodeByteArray(picture, 0, picture.length);
-//            return null;
-//        }
 
         @Override
         public Bitmap load() {
