@@ -1,6 +1,7 @@
 package com.gcodes.iplayer.music;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import com.google.android.material.tabs.TabLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.fragment.app.FragmentStatePagerAdapter;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager.widget.ViewPager;
 
@@ -57,41 +59,48 @@ public class MusicFragment extends Fragment
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mSectionsPagerAdapter = new SectionsPagerAdapter( getChildFragmentManager() );
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View content = inflater.inflate(R.layout.music_view_pager, container, false);
-        mSectionsPagerAdapter = new SectionsPagerAdapter( getChildFragmentManager() );
 //        mSectionsPagerAdapter = new SectionsPagerAdapter( getFragmentManager() );
         mViewPager = content.findViewById( R.id.music_viewpager );
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         getTabLayout().addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
 
-        getTabLayout().getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
+        initState( savedInstanceState );
         return content;
+    }
+
+    private void initState(Bundle savedInstanceState) {
+        Log.d( "App_State", "The State his " + savedInstanceState );
+//        if ( savedInstanceState == null )
+//            getTabLayout().getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
     }
 
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
     {
-        private Fragment[] views;
+        private static final Fragment[] views = { new AlbumFragment(), new ArtistFragment(), new TrackFragment(),
+                new GenreFragment(), new FolderFragment() } ;
 
         public SectionsPagerAdapter(FragmentManager fm)
         {
-            super(fm);
+            super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
             init();
         }
 
         public void init()
         {
-            views = new Fragment[ 5 ];
-            views[ 0 ] = new AlbumFragment();
-            views[ 1 ] = new ArtistFragment();
-            views[ 2 ] = new TrackFragment();
-            views[ 3 ] = new GenreFragment();
-            views[ 4 ] = new FolderFragment();
+//            views = new Fragment[ 5 ];
+//            views[ 0 ] = new AlbumFragment();
+//            views[ 1 ] = new ArtistFragment();
+//            views[ 2 ] = new TrackFragment();
+//            views[ 3 ] = new GenreFragment();
+//            views[ 4 ] = new FolderFragment();
         }
 
         @Override

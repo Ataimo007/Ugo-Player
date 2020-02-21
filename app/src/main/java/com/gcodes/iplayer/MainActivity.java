@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity
     {
         BottomNavigationView navigation = findViewById(R.id.navigation);
         //        navigation.setSelectedItemId( R.id.navigation_music );
-        navigation.setSelectedItemId( R.id.navigation_music );
+//        navigation.setSelectedItemId( R.id.navigation_music );
     }
 
 //    @Override
