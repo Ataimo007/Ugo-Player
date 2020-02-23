@@ -37,6 +37,19 @@ public class MusicTabFragment extends Fragment
         return tab;
     }
 
+    public static MusicTabFragment InitTab(FragmentManager manager, int layout, Runnable runnable)
+    {
+        FragmentTransaction transaction = manager.beginTransaction();
+        MusicTabFragment tab = new MusicTabFragment();
+        Bundle args = new Bundle();
+        args.putInt( "layout", layout );
+        tab.setArguments( args );
+        transaction.replace( R.id.main_tablayout, tab);
+        transaction.runOnCommit(runnable);
+        transaction.commit();
+        return tab;
+    }
+
     public TabLayout getTab() {
         return (TabLayout) getView();
     }

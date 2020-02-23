@@ -27,7 +27,6 @@ import org.jmusixmatch.subtitle.Subtitle;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import androidx.annotation.NonNull;
@@ -47,17 +46,7 @@ public class MainActivity extends AppCompatActivity
     Supplier<Boolean> action;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = item -> {
-                switch (item.getItemId()) {
-                    case R.id.navigation_music:
-                        MusicFragment.InitFragments( getSupportFragmentManager() );
-                        return true;
-                    case R.id.navigation_video:
-                        VideoFragment.InitFragments( getSupportFragmentManager() );
-                        return true;
-                }
-                return false;
-            };
+            = this::doSelection;
     private Menu menu;
     private BackManager backAction;
 
@@ -88,6 +77,9 @@ public class MainActivity extends AppCompatActivity
         init();
         application = this;
 
+        navigation.setSelectedItemId( R.id.navigation_music );
+//        doSelection(item);
+
 //        testYoutube();
 //        getLyrics();
 //        test();
@@ -101,7 +93,7 @@ public class MainActivity extends AppCompatActivity
 
     private void start()
     {
-        BottomNavigationView navigation = findViewById(R.id.navigation);
+
         //        navigation.setSelectedItemId( R.id.navigation_music );
 //        navigation.setSelectedItemId( R.id.navigation_music );
     }
@@ -115,6 +107,28 @@ public class MainActivity extends AppCompatActivity
 ////        return super.onCreateOptionsMenu(menu);
 //        return true;
 //    }
+
+    private boolean doSelection(MenuItem item)
+    {
+        if ( checkPermissions() )
+            return doSelection( item.getItemId() );
+        return false;
+    }
+
+    private boolean doSelection( int id )
+    {
+        switch (id) {
+            case R.id.navigation_music:
+                Log.d("Selecting_music", "Selected Music" );
+                MusicFragment.InitFragments( getSupportFragmentManager() );
+                return true;
+            case R.id.navigation_video:
+                VideoFragment.InitFragments( getSupportFragmentManager() );
+                return true;
+            default:
+                return false;
+        }
+    }
 
     private void prepareSearchMenu() {
         MenuItem searchItem = menu.findItem(R.id.action_search);
@@ -140,12 +154,8 @@ public class MainActivity extends AppCompatActivity
     private void getPermission()
     {
         // Here, thisActivity is the current activity
-        if ( checkPermissions() ) {
-//            begin();
-            start();
-        }
-        else
-        {
+        if ( !checkPermissions() ) {
+            Log.d("Selecting_music", "Getting Permissions is " + checkPermissions() );
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     requestCode );
@@ -194,8 +204,8 @@ public class MainActivity extends AppCompatActivity
 //                    return;
 //            }
             if ( grantResults.length > 0 && grantResults[ 0 ] == PackageManager.PERMISSION_GRANTED
-                    && grantResults[ 0 ] == PackageManager.PERMISSION_GRANTED  )
-                start();
+                    && grantResults[ 1 ] == PackageManager.PERMISSION_GRANTED  )
+                doSelection(R.id.navigation_music);
 //            begin();
 
         }

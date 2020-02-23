@@ -68,24 +68,25 @@ public class MusicFragment extends Fragment
         View content = inflater.inflate(R.layout.music_view_pager, container, false);
 //        mSectionsPagerAdapter = new SectionsPagerAdapter( getFragmentManager() );
         mViewPager = content.findViewById( R.id.music_viewpager );
+        tabLayout = getActivity().findViewById( R.id.app_tabs );
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         getTabLayout().addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
+//        tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
 
         initState( savedInstanceState );
         return content;
     }
 
     private void initState(Bundle savedInstanceState) {
-        Log.d( "App_State", "The State his " + savedInstanceState );
-//        if ( savedInstanceState == null )
-//            getTabLayout().getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
+        Log.d("navigation_debug", "Go to tab 2" );
+        getTabLayout().getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
+//        tabLayout.getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
     }
 
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
     {
-        private static final Fragment[] views = { new AlbumFragment(), new ArtistFragment(), new TrackFragment(),
-                new GenreFragment(), new FolderFragment() } ;
+        private Fragment[] views;
 
         public SectionsPagerAdapter(FragmentManager fm)
         {
@@ -95,12 +96,12 @@ public class MusicFragment extends Fragment
 
         public void init()
         {
-//            views = new Fragment[ 5 ];
-//            views[ 0 ] = new AlbumFragment();
-//            views[ 1 ] = new ArtistFragment();
-//            views[ 2 ] = new TrackFragment();
-//            views[ 3 ] = new GenreFragment();
-//            views[ 4 ] = new FolderFragment();
+            views = new Fragment[ 5 ];
+            views[ 0 ] = new AlbumFragment();
+            views[ 1 ] = new ArtistFragment();
+            views[ 2 ] = new TrackFragment();
+            views[ 3 ] = new GenreFragment();
+            views[ 4 ] = new FolderFragment();
         }
 
         @Override
