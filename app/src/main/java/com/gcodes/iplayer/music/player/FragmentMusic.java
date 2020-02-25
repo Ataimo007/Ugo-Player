@@ -37,8 +37,8 @@ public class FragmentMusic extends Fragment {
     private View controlView;
     private GlideRequests request;
 
-    private CardView art;
     private Animation rotate;
+    private Music currentMusic;
 //    private SimpleExoPlayer player;
 //    private DefaultDataSourceFactory factory;
 
@@ -108,18 +108,19 @@ public class FragmentMusic extends Fragment {
     }
 
     private void initRotateAnimation() {
-        art = controlView.findViewById(R.id.exo_album_art);
         rotate = AnimationUtils.loadAnimation(getContext(), R.anim.u_rotate);
         rotate.setFillAfter( true );
     }
 
     public void startAnimation()
     {
+        CardView art = controlView.findViewById(R.id.exo_album_art);
         art.startAnimation( rotate );
     }
 
     public void pauseAnimation()
     {
+        CardView art = controlView.findViewById(R.id.exo_album_art);
         art.clearAnimation();
     }
 
@@ -147,8 +148,8 @@ public class FragmentMusic extends Fragment {
         PlayerControlView control = controlView.findViewById(R.id.music_control_view);
         control.setShowTimeoutMs( -1 );
         control.setPlayer( MusicPlayer.getInstance().getPlayerManager() );
-        MusicPlayer.registerOnTrackChange(this::consumeTrack);
-        MusicPlayer.consumeTrack( this::consumeTrack );
+//        MusicPlayer.registerOnTrackChange(this::consumeTrack);
+//        MusicPlayer.consumeTrack( this::consumeTrack );
         controlView.setOnClickListener( v -> {
             showMusicPlayer();
         });
@@ -166,14 +167,18 @@ public class FragmentMusic extends Fragment {
         getContext().startActivity( intent );
     }
 
-    private void consumeTrack( Music music )
+    public void consumeTrack( Music music )
     {
-        TextView trackName = controlView.findViewById(R.id.exo_track);
-        trackName.setText( music.getName() );
-//        TextView artistName = controlView.findViewById(R.id.exo_artist);
-//        artistName.setText( music.getArtist() );
-        ImageView art = controlView.findViewById(R.id.exo_album);
-        setImage( music, art);
+        if ( currentMusic != music )
+        {
+            TextView trackName = controlView.findViewById(R.id.exo_track);
+            trackName.setText( music.getName() );
+    //        TextView artistName = controlView.findViewById(R.id.exo_artist);
+    //        artistName.setText( music.getArtist() );
+            ImageView art = controlView.findViewById(R.id.exo_album);
+            setImage( music, art);
+            currentMusic = music;
+        }
     }
 
     public void setImage(Music music, ImageView image)

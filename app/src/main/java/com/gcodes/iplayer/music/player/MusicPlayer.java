@@ -49,7 +49,7 @@ public class MusicPlayer
     public static void play(ArrayList<Music> music )
     {
         getInstance().playAll( music );
-        FragmentMusic.render();
+//        FragmentMusic.render();
     }
 
     public static void play(Music music) {
@@ -59,7 +59,7 @@ public class MusicPlayer
     public static void play(ArrayList<Music> music, AppCompatActivity activity )
     {
         getInstance().playAll( music );
-        FragmentMusic.render( activity );
+//        FragmentMusic.render( activity );
     }
 
     public static void play(Music music, AppCompatActivity activity ) {

@@ -10,6 +10,7 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.FragmentMusic;
+import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.player.MusicPlayerService;
 import com.gcodes.iplayer.services.ACRService;
 import com.google.android.exoplayer2.ExoPlayerFactory;
@@ -63,6 +64,7 @@ public class PlayerManager
 
     private AppCompatActivity host;
     private FragmentMusic fragmentMusic;
+    private static final String MUSIC_FRAGMENT_TAG = "music_controller_view";
 
     private PlayerManager(AppCompatActivity context )
     {
@@ -80,14 +82,15 @@ public class PlayerManager
         player.addListener(new Player.EventListener() {
             @Override
             public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-
+                if ( readyToChangeTrack() )
+                    consumeTrack();
             }
 
             @Override
             public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
                 if ( playWhenReady )
                 {
-                    Log.d("Animation_View", "playing music" );
+//                    Log.d( "Music_Controller", "Just Played a Song " + readyToRender() );
                     if ( readyToRender() )
                         renderPlayer();
                     if ( isRendered() && playbackState == Player.STATE_READY )
@@ -95,7 +98,7 @@ public class PlayerManager
                 }
                 else
                 {
-                    Log.d("Animation_View", "music paused" );
+//                    Log.d("Animation_View", "music paused" );
                     if ( isRendered() )
                         fragmentMusic.pauseAnimation();
                 }
@@ -103,23 +106,43 @@ public class PlayerManager
         });
     }
 
-    private void hasPlayerBeenRender()
+    private void consumeTrack()
     {
-
+        int index = player.getCurrentPeriodIndex();
+        Music music = MusicPlayer.getInstance().getMusic(index);
+        fragmentMusic.consumeTrack( music );
+        if ( player.getPlayWhenReady() && player.getPlaybackState() == Player.STATE_READY )
+            fragmentMusic.startAnimation();
+        else
+            fragmentMusic.pauseAnimation();
     }
 
     private void renderPlayer()
     {
-        FragmentManager manager = context.getSupportFragmentManager();
-        FragmentTransaction transaction = manager.beginTransaction();
-        fragmentMusic = newInstance();
-        View musicControl = host.findViewById(R.id.music_control);
-        musicControl.setVisibility( View.VISIBLE );
-        transaction.replace( R.id.music_control, fragmentMusic);
-        transaction.commit();
+        FragmentManager manager = host.getSupportFragmentManager();
+        Fragment fragment = manager.findFragmentByTag(MUSIC_FRAGMENT_TAG);
+        if ( fragment != null )
+        {
+//            Log.d( "Music_Controller", "Fragment Exists" );
+            fragmentMusic = (FragmentMusic) fragment;
+            consumeTrack();
+        }
+        else
+        {
+//            Log.d( "Music_Controller", "A new Fragment" );
+            FragmentTransaction transaction = manager.beginTransaction();
+            fragmentMusic = newInstance();
+            View musicControl = host.findViewById(R.id.music_control);
+            musicControl.setVisibility( View.VISIBLE );
+            transaction.replace( R.id.music_control, fragmentMusic, MUSIC_FRAGMENT_TAG );
+            transaction.runOnCommit(this::consumeTrack);
+            transaction.commit();
+        }
+
+//        consumeTrack();
     }
 
-    private synchronized void onNewActivity(AppCompatActivity activity)
+    public synchronized void onNewActivity(AppCompatActivity activity)
     {
         host = activity;
         if ( player.getPlayWhenReady() )
@@ -128,6 +151,8 @@ public class PlayerManager
 
     private synchronized boolean readyToRender()
     {
+//        Log.d( "Music_Controller", "Ready to render " + ( host != null ) );
+//        Log.d( "Music_Controller", "Ready to render " + ( fragmentMusic == null ) );
         return host != null && fragmentMusic == null;
     }
 
@@ -141,10 +166,13 @@ public class PlayerManager
         return host != null && fragmentMusic != null;
     }
 
-    private synchronized void onDestroyActivity()
+    public synchronized void onDestroyActivity(AppCompatActivity activity)
     {
-        host = null;
-        fragmentMusic = null;
+        if ( host == activity )
+        {
+            host = null;
+            fragmentMusic = null;
+        }
     }
 
     public String getUserAgent() {
@@ -158,7 +186,11 @@ public class PlayerManager
 
     public static void init( AppCompatActivity context )
     {
-        PlayerManager = new PlayerManager( context );
+        if  ( PlayerManager == null )
+        {
+            PlayerManager = new PlayerManager( context );
+            PlayerManager.initPlayerControl();
+        }
     }
 
     public Handler getHandler()

@@ -20,6 +20,7 @@ import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.track.TrackFragment;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 
 import java.util.ArrayList;
@@ -82,6 +83,20 @@ public class ArtistOnlyActivity extends AppCompatActivity
 
         init();
         initView();
+
+        PlayerManager.getInstance().onNewActivity( this );
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        PlayerManager.getInstance().onNewActivity( this );
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        PlayerManager.getInstance().onDestroyActivity( this );
     }
 
     private void init() {

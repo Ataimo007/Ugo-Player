@@ -57,10 +57,20 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        PlayerManager.getInstance().onDestroyActivity( this );
+    }
+
+    @Override
     public void onBackPressed() {
-        boolean back = backAction.goBack();
-        if ( !back )
-            super.onBackPressed();
+        if ( backAction != null )
+        {
+            boolean back = backAction.goBack();
+            if ( !back )
+                super.onBackPressed();
+        }
+        super.onBackPressed();
     }
 
     private void begin()
@@ -89,6 +99,8 @@ public class MainActivity extends AppCompatActivity
     protected void onStart() {
         super.onStart();
         getPermission();
+
+        PlayerManager.getInstance().onNewActivity( this );
     }
 
     private void start()

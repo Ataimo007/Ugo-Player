@@ -27,6 +27,7 @@ import com.gcodes.iplayer.music.artist.ArtistOnlyActivity;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.track.TrackFragment;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.material.tabs.TabLayout;
 
@@ -111,6 +112,20 @@ public class GenreActivity extends AppCompatActivity
 
         init();
         initView();
+
+        PlayerManager.getInstance().onNewActivity( this );
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        PlayerManager.getInstance().onNewActivity( this );
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        PlayerManager.getInstance().onDestroyActivity( this );
     }
 
     private void initPager()
