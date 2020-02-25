@@ -382,6 +382,7 @@ public class GenreActivity extends AppCompatActivity
 
                 holder.setTitle(album.getAlbum());
                 holder.setImage(GenreAlbumFragment.this, String.valueOf(album.getAlbumId()));
+                holder.setImageFromGenre( GenreAlbumFragment.this, genreId, MediaStore.Audio.Genres.Members.ALBUM_KEY, album.getAlbumKey() );
 
                 holder.itemView.setOnClickListener(v -> {
                     Intent intent = new Intent( GenreAlbumFragment.this.getContext(), AlbumActivity.class );
@@ -415,9 +416,14 @@ public class GenreActivity extends AppCompatActivity
                                  Bundle savedInstanceState) {
             RecyclerView listView = new RecyclerView( getContext() );
             CustomAdapter adapter = new CustomAdapter();
-            listView.setLayoutManager( new GridLayoutManager(getContext(), 2) );
+            listView.setLayoutManager( new GridLayoutManager(getContext(), getSpan()) );
             listView.setAdapter(adapter);
+            listView.addItemDecoration(new UIConstance.AppItemDecorator( getSpan()));
             return listView;
+        }
+
+        private int getSpan() {
+            return 2;
         }
 
         public void setGenreId(long genreId) {
@@ -440,7 +446,7 @@ public class GenreActivity extends AppCompatActivity
                 String albumArt = Music.getArtPath(artist.getAlbumId(), artLoader);
 
                 holder.setTitle(artist.getArtist());
-                holder.setImage( GenreArtistFragment.this, String.valueOf(artist.getArtistId()) );
+                holder.setImageFromGenre( GenreArtistFragment.this, genreId, MediaStore.Audio.Genres.Members.ARTIST_KEY, artist.getArtistKey() );
 
                 holder.itemView.setOnClickListener(v -> {
                     Intent intent = new Intent( GenreArtistFragment.this.getContext(), ArtistOnlyActivity.class );

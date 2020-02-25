@@ -30,6 +30,7 @@ import androidx.loader.content.CursorLoader;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import static com.gcodes.iplayer.helpers.ProcessModelLoaderFactory.*;
 
@@ -164,6 +165,35 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
         }
     }
 
+    public static class MusicDualCategoryProcessFetcher extends MusicCategoryProcessFetcher
+    {
+        private final String id2;
+        private final String cat2;
+
+        public MusicDualCategoryProcessFetcher(Context context, String id, String cat, String id2, String cat2 ) {
+            super(context, id, cat);
+            this.id2 = id2;
+            this.cat2 = cat2;
+        }
+
+        public MusicDualCategoryProcessFetcher(Fragment fragment, String id, String cat, String id2, String cat2) {
+            this(fragment.getContext(), id, cat, id2, cat2);
+        }
+
+        @Override
+        protected CursorLoader getLoader()
+        {
+            return new CursorLoader( context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    new String[]{MediaStore.Audio.Media._ID},
+                    String.format( "%s != ? and %s = ? and %s = ?", MediaStore.Audio.Media.IS_MUSIC, cat, cat2 ),
+                    new String[]{ "0", id, id2 }, MediaStore.Audio.Media._ID + " asc" );
+        }
+
+        public Object getKey() {
+            return String.format( Locale.ENGLISH, "%s %s %s %s", cat, id, cat2, id2 );
+        }
+    }
+
     public static class MusicCategoryProcessFetcher implements ProcessModelLoaderFactory.ProcessFetcher
     {
 //        private final static MediaMetadataRetriever retriever = new MediaMetadataRetriever();
@@ -201,12 +231,17 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
             picture = getPicture( id, cat );
         }
 
-        protected byte[] getPicture(String id, String cat )
+        protected CursorLoader getLoader()
         {
-            CursorLoader loader = new CursorLoader( context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            return new CursorLoader( context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     new String[]{MediaStore.Audio.Media._ID},
                     String.format( "%s != ? and %s = ?", MediaStore.Audio.Media.IS_MUSIC, cat ),
                     new String[]{ "0", id }, MediaStore.Audio.Media._ID + " asc" );
+        }
+
+        protected byte[] getPicture(String id, String cat )
+        {
+            CursorLoader loader = getLoader();
             Cursor cursor = loader.loadInBackground();
             cursor.moveToFirst();
 
@@ -237,10 +272,44 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
         }
     }
 
+    public static class CustomGenreProcessFetcher extends GenreProcessFetcher
+    {
+        private final String cat;
+        private final String id;
+        private final String[] genreProjection = {
+                MediaStore.Audio.Genres.Members._ID,
+                MediaStore.Audio.Genres.Members.ALBUM_KEY,
+                MediaStore.Audio.Genres.Members.ARTIST_KEY
+        };
+
+        public CustomGenreProcessFetcher(Fragment fragment, long genreId, String cat, String id) {
+            this(fragment.getContext(), genreId, cat, id);
+        }
+
+        public CustomGenreProcessFetcher(Context context, long genreId,  String cat, String id) {
+            super(context, genreId);
+            this.cat = cat;
+            this.id = id;
+        }
+
+        @Override
+        public Object getKey() {
+            return String.format("genre %s %s %s",  genreId, cat, id );
+        }
+
+        protected CursorLoader getLoader()
+        {
+            return new CursorLoader( context,
+                    MediaStore.Audio.Genres.Members.getContentUri( "external", genreId ), genreProjection,
+                    String.format( "%s = ?", cat ), new String[]{ id }, MediaStore.Audio.Media._ID + " COLLATE LOCALIZED ASC" );
+        }
+
+    }
+
     public static class GenreProcessFetcher extends MusicCategoryProcessFetcher
     {
 
-        private final long genreId;
+        protected final long genreId;
 
         public GenreProcessFetcher(Fragment fragment, long genreId) {
             super(fragment, null, null);
@@ -257,15 +326,20 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
             return "genre " + genreId;
         }
 
+        protected CursorLoader getLoader()
+        {
+            return new CursorLoader( context,
+                    MediaStore.Audio.Genres.Members.getContentUri( "external", genreId ), new String[]{MediaStore.Audio.Genres.Members._ID},
+                    null, null, MediaStore.Audio.Media._ID + " COLLATE LOCALIZED ASC" );
+        }
+
         @Override
         public Bitmap load() {
 
             if  ( Looper.myLooper() == null || Looper.myLooper().getThread() != Thread.currentThread() )
                 Looper.prepare();
 
-            CursorLoader loader = new CursorLoader( context,
-                    MediaStore.Audio.Genres.Members.getContentUri( "external", genreId ), new String[]{MediaStore.Audio.Genres.Members._ID},
-                    null, null, MediaStore.Audio.Media._ID + " COLLATE LOCALIZED ASC" );
+            CursorLoader loader = getLoader();
             Cursor cursor = loader.loadInBackground();
 
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();

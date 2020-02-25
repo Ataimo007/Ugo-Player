@@ -190,7 +190,7 @@ public class ArtistOnlyActivity extends AppCompatActivity
     public void setToolbarImage()
     {
         ImageView image = findViewById(R.id.album_art);
-        GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( this, String.valueOf(artistId), MediaStore.Audio.Media.ALBUM_ID ) )
+        GlideApp.with( this ).load( new ProcessModelLoaderFactory.CustomGenreProcessFetcher( this, genreId, MediaStore.Audio.Genres.Members.ARTIST_KEY, artistKey ) )
                 .placeholder( R.drawable.u_artist_avatar ).apply( circleCropTransform() ).into( image );
     }
 

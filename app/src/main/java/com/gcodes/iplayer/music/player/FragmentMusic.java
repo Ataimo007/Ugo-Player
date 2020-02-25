@@ -1,10 +1,13 @@
 package com.gcodes.iplayer.music.player;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -33,6 +36,9 @@ public class FragmentMusic extends Fragment {
 
     private View controlView;
     private GlideRequests request;
+
+    private CardView art;
+    private Animation rotate;
 //    private SimpleExoPlayer player;
 //    private DefaultDataSourceFactory factory;
 
@@ -40,29 +46,42 @@ public class FragmentMusic extends Fragment {
         // Required empty public constructor
     }
 
-    public static void render() {
-        PlayerManager playerManager = PlayerManager.getInstance();
-        FragmentManager manager = playerManager.getActivity().getSupportFragmentManager();
-        FragmentTransaction transaction = manager.beginTransaction();
-        FragmentMusic fragmentMusic = newInstance();
-        View musicControl = playerManager.getActivity().findViewById(R.id.music_control);
-        musicControl.setVisibility( View.VISIBLE );
-        transaction.replace( R.id.music_control, fragmentMusic);
-//        transaction.add( R.id.music_control, fragmentMusic);
-        transaction.commit();
-    }
+//    public static void renderPlayer(AppCompatActivity activity)
+//    {
+//        PlayerManager playerManager = PlayerManager.getInstance();
+//        FragmentManager manager = playerManager.getActivity().getSupportFragmentManager();
+//        FragmentTransaction transaction = manager.beginTransaction();
+//        FragmentMusic fragmentMusic = newInstance();
+//        View musicControl = activity.findViewById(R.id.music_control);
+//        musicControl.setVisibility( View.VISIBLE );
+//        transaction.replace( R.id.music_control, fragmentMusic);
+////        transaction.add( R.id.music_control, fragmentMusic);
+//        transaction.commit();
+//    }
 
-    public static void render(AppCompatActivity activity ) {
-        PlayerManager playerManager = PlayerManager.getInstance();
-        FragmentManager manager = activity.getSupportFragmentManager();
-        FragmentTransaction transaction = manager.beginTransaction();
-        FragmentMusic fragmentMusic = newInstance();
-        View musicControl = activity.findViewById(R.id.music_control);
-        musicControl.setVisibility( View.VISIBLE );
-        transaction.replace( R.id.music_control, fragmentMusic);
-//        transaction.add( R.id.music_control, fragmentMusic);
-        transaction.commit();
-    }
+//    public static void render() {
+//        PlayerManager playerManager = PlayerManager.getInstance();
+//        FragmentManager manager = playerManager.getActivity().getSupportFragmentManager();
+//        FragmentTransaction transaction = manager.beginTransaction();
+//        FragmentMusic fragmentMusic = newInstance();
+//        View musicControl = playerManager.getActivity().findViewById(R.id.music_control);
+//        musicControl.setVisibility( View.VISIBLE );
+//        transaction.replace( R.id.music_control, fragmentMusic);
+////        transaction.add( R.id.music_control, fragmentMusic);
+//        transaction.commit();
+//    }
+//
+//    public static void render(AppCompatActivity activity ) {
+//        PlayerManager playerManager = PlayerManager.getInstance();
+//        FragmentManager manager = activity.getSupportFragmentManager();
+//        FragmentTransaction transaction = manager.beginTransaction();
+//        FragmentMusic fragmentMusic = newInstance();
+//        View musicControl = activity.findViewById(R.id.music_control);
+//        musicControl.setVisibility( View.VISIBLE );
+//        transaction.replace( R.id.music_control, fragmentMusic);
+////        transaction.add( R.id.music_control, fragmentMusic);
+//        transaction.commit();
+//    }
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
@@ -85,6 +104,23 @@ public class FragmentMusic extends Fragment {
 
     private void init() {
         request = GlideApp.with(FragmentMusic.this);
+        initRotateAnimation();
+    }
+
+    private void initRotateAnimation() {
+        art = controlView.findViewById(R.id.exo_album_art);
+        rotate = AnimationUtils.loadAnimation(getContext(), R.anim.u_rotate);
+        rotate.setFillAfter( true );
+    }
+
+    public void startAnimation()
+    {
+        art.startAnimation( rotate );
+    }
+
+    public void pauseAnimation()
+    {
+        art.clearAnimation();
     }
 
 //    private void initSources()
@@ -116,13 +152,13 @@ public class FragmentMusic extends Fragment {
         controlView.setOnClickListener( v -> {
             showMusicPlayer();
         });
-        initRotateAnim();
+//        initRotateAnim();
     }
 
-    private void initRotateAnim() {
-        CardView art = controlView.findViewById(R.id.exo_album_art);
-        MusicPlayer.onStateChange( art );
-    }
+//    private void initRotateAnim() {
+//        CardView art = controlView.findViewById(R.id.exo_album_art);
+//        MusicPlayer.onStateChange( art );
+//    }
 
     private void showMusicPlayer()
     {

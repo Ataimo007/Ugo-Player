@@ -59,24 +59,10 @@ public class ArtistItemHolder extends RecyclerView.ViewHolder
                 .placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
     }
 
-    public String getPath( Fragment fragment, int id )
+    public void setImageFromGenre(Fragment fragment, long id, String cat, String catId )
     {
-        CursorLoader loader = new CursorLoader( fragment.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
-                MediaStore.Audio.Albums._ID + "=?",
-                new String[]{ String.valueOf(id)},
-                null);
-        Cursor cursor = loader.loadInBackground();
-        String path = null;
-
-        if ( cursor != null )
-        {
-            if ( cursor.moveToFirst()) {
-                path = cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART) );
-                cursor.close();
-            }
-        }
-
-        return path;
+        GlideApp.with( fragment.getContext() ).load( new ProcessModelLoaderFactory.CustomGenreProcessFetcher( fragment.getContext(), id, cat, catId ) )
+                .placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
     }
+
 }

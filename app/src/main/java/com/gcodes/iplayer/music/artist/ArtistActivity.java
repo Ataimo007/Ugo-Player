@@ -328,7 +328,7 @@ public class ArtistActivity extends AppCompatActivity
 
                 holder.setTitle(albumName);
                 holder.setSubtitle( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ARTIST)));
-                holder.setImageByArtist(getContext(), artistId);
+                holder.setImageByArtist(getContext(), artistKey, albumKey);
 
                 holder.itemView.setOnClickListener(v -> {
                     Intent intent = new Intent( ArtistAlbumFragment.this.getContext(), AlbumActivity.class );

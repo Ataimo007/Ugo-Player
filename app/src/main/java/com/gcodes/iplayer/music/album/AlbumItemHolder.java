@@ -15,6 +15,7 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 
+import static com.gcodes.iplayer.helpers.GlideOptions.centerCropTransform;
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 public class AlbumItemHolder extends RecyclerView.ViewHolder
@@ -61,9 +62,15 @@ public class AlbumItemHolder extends RecyclerView.ViewHolder
                 .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
     }
 
-    public void setImageByArtist(Context context, String artistId )
+    public void setImageByArtist(Context context, String artistKey, String albumKey )
     {
-        GlideApp.with( context ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( context, artistId, MediaStore.Audio.Media.ARTIST_ID ) )
+        GlideApp.with( context ).load( new ProcessModelLoaderFactory.MusicDualCategoryProcessFetcher( context, artistKey, MediaStore.Audio.Media.ARTIST_KEY, albumKey, MediaStore.Audio.Media.ALBUM_KEY ) )
+                .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
+    }
+
+    public void setImageFromGenre(Fragment fragment, long id, String cat, String catId )
+    {
+        GlideApp.with( fragment.getContext() ).load( new ProcessModelLoaderFactory.CustomGenreProcessFetcher( fragment.getContext(), id, cat, catId ) )
                 .placeholder( R.drawable.u_song_solid ).apply( circleCropTransform() ).into( image );
     }
 }

@@ -223,8 +223,23 @@ public class AlbumActivity extends AppCompatActivity
     public void setToolbarImage()
     {
         ImageView image = findViewById(R.id.album_art);
-        GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( this, String.valueOf(albumKey), MediaStore.Audio.Media.ALBUM_KEY ) )
-                .placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
+        switch ( from )
+        {
+            case "album":
+                GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicCategoryProcessFetcher( this, String.valueOf(albumKey), MediaStore.Audio.Media.ALBUM_KEY ) )
+                        .placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
+                break;
+
+            case "genre":
+                GlideApp.with( this ).load( new ProcessModelLoaderFactory.CustomGenreProcessFetcher( this, genreId, MediaStore.Audio.Genres.Members.ALBUM_KEY, albumKey ) )
+                        .placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
+                break;
+
+            case "artist":
+                GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicDualCategoryProcessFetcher( this, artistKey, MediaStore.Audio.Media.ARTIST_KEY, albumKey, MediaStore.Audio.Media.ALBUM_KEY ) )
+                        .placeholder( R.drawable.u_artist_avatar ).apply( centerCropTransform() ).into( image );
+                break;
+        }
     }
 
     public class CustomAdapter extends RecyclerView.Adapter<TrackItemHolder>

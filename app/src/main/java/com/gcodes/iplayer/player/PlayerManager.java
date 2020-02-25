@@ -3,18 +3,24 @@ package com.gcodes.iplayer.player;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.util.Log;
+import android.view.View;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.player.FragmentMusic;
 import com.gcodes.iplayer.music.player.MusicPlayerService;
 import com.gcodes.iplayer.services.ACRService;
 import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.database.DatabaseProvider;
 import com.google.android.exoplayer2.database.ExoDatabaseProvider;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
@@ -30,8 +36,14 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.api.services.youtube.model.Video;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import java.io.File;
+
+import static com.gcodes.iplayer.music.player.FragmentMusic.newInstance;
 
 public class PlayerManager
 {
@@ -49,6 +61,9 @@ public class PlayerManager
     private DatabaseProvider databaseProvider;
     private static final String DOWNLOAD_CONTENT_DIRECTORY = "downloads";
 
+    private AppCompatActivity host;
+    private FragmentMusic fragmentMusic;
+
     private PlayerManager(AppCompatActivity context )
     {
         userAgent = Util.getUserAgent(context, context.getResources().getString(R.string.app_name));
@@ -58,6 +73,78 @@ public class PlayerManager
 
         PlayerDatabase.initialize( context );
         ACRService.getInstance( context );
+    }
+
+    private void initPlayerControl()
+    {
+        player.addListener(new Player.EventListener() {
+            @Override
+            public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+
+            }
+
+            @Override
+            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+                if ( playWhenReady )
+                {
+                    Log.d("Animation_View", "playing music" );
+                    if ( readyToRender() )
+                        renderPlayer();
+                    if ( isRendered() && playbackState == Player.STATE_READY )
+                        fragmentMusic.startAnimation();
+                }
+                else
+                {
+                    Log.d("Animation_View", "music paused" );
+                    if ( isRendered() )
+                        fragmentMusic.pauseAnimation();
+                }
+            }
+        });
+    }
+
+    private void hasPlayerBeenRender()
+    {
+
+    }
+
+    private void renderPlayer()
+    {
+        FragmentManager manager = context.getSupportFragmentManager();
+        FragmentTransaction transaction = manager.beginTransaction();
+        fragmentMusic = newInstance();
+        View musicControl = host.findViewById(R.id.music_control);
+        musicControl.setVisibility( View.VISIBLE );
+        transaction.replace( R.id.music_control, fragmentMusic);
+        transaction.commit();
+    }
+
+    private synchronized void onNewActivity(AppCompatActivity activity)
+    {
+        host = activity;
+        if ( player.getPlayWhenReady() )
+            renderPlayer();
+    }
+
+    private synchronized boolean readyToRender()
+    {
+        return host != null && fragmentMusic == null;
+    }
+
+    private synchronized boolean isRendered()
+    {
+        return fragmentMusic != null;
+    }
+
+    private synchronized boolean readyToChangeTrack()
+    {
+        return host != null && fragmentMusic != null;
+    }
+
+    private synchronized void onDestroyActivity()
+    {
+        host = null;
+        fragmentMusic = null;
     }
 
     public String getUserAgent() {
