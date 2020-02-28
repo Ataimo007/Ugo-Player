@@ -59,13 +59,13 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.2.0-alpha01'
     implementation 'androidx.viewpager:viewpager:1.0.0'
     testImplementation 'junit:junit:4.13'
-    androidTestImplementation 'androidx.test:runner:1.3.0-alpha03'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0-alpha03'
+    androidTestImplementation 'androidx.test:runner:1.3.0-alpha04'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0-alpha04'
 
     //    androidTestImplementation 'com.google.code.findbugs:jsr305:3.0.2'
 
     // room persistence database dependencies
-    def room_version = '2.2.3'
+    def room_version = '2.2.4'
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-rxjava2:$room_version"
@@ -76,7 +76,7 @@ dependencies {
     implementation "androidx.paging:paging-rxjava2:$paging_version"
     def lifecycle_version = '2.2.0'
     def lifecycle_test = '2.2.0'
-    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:1.0.0"
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-savedstate:2.2.0'
     implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-reactivestreams:2.2.0"
