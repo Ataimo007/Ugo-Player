@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="140dp"
+    android:layout_gravity="bottom"
+    android:background="?attr/colorPrimary">
+
+    <com.google.android.exoplayer2.ui.DefaultTimeBar
+        android:id="@+id/exo_progress"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="40dp"
+        app:bar_height="1dp"
+        app:buffered_color="@color/colorAccent2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:played_color="@color/colorAccent"
+        app:scrubber_color="@color/colorAccent"
+        app:unplayed_color="@color/colorAccent2" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/exo_progress"
+        app:layout_constraintStart_toStartOf="@+id/exo_progress"
+        app:layout_constraintTop_toBottomOf="@+id/exo_progress"
+        app:layout_constraintVertical_bias="0.3">
+
+        <ImageView
+            android:id="@+id/exo_pause"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:adjustViewBounds="true"
+            android:cropToPadding="true"
+            android:scaleType="fitCenter"
+            android:tint="@color/colorAccent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/u_pause" />
+
+        <ImageView
+            android:id="@+id/exo_play"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:adjustViewBounds="true"
+            android:cropToPadding="true"
+            android:scaleType="fitCenter"
+            android:tint="@color/colorAccent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/u_play" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <ImageView
+        android:id="@+id/exo_prev"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginEnd="30dp"
+        android:adjustViewBounds="true"
+        android:cropToPadding="true"
+        android:scaleType="fitCenter"
+        android:tint="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="@+id/constraintLayout3"
+        app:layout_constraintEnd_toStartOf="@+id/constraintLayout3"
+        app:layout_constraintTop_toTopOf="@+id/constraintLayout3"
+        app:srcCompat="@drawable/u_previous" />
+
+    <ImageView
+        android:id="@+id/exo_next"
+        android:layout_width="20dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="30dp"
+        android:adjustViewBounds="true"
+        android:cropToPadding="true"
+        android:scaleType="fitCenter"
+        android:tint="@color/colorAccent"
+        android:tintMode="src_in"
+        app:layout_constraintBottom_toBottomOf="@+id/constraintLayout3"
+        app:layout_constraintStart_toEndOf="@+id/constraintLayout3"
+        app:layout_constraintTop_toTopOf="@+id/constraintLayout3"
+        app:layout_constraintVertical_bias="0.6"
+        app:srcCompat="@drawable/u_next" />
+
+    <ImageView
+        android:id="@+id/exo_shuffle"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="30dp"
+        android:backgroundTint="@android:color/black"
+        android:tint="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="@+id/exo_next"
+        app:layout_constraintStart_toEndOf="@+id/exo_next"
+        app:layout_constraintTop_toTopOf="@+id/exo_next"
+        app:srcCompat="@drawable/exo_controls_shuffle" />
+
+    <ImageView
+        android:id="@+id/exo_repeat_toggle"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginEnd="30dp"
+        android:adjustViewBounds="true"
+        android:backgroundTint="@android:color/black"
+        android:cropToPadding="true"
+        android:scaleType="fitCenter"
+        android:tint="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="@+id/exo_prev"
+        app:layout_constraintEnd_toStartOf="@+id/exo_prev"
+        app:layout_constraintTop_toTopOf="@+id/exo_prev"
+        app:srcCompat="@drawable/exo_controls_repeat_all" />
+
+    <TextView
+        android:id="@+id/exo_position"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:text="0:00"
+        android:textColor="@color/colorAccent2"
+        app:layout_constraintStart_toStartOf="@+id/exo_progress"
+        app:layout_constraintTop_toBottomOf="@+id/exo_progress" />
+
+    <TextView
+        android:id="@+id/exo_duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:text="0:00"
+        android:textColor="@color/colorAccent2"
+        app:layout_constraintEnd_toEndOf="@+id/exo_progress"
+        app:layout_constraintTop_toBottomOf="@+id/exo_progress" />
+</androidx.constraintlayout.widget.ConstraintLayout>

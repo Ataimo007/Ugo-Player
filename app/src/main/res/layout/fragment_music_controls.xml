@@ -55,9 +55,8 @@
         android:overScrollMode="ifContentScrolls"
         android:singleLine="true"
         android:text="Track"
-        android:textColor="@android:color/black"
+        android:textColor="@color/colorAccent5"
         android:textSize="14sp"
-        android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@+id/constraintLayout"
         app:layout_constraintStart_toEndOf="@+id/exo_album_art"
         app:layout_constraintTop_toTopOf="@+id/exo_album_art" />
@@ -68,7 +67,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="10dp"
         android:text="0:00"
-        android:textColor="@android:color/black"
+        android:textColor="@color/colorAccent5"
         app:layout_constraintBottom_toBottomOf="@+id/exo_progress"
         app:layout_constraintEnd_toEndOf="parent" />
 

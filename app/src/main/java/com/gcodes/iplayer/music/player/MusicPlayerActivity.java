@@ -11,16 +11,20 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
+import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
+import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.services.ACRService;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
+import com.google.android.exoplayer2.ui.PlayerControlView;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.gson.JsonObject;
 
@@ -29,8 +33,11 @@ import java.io.IOException;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import jp.wasabeef.glide.transformations.BlurTransformation;
+
+import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 public class MusicPlayerActivity extends AppCompatActivity{
 
@@ -41,11 +48,15 @@ public class MusicPlayerActivity extends AppCompatActivity{
     private Music currentMusic;
     private Player.EventListener trackListener;
     private PlayerDatabase.MusicInfo musicInfo;
+    private PlayerControlView control;
+    private TextView musicName;
+    private TextView artistName;
+    private ImageView image;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_music_player);
+        setContentView(R.layout.activity_music_player2);
 
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -71,7 +82,15 @@ public class MusicPlayerActivity extends AppCompatActivity{
 
     private void initView()
     {
+        initViews();
         initPlayer();
+    }
+
+    private void initViews() {
+        control = findViewById(R.id.music_control_view2);
+        musicName = findViewById( R.id.player_music );
+        artistName = findViewById( R.id.player_artist );
+        image = findViewById( R.id.player_art );
     }
 
     public void showLyrics(View view)
@@ -89,13 +108,23 @@ public class MusicPlayerActivity extends AppCompatActivity{
     private void initPlayer()
     {
 //        PlayerView playerView;
-        playerView = findViewById(R.id.music_player_view);
-        playerView.showController();
-        playerView.setControllerShowTimeoutMs(-1);
-        playerView.setControllerHideOnTouch( false );
-        playerView.setPlayer( MusicPlayer.getInstance().getPlayerManager() );
+        control.setShowTimeoutMs( -1 );
+        control.setPlayer( MusicPlayer.getInstance().getPlayerManager() );
+
+//        playerView = findViewById(R.id.music_player_view);
+//        playerView.showController();
+//        playerView.setControllerShowTimeoutMs(-1);
+//        playerView.setControllerHideOnTouch( false );
+//        playerView.setPlayer( MusicPlayer.getInstance().getPlayerManager() );
+
         trackListener = MusicPlayer.registerOnTrackChange(this::consumeTrack);
         MusicPlayer.consumeTrack( this::consumeTrack );
+        initRotateAnim();
+    }
+
+    private void initRotateAnim() {
+        CardView art = findViewById(R.id.player_album_art);
+        MusicPlayer.onStateChange( art );
     }
 
     @Override
@@ -163,9 +192,9 @@ public class MusicPlayerActivity extends AppCompatActivity{
         int newTrack = MusicPlayer.getCurrentTrack();
         if ( currentTrack != -1 || currentTrack != newTrack )
         {
-            imageToToolbar( music.getArtPath() );
-            getSupportActionBar().setTitle( music.getName() );
-            getSupportActionBar().setSubtitle( music.getArtist() );
+            setImage( music );
+            musicName.setText( music.getName() );
+            artistName.setText( music.getArtist() );
             currentTrack = newTrack;
 //            getLyricsIfExist( music );
         }
@@ -181,6 +210,12 @@ public class MusicPlayerActivity extends AppCompatActivity{
 
 //        update();
 //        recognizeMusic( music );
+    }
+
+    public void setImage(Music music)
+    {
+        GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( this, music ) )
+                .placeholder( R.drawable.u_song_art_padded ).apply( circleCropTransform() ).into( image );
     }
 
 //    private void recognizeMusic( Music music )

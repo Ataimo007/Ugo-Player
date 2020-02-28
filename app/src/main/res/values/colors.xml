@@ -11,7 +11,9 @@
     <color name="colorAccent3">#992B579A</color>
     <color name="colorAccent4">#0E3777</color>
     <color name="colorAccent5">#000000</color>
-    <color name="dami">#424242</color>
+    <color name="colorAccent6">#8B8B8B</color>
+    <color name="colorAccent7">#D5D5D5</color>
+    <color name="colorAccent8">#042E6F</color>
 
 
 
@@ -19,7 +21,7 @@
     <color name="videoPrimaryDark">#00000000</color>
     <color name="videoAccent">#00000000</color>
 
-    <color name="colorAccent6">#FFFFFF</color>
+    <color name="colorAccent9">#FFFFFF</color>
     <color name="colorAccent2Fade">#969696</color>
     <color name="no_buffer_color">#00ffffff</color>
     <color name="black_overlay">#00000000</color>
