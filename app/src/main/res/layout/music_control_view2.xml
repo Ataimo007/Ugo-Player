@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="140dp"
+    android:layout_height="120dp"
     android:layout_gravity="bottom"
     android:background="?attr/colorPrimary">
 
@@ -40,12 +40,12 @@
             android:adjustViewBounds="true"
             android:cropToPadding="true"
             android:scaleType="fitCenter"
-            android:tint="@color/colorAccent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/u_pause" />
+            app:srcCompat="@drawable/u_pause"
+            app:tint="@color/colorAccent" />
 
         <ImageView
             android:id="@+id/exo_play"
@@ -54,12 +54,12 @@
             android:adjustViewBounds="true"
             android:cropToPadding="true"
             android:scaleType="fitCenter"
-            android:tint="@color/colorAccent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/u_play" />
+            app:srcCompat="@drawable/u_play"
+            app:tint="@color/colorAccent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ImageView
@@ -70,11 +70,11 @@
         android:adjustViewBounds="true"
         android:cropToPadding="true"
         android:scaleType="fitCenter"
-        android:tint="@color/colorAccent"
         app:layout_constraintBottom_toBottomOf="@+id/constraintLayout3"
         app:layout_constraintEnd_toStartOf="@+id/constraintLayout3"
         app:layout_constraintTop_toTopOf="@+id/constraintLayout3"
-        app:srcCompat="@drawable/u_previous" />
+        app:srcCompat="@drawable/u_previous"
+        app:tint="@color/colorAccent" />
 
     <ImageView
         android:id="@+id/exo_next"
@@ -82,15 +82,16 @@
         android:layout_height="0dp"
         android:layout_marginStart="30dp"
         android:adjustViewBounds="true"
+        android:contentDescription="TODO"
         android:cropToPadding="true"
         android:scaleType="fitCenter"
-        android:tint="@color/colorAccent"
         android:tintMode="src_in"
         app:layout_constraintBottom_toBottomOf="@+id/constraintLayout3"
         app:layout_constraintStart_toEndOf="@+id/constraintLayout3"
         app:layout_constraintTop_toTopOf="@+id/constraintLayout3"
         app:layout_constraintVertical_bias="0.6"
-        app:srcCompat="@drawable/u_next" />
+        app:srcCompat="@drawable/u_next"
+        app:tint="@color/colorAccent" />
 
     <ImageView
         android:id="@+id/exo_shuffle"
@@ -98,11 +99,11 @@
         android:layout_height="20dp"
         android:layout_marginStart="30dp"
         android:backgroundTint="@android:color/black"
-        android:tint="@color/colorAccent"
         app:layout_constraintBottom_toBottomOf="@+id/exo_next"
         app:layout_constraintStart_toEndOf="@+id/exo_next"
         app:layout_constraintTop_toTopOf="@+id/exo_next"
-        app:srcCompat="@drawable/exo_controls_shuffle" />
+        app:srcCompat="@drawable/exo_controls_shuffle"
+        app:tint="@color/colorAccent" />
 
     <ImageView
         android:id="@+id/exo_repeat_toggle"
@@ -113,11 +114,11 @@
         android:backgroundTint="@android:color/black"
         android:cropToPadding="true"
         android:scaleType="fitCenter"
-        android:tint="@color/colorAccent"
         app:layout_constraintBottom_toBottomOf="@+id/exo_prev"
         app:layout_constraintEnd_toStartOf="@+id/exo_prev"
         app:layout_constraintTop_toTopOf="@+id/exo_prev"
-        app:srcCompat="@drawable/exo_controls_repeat_all" />
+        app:srcCompat="@drawable/exo_controls_repeat_all"
+        app:tint="@color/colorAccent" />
 
     <TextView
         android:id="@+id/exo_position"

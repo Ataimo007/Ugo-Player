@@ -4,7 +4,6 @@ import android.net.Uri;
 import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.gcodes.iplayer.R;
@@ -126,27 +125,31 @@ public class MusicPlayer
         return trackListenr;
     }
 
-    public static void onStateChange( CardView view )
+    public static void removeStateChange(Player.EventListener listener)
+    {
+        musicPlayer.getPlayerManager().removeListener( listener );
+    }
+
+    public static Player.EventListener onStateChange(CardView view )
     {
         MusicPlayer musicPlayer = getInstance();
         Animation rotate = AnimationUtils.loadAnimation(musicPlayer.getMainPlayerManager().getContext(), R.anim.u_rotate);
         rotate.setFillAfter( true );
-        musicPlayer.getPlayerManager().addListener( new com.google.android.exoplayer2.Player.EventListener() {
+        Player.EventListener eventListener = new Player.EventListener() {
 
             @Override
             public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-                if ( playWhenReady && playbackState == Player.STATE_READY )
-                {
-                    Log.d("Animation_View", "playing music" );
-                    view.startAnimation( rotate );
-                }
-                else
-                {
-                    Log.d("Animation_View", "music paused" );
+                if (playWhenReady && playbackState == Player.STATE_READY) {
+                    Log.d("Animation_View", "playing music");
+                    view.startAnimation(rotate);
+                } else {
+                    Log.d("Animation_View", "music paused");
                     view.clearAnimation();
                 }
             }
-        } );
+        };
+
+        musicPlayer.getPlayerManager().addListener( eventListener );
 
         if ( musicPlayer.getPlayerManager().getPlayWhenReady() && musicPlayer.getPlayerManager().getPlaybackState() == Player.STATE_READY )
         {
@@ -159,6 +162,7 @@ public class MusicPlayer
             view.clearAnimation();
         }
 
+        return eventListener;
     }
 
     public static void unRegisterOnTrackChange(com.google.android.exoplayer2.Player.EventListener trackListener)
