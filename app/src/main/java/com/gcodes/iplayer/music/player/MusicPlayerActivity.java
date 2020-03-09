@@ -7,9 +7,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -21,6 +23,7 @@ import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.MusicFragment;
 import com.gcodes.iplayer.services.ACRService;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
@@ -31,6 +34,8 @@ import com.google.gson.JsonObject;
 
 import java.io.IOException;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
@@ -39,6 +44,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager.widget.ViewPager;
 
 import jp.wasabeef.glide.transformations.BlurTransformation;
@@ -94,6 +100,13 @@ public class MusicPlayerActivity extends AppCompatActivity{
         tabs.addOnTabSelectedListener( new TabLayout.ViewPagerOnTabSelectedListener( pager ) );
 
         tabs.getTabAt( pagerAdapter.getDefaultTabPos() ).select();
+        pager.addOnPageChangeListener( new ViewPager.SimpleOnPageChangeListener(){
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                pagerAdapter.setToolbar( position );
+            }
+        });
     }
 
 
@@ -128,17 +141,19 @@ public class MusicPlayerActivity extends AppCompatActivity{
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
     {
         private Fragment[] views;
+        private final FragmentManager fm;
 
         public SectionsPagerAdapter(FragmentManager fm)
         {
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+            this.fm = fm;
             init();
         }
 
         public void init()
         {
             views = new Fragment[ 3 ];
-            views[ 0 ] = new Fragment();
+            views[ 0 ] = new MusicVideoFragment();
             views[ 1 ] = new MusicPlayerFragment();
             views[ 2 ] = new PlaylistFragment();
         }
@@ -146,6 +161,7 @@ public class MusicPlayerActivity extends AppCompatActivity{
         @Override
         public Fragment getItem(int position)
         {
+            setToolbar( position );
             return views[ position ];
         }
 
@@ -157,5 +173,38 @@ public class MusicPlayerActivity extends AppCompatActivity{
         public int getDefaultTabPos() {
             return 1;
         }
+
+        public void setToolbar( int pos )
+        {
+            FragmentTransaction transaction = fm.beginTransaction();
+            PlayerBar playerBar = (PlayerBar) views[ pos ];
+            Fragment fragment = playerBar.getBar();
+            transaction.replace( R.id.player_toolbar, fragment);
+            transaction.commit();
+        }
+    }
+
+    public static abstract class SimplePlayerBar extends Fragment
+    {
+        @Nullable
+        @Override
+        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+            View content = inflater.inflate(getLayout(), container, false);
+            TextView title = content.findViewById( R.id.player_title );
+            title.setText( getTitle() );
+            return content;
+        }
+
+        protected int getLayout()
+        {
+            return R.layout.player_simple_toolbar;
+        }
+
+        protected abstract String getTitle();
+    }
+
+    public static interface PlayerBar
+    {
+        Fragment getBar();
     }
 }

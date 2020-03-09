@@ -15,6 +15,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
@@ -39,7 +41,8 @@ import jp.wasabeef.glide.transformations.BlurTransformation;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
-public class MusicPlayerFragment extends Fragment {
+public class MusicPlayerFragment extends Fragment implements MusicPlayerActivity.PlayerBar
+{
 
     private PlayerView playerView;
     private Menu menu;
@@ -55,14 +58,45 @@ public class MusicPlayerFragment extends Fragment {
     private CardView art;
     private Player.EventListener eventListener;
 
+    public static class PlayerListBar extends MusicPlayerActivity.SimplePlayerBar {
+        private final MusicPlayerFragment player;
+
+        public PlayerListBar(MusicPlayerFragment player ) {
+            this.player = player;
+        }
+
+        @Nullable
+        @Override
+        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+            View content = super.onCreateView(inflater, container, savedInstanceState);
+            player.musicName = content.findViewById( R.id.player_subtitle );
+            player.artistName = content.findViewById( R.id.player_title );
+            player.musicName.setText( getTitle() );
+            return content;
+        }
+
+        @Override
+        protected String getTitle() {
+            return "Current Playlist";
+        }
+    }
+
+    @Override
+    public Fragment getBar() {
+        return new PlayerListBar( this );
+    }
+
+    public class PlayerBar extends Fragment
+    {
+
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View content = inflater.inflate(R.layout.activity_music_player2, container, false);
 
         control = content.findViewById(R.id.music_control_view2);
-        musicName = content.findViewById( R.id.player_music );
-        artistName = content.findViewById( R.id.player_artist );
         image = content.findViewById( R.id.player_art );
         art = content.findViewById(R.id.player_album_art);
 

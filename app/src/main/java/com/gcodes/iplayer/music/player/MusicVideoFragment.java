@@ -55,7 +55,7 @@ import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 //
 //import android.support.v7.widget.RecyclerView;
 
-public class MusicVideoFragment extends Fragment
+public class MusicVideoFragment extends Fragment implements MusicPlayerActivity.PlayerBar
 {
     private Music music;
     private RecyclerView listView;
@@ -65,7 +65,7 @@ public class MusicVideoFragment extends Fragment
     private Consumer<Void> showMusic;
     private PlayerDatabase.MusicInfo musicInfo;
 
-    private Handler updateProgress = new Handler( getContext().getMainLooper() );
+    private Handler updateProgress;
 
     public MusicVideoFragment() {
     }
@@ -89,6 +89,7 @@ public class MusicVideoFragment extends Fragment
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        updateProgress = new Handler( getContext().getMainLooper() );
     }
 
     private void getMusicVideo()
@@ -115,11 +116,11 @@ public class MusicVideoFragment extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.music_lyrics, container, false);
-        initRecycleView( view );
-        initButton( view );
-        initFrame();
-        initMusicVideos();
+        View view = inflater.inflate(R.layout.music_video_fragment, container, false);
+//        initRecycleView( view );
+//        initButton( view );
+//        initFrame();
+//        initMusicVideos();
         return view;
     }
 
@@ -136,7 +137,7 @@ public class MusicVideoFragment extends Fragment
     private void initRecycleView( View view )
     {
         adapter = new CustomAdapter();
-        listView = view.findViewById( R.id.lyrics_list );
+        listView = view.findViewById( R.id.video_list );
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
     }
@@ -190,6 +191,11 @@ public class MusicVideoFragment extends Fragment
         return musicInfo;
     }
 
+    @Override
+    public Fragment getBar() {
+        return new MusicVideoBar();
+    }
+
     public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
     {
         private SparseArrayCompat< Runnable > progresses = new SparseArrayCompat<>();
@@ -199,7 +205,7 @@ public class MusicVideoFragment extends Fragment
         @Override
         public ItemHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.video_view_item, parent, false);
+                    .inflate(R.layout.video_view_item2, parent, false);
             return new ItemHolder(view);
         }
 
@@ -362,4 +368,10 @@ public class MusicVideoFragment extends Fragment
 
     }
 
+    public static class MusicVideoBar extends MusicPlayerActivity.SimplePlayerBar {
+        @Override
+        protected String getTitle() {
+            return "Available Music Videos";
+        }
+    }
 }

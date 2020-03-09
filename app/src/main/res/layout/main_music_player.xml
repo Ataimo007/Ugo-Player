@@ -7,6 +7,30 @@
     android:fitsSystemWindows="true"
     tools:context=".music.player.MusicPlayerActivity">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar2"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="10dp"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme"
+        app:contentInsetStart="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:titleMargin="0dp"
+        app:titleMarginStart="0dp">
+
+        <FrameLayout
+            android:id="@+id/player_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        </FrameLayout>
+
+    </androidx.appcompat.widget.Toolbar>
+
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/player_tabs"

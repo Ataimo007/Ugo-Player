@@ -3,65 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorAccent7"
+    android:background="@color/colorAccent2"
     android:fitsSystemWindows="true"
     tools:context=".music.player.MusicPlayerActivity">
-
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar2"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="?attr/colorPrimary"
-        android:elevation="10dp"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
-        app:contentInsetStart="0dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:titleMargin="0dp"
-        app:titleMarginStart="0dp">
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <TextView
-                android:id="@+id/player_music"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="132dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="148dp"
-                android:singleLine="true"
-                android:text="Name Of Song"
-                android:textColor="@color/colorAccent"
-                android:textSize="18sp"
-                app:layout_constraintBottom_toTopOf="@+id/player_artist"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <TextView
-                android:id="@+id/player_artist"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:singleLine="true"
-                android:text="TextView"
-                android:textColor="@color/colorAccent2"
-                android:textSize="14sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="@+id/player_music"
-                app:layout_constraintStart_toStartOf="@+id/player_music"
-                app:layout_constraintTop_toBottomOf="@+id/player_music" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-    </androidx.appcompat.widget.Toolbar>
-
 
     <androidx.cardview.widget.CardView
         android:id="@+id/music_control_container"
@@ -93,13 +37,14 @@
         android:layout_marginTop="20dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="20dp"
+        app:cardBackgroundColor="@color/colorAccent"
         app:cardCornerRadius="150dp"
         app:cardElevation="5dp"
         app:layout_constraintBottom_toTopOf="@+id/music_control_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHeight_max="300dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar2"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_max="300dp">
 
         <ImageView
