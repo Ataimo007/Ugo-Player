@@ -32,15 +32,8 @@ import androidx.recyclerview.widget.RecyclerView;
 //
 //import android.support.v7.widget.RecyclerView;
 
-public class PlaylistFragment extends Fragment implements MusicPlayerActivity.PlayerBar
+public class PlaylistFragment extends Fragment
 {
-    public static class MusicVideoBar extends MusicPlayerActivity.SimplePlayerBar {
-        @Override
-        protected String getTitle() {
-            return "Available Music Videos";
-        }
-    }
-
     public PlaylistFragment() {
     }
 
@@ -63,10 +56,7 @@ public class PlaylistFragment extends Fragment implements MusicPlayerActivity.Pl
         return view;
     }
 
-    @Override
-    public Fragment getBar() {
-        return new MusicVideoBar();
-    }
+
 
 //    public static void hide( FragmentManager fragmentManager ) {
 //        Fragment playlist = fragmentManager.findFragmentByTag("Playlist_View");

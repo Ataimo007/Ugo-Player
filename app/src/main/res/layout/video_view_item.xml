@@ -69,7 +69,7 @@
             app:srcCompat="@drawable/u_song_art_padded" />
 
         <TextView
-            android:id="@+id/textView"
+            android:id="@+id/item_subtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|right"
@@ -90,11 +90,12 @@
         app:layout_constraintTop_toTopOf="@+id/item_description"
         >
 
-        <ImageView
-            android:id="@+id/imageView"
+        <ImageButton
+            android:id="@+id/video_download"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:visibility="visible"
+            android:background="@android:color/transparent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

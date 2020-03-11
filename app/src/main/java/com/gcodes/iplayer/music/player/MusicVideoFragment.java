@@ -22,6 +22,7 @@ import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.player.PlayerDownloadService;
 import com.gcodes.iplayer.services.YouTubeService;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.offline.Download;
 import com.google.api.services.youtube.model.Video;
 
@@ -55,7 +56,7 @@ import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 //
 //import android.support.v7.widget.RecyclerView;
 
-public class MusicVideoFragment extends Fragment implements MusicPlayerActivity.PlayerBar
+public class MusicVideoFragment extends Fragment
 {
     private Music music;
     private RecyclerView listView;
@@ -66,12 +67,20 @@ public class MusicVideoFragment extends Fragment implements MusicPlayerActivity.
     private PlayerDatabase.MusicInfo musicInfo;
 
     private Handler updateProgress;
+    private Player.EventListener trackListener;
 
     public MusicVideoFragment() {
     }
 
     public void setMusic(Music music) {
         this.music = music;
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if ( trackListener != null )
+            MusicPlayer.unRegisterOnTrackChange( trackListener );
     }
 
     public void setVideoPrepare(Consumer<Void> showVideo )
@@ -92,11 +101,13 @@ public class MusicVideoFragment extends Fragment implements MusicPlayerActivity.
         updateProgress = new Handler( getContext().getMainLooper() );
     }
 
-    private void getMusicVideo()
+    private void getMusicVideo( Music music )
     {
         YouTubeService youtube = YouTubeService.getIntance();
-        String query = musicInfo != null ? String.format( "%s %s", musicInfo.getTitle(), musicInfo.getAllArtists() ) :
-                String.format( "%s %s", music.getName(), music.getArtist() ) ;
+//        String query = musicInfo != null ? String.format( "%s %s", musicInfo.getTitle(), musicInfo.getAllArtists() ) :
+//                String.format( "%s %s", music.getName(), music.getArtist() ) ;
+
+        String query = String.format( "%s %s", music.getName(), music.getArtist() ) ;
 
         Helper.Worker.executeTask(() -> {
             try {
@@ -117,15 +128,16 @@ public class MusicVideoFragment extends Fragment implements MusicPlayerActivity.
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.music_video_fragment, container, false);
-//        initRecycleView( view );
+        initRecycleView( view );
 //        initButton( view );
 //        initFrame();
-//        initMusicVideos();
+        initMusicVideos();
         return view;
     }
 
     private void initMusicVideos() {
-        getMusicVideo();
+        trackListener = MusicPlayer.registerOnTrackChange(this::getMusicVideo);
+        MusicPlayer.consumeTrack( this::getMusicVideo );
     }
 
     private void initFrame()
@@ -191,11 +203,6 @@ public class MusicVideoFragment extends Fragment implements MusicPlayerActivity.
         return musicInfo;
     }
 
-    @Override
-    public Fragment getBar() {
-        return new MusicVideoBar();
-    }
-
     public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
     {
         private SparseArrayCompat< Runnable > progresses = new SparseArrayCompat<>();
@@ -205,7 +212,7 @@ public class MusicVideoFragment extends Fragment implements MusicPlayerActivity.
         @Override
         public ItemHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.video_view_item2, parent, false);
+                    .inflate(R.layout.video_view_item, parent, false);
             return new ItemHolder(view);
         }
 
@@ -366,12 +373,5 @@ public class MusicVideoFragment extends Fragment implements MusicPlayerActivity.
         }
 
 
-    }
-
-    public static class MusicVideoBar extends MusicPlayerActivity.SimplePlayerBar {
-        @Override
-        protected String getTitle() {
-            return "Available Music Videos";
-        }
     }
 }

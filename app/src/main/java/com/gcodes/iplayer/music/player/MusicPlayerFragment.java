@@ -41,16 +41,16 @@ import jp.wasabeef.glide.transformations.BlurTransformation;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
-public class MusicPlayerFragment extends Fragment implements MusicPlayerActivity.PlayerBar
+public class MusicPlayerFragment extends Fragment
 {
 
-    private PlayerView playerView;
-    private Menu menu;
-    private Toolbar toolbar;
+//    private PlayerView playerView;
+//    private Menu menu;
+//    private Toolbar toolbar;
     private int currentTrack = -1;
-    private Music currentMusic;
+//    private Music currentMusic;
     private Player.EventListener trackListener;
-    private PlayerDatabase.MusicInfo musicInfo;
+//    private PlayerDatabase.MusicInfo musicInfo;
     private PlayerControlView control;
     private TextView musicName;
     private TextView artistName;
@@ -58,37 +58,12 @@ public class MusicPlayerFragment extends Fragment implements MusicPlayerActivity
     private CardView art;
     private Player.EventListener eventListener;
 
-    public static class PlayerListBar extends MusicPlayerActivity.SimplePlayerBar {
-        private final MusicPlayerFragment player;
-
-        public PlayerListBar(MusicPlayerFragment player ) {
-            this.player = player;
-        }
-
-        @Nullable
-        @Override
-        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-            View content = super.onCreateView(inflater, container, savedInstanceState);
-            player.musicName = content.findViewById( R.id.player_subtitle );
-            player.artistName = content.findViewById( R.id.player_title );
-            player.musicName.setText( getTitle() );
-            return content;
-        }
-
-        @Override
-        protected String getTitle() {
-            return "Current Playlist";
-        }
-    }
-
     @Override
-    public Fragment getBar() {
-        return new PlayerListBar( this );
-    }
-
-    public class PlayerBar extends Fragment
-    {
-
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        AppCompatActivity activity = (AppCompatActivity) context;
+        musicName = activity.findViewById( R.id.song_name );
+        artistName = activity.findViewById( R.id.artist_name );
     }
 
     @Override
@@ -99,7 +74,8 @@ public class MusicPlayerFragment extends Fragment implements MusicPlayerActivity
         control = content.findViewById(R.id.music_control_view2);
         image = content.findViewById( R.id.player_art );
         art = content.findViewById(R.id.player_album_art);
-
+//        musicName = content.findViewById( R.id.song_name );
+//        artistName = content.findViewById( R.id.artist_name );
         initView();
 
         return content;
@@ -176,7 +152,9 @@ public class MusicPlayerFragment extends Fragment implements MusicPlayerActivity
     public void onStop() {
         super.onStop();
         if ( eventListener != null )
-            MusicPlayer.removeStateChange( eventListener );
+            MusicPlayer.unRegisterOnTrackChange( trackListener );
+        if ( trackListener != null )
+            MusicPlayer.unRegisterOnTrackChange( trackListener );
     }
 
     private void initRotateAnim() {
@@ -256,14 +234,12 @@ public class MusicPlayerFragment extends Fragment implements MusicPlayerActivity
 //            getLyricsIfExist( music );
         }
 
-        currentMusic = music;
-
         // get online music info
-        PlayerDatabase database = PlayerDatabase.getInstance();
-        Helper.Worker.executeTask( () -> {
-            musicInfo = database.playerDao().getInfo(music);
-            return () -> {};
-        });
+//        PlayerDatabase database = PlayerDatabase.getInstance();
+//        Helper.Worker.executeTask( () -> {
+//            musicInfo = database.playerDao().getInfo(music);
+//            return () -> {};
+//        });
 
 //        update();
 //        recognizeMusic( music );

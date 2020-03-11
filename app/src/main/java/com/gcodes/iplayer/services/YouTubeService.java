@@ -33,7 +33,8 @@ import at.huber.youtubeExtractor.YtFile;
 
 public class YouTubeService
 {
-    private static final String apiKey = "AIzaSyDpZNHV4XP-JMyKvPhz-vZbw_qEOCQjodw";
+//    private static final String apiKey = "AIzaSyDpZNHV4XP-JMyKvPhz-vZbw_qEOCQjodw";
+    private static final String apiKey = "AIzaSyBFboHVZz-Q-WIFSKF6Clb8qZn3BsxsFoM";
     public static final String YOUTUBE_TAG = "YouTube_API";
 
     private static final String BASE_URL = "https://www.youtube.com";

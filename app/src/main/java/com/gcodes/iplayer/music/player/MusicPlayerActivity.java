@@ -1,53 +1,29 @@
 package com.gcodes.iplayer.music.player;
 
-import android.app.SearchManager;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
-import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
-import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.music.MusicFragment;
-import com.gcodes.iplayer.services.ACRService;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.material.tabs.TabLayout;
-import com.google.gson.JsonObject;
 
-import java.io.IOException;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
-import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager.widget.ViewPager;
-
-import jp.wasabeef.glide.transformations.BlurTransformation;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
@@ -100,11 +76,14 @@ public class MusicPlayerActivity extends AppCompatActivity{
         tabs.addOnTabSelectedListener( new TabLayout.ViewPagerOnTabSelectedListener( pager ) );
 
         tabs.getTabAt( pagerAdapter.getDefaultTabPos() ).select();
+        findViewById( R.id.player_bar).setVisibility( View.VISIBLE );
+
         pager.addOnPageChangeListener( new ViewPager.SimpleOnPageChangeListener(){
             @Override
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
-                pagerAdapter.setToolbar( position );
+                hideAll();
+                showBar( position );
             }
         });
     }
@@ -138,6 +117,31 @@ public class MusicPlayerActivity extends AppCompatActivity{
 
     }
 
+    public void hideAll()
+    {
+        findViewById( R.id.player_video_bar ).setVisibility( View.GONE );
+        findViewById( R.id.playerlist_bar).setVisibility( View.GONE );
+        findViewById( R.id.playerlist_bar ).setVisibility( View.GONE );
+    }
+
+    public void showBar( int pos )
+    {
+        switch ( pos )
+        {
+            case 0:
+                findViewById( R.id.player_video_bar ).setVisibility( View.VISIBLE );
+                break;
+
+            case 1:
+                findViewById( R.id.player_bar).setVisibility( View.VISIBLE );
+                break;
+
+            case 2:
+                findViewById( R.id.playerlist_bar ).setVisibility( View.VISIBLE );
+                break;
+        }
+    }
+
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
     {
         private Fragment[] views;
@@ -161,7 +165,7 @@ public class MusicPlayerActivity extends AppCompatActivity{
         @Override
         public Fragment getItem(int position)
         {
-            setToolbar( position );
+//            setToolbar( position );
             return views[ position ];
         }
 
@@ -174,37 +178,40 @@ public class MusicPlayerActivity extends AppCompatActivity{
             return 1;
         }
 
-        public void setToolbar( int pos )
-        {
-            FragmentTransaction transaction = fm.beginTransaction();
-            PlayerBar playerBar = (PlayerBar) views[ pos ];
-            Fragment fragment = playerBar.getBar();
-            transaction.replace( R.id.player_toolbar, fragment);
-            transaction.commit();
-        }
+//        public void setToolbar( int pos )
+//        {
+//            for ( Fragment bar : views )
+//            {
+//                PlayerBar playerBar = (PlayerBar) views[ pos ];
+//                playerBar.HideBar();
+//            }
+//            PlayerBar playerBar = (PlayerBar) views[ pos ];
+//            playerBar.ShowBar();
+//        }
     }
 
-    public static abstract class SimplePlayerBar extends Fragment
-    {
-        @Nullable
-        @Override
-        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-            View content = inflater.inflate(getLayout(), container, false);
-            TextView title = content.findViewById( R.id.player_title );
-            title.setText( getTitle() );
-            return content;
-        }
+//    public static abstract class SimplePlayerBar extends Fragment
+//    {
+//        @Nullable
+//        @Override
+//        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+//            View content = inflater.inflate(getLayout(), container, false);
+//            TextView title = content.findViewById( R.id.player_title );
+//            title.setText( getTitle() );
+//            return content;
+//        }
+//
+//        protected int getLayout()
+//        {
+//            return R.layout.player_simple_toolbar;
+//        }
+//
+//        protected abstract String getTitle();
+//    }
 
-        protected int getLayout()
-        {
-            return R.layout.player_simple_toolbar;
-        }
-
-        protected abstract String getTitle();
-    }
-
-    public static interface PlayerBar
-    {
-        Fragment getBar();
-    }
+//    public static interface PlayerBar
+//    {
+//        void ShowBar();
+//        void HideBar();
+//    }
 }
