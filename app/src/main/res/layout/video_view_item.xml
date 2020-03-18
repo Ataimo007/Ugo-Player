@@ -46,8 +46,8 @@
 
     <androidx.cardview.widget.CardView
         android:id="@+id/item_card"
-        android:layout_width="110dp"
-        android:layout_height="65dp"
+        android:layout_width="100dp"
+        android:layout_height="60dp"
         android:layout_marginStart="10dp"
         android:transitionGroup="false"
         app:cardCornerRadius="6dp"
@@ -66,6 +66,7 @@
             android:adjustViewBounds="true"
             android:cropToPadding="true"
             android:elevation="10dp"
+            android:scaleType="centerCrop"
             app:srcCompat="@drawable/u_song_art_padded" />
 
         <TextView

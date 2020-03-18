@@ -66,14 +66,14 @@ public class Helper
         public UIAction perform();
     }
 
-    private static boolean isDeviceOnline(Activity activity)
+    public static boolean isDeviceOnline(Activity activity)
     {
         ConnectivityManager connMgr = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         return (networkInfo != null && networkInfo.isConnected());
     }
 
-    private static boolean isGooglePlayServicesAvailable( Activity activity )
+    public static boolean isGooglePlayServicesAvailable( Activity activity )
     {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
         final int connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable( activity );
@@ -84,7 +84,7 @@ public class Helper
      * Attempt to resolve a missing, out-of-date, invalid or disabled Google
      * Play Services installation via a user dialog, if possible.
      */
-    private static void acquireGooglePlayServices( Activity activity ) {
+    public static void acquireGooglePlayServices( Activity activity ) {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
         final int connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(activity );
         if (apiAvailability.isUserResolvableError(connectionStatusCode)) {

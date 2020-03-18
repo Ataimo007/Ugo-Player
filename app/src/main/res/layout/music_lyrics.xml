@@ -4,38 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent"
+    android:background="@color/colorAccent9"
     android:orientation="vertical">
-
-    <ImageButton
-        android:id="@+id/lyrics_minimize"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="5dp"
-        android:layout_marginEnd="5dp"
-        android:adjustViewBounds="true"
-        android:background="@android:color/transparent"
-        android:cropToPadding="true"
-        android:scaleType="fitCenter"
-        android:tint="@android:color/white"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_close_black_24dp" />
-
-    <ImageButton
-        android:id="@+id/lyrics_sync"
-        android:layout_width="0dp"
-        android:layout_height="30dp"
-        android:layout_marginEnd="5dp"
-        android:adjustViewBounds="true"
-        android:background="@android:color/transparent"
-        android:cropToPadding="true"
-        android:scaleType="fitCenter"
-        android:tint="@android:color/white"
-        app:layout_constraintBottom_toBottomOf="@+id/lyrics_minimize"
-        app:layout_constraintEnd_toStartOf="@+id/lyrics_minimize"
-        app:layout_constraintTop_toTopOf="@+id/lyrics_minimize"
-        app:srcCompat="@drawable/exo_controls_play" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/lyrics_list"
@@ -49,7 +19,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/lyrics_sync"
+        app:layout_constraintTop_toTopOf="parent"
         tools:listitem="@layout/single_item" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

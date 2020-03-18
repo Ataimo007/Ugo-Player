@@ -10,23 +10,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.music.MusicFragment;
-import com.gcodes.iplayer.music.player.FragmentMusic;
+import com.gcodes.iplayer.music.album.AlbumFragment;
+import com.gcodes.iplayer.music.artist.ArtistFragment;
+import com.gcodes.iplayer.music.folder.FolderFragment;
+import com.gcodes.iplayer.music.genre.GenreFragment;
+import com.gcodes.iplayer.music.track.TrackFragment;
 import com.gcodes.iplayer.player.PlayerManager;
-import com.gcodes.iplayer.services.YouTubeService;
+import com.gcodes.iplayer.video.AllFragment;
+import com.gcodes.iplayer.video.SeriesFragment;
 import com.gcodes.iplayer.video.VideoFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.api.services.youtube.model.Video;
+import com.google.android.material.tabs.TabLayout;
 
-import org.jmusixmatch.MusixMatch;
-import org.jmusixmatch.MusixMatchException;
-import org.jmusixmatch.entity.lyrics.Lyrics;
-import org.jmusixmatch.entity.track.Track;
-import org.jmusixmatch.subtitle.Subtitle;
-
-import java.io.IOException;
-import java.util.List;
 import java.util.function.Supplier;
 
 import androidx.annotation.NonNull;
@@ -37,7 +33,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.ViewPager;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -49,6 +46,16 @@ public class MainActivity extends AppCompatActivity
             = this::doSelection;
     private Menu menu;
     private BackManager backAction;
+
+    private TabLayout.ViewPagerOnTabSelectedListener mPagerListener;
+    private TabLayout.TabLayoutOnPageChangeListener mTabListener;
+    private MusicAdapter musicAdapter;
+    private TabLayout musicTabs;
+    private ViewPager pager;
+    private TabLayout videoTabs;
+    private VideoAdapter videoAdapter;
+    private TabLayout.TabLayoutOnPageChangeListener vTabListener;
+    private TabLayout.ViewPagerOnTabSelectedListener vPagerListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +88,8 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = findViewById(R.id.app_toolbar);
         setSupportActionBar( toolbar );
 
+        initContent();
+
         BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
@@ -88,11 +97,20 @@ public class MainActivity extends AppCompatActivity
         application = this;
 
         navigation.setSelectedItemId( R.id.navigation_music );
-//        doSelection(item);
 
-//        testYoutube();
-//        getLyrics();
-//        test();
+    }
+
+    private void initContent() {
+        musicTabs = findViewById(R.id.music_tabs);
+        pager = findViewById( R.id.content_viewpager );
+        musicAdapter = new MusicAdapter(getSupportFragmentManager());
+        mTabListener = new TabLayout.TabLayoutOnPageChangeListener(musicTabs);
+        mPagerListener = new TabLayout.ViewPagerOnTabSelectedListener(pager);
+
+        videoTabs = findViewById(R.id.video_tabs);
+        videoAdapter = new VideoAdapter(getSupportFragmentManager());
+        vTabListener = new TabLayout.TabLayoutOnPageChangeListener(musicTabs);
+        vPagerListener = new TabLayout.ViewPagerOnTabSelectedListener(pager);
     }
 
     @Override
@@ -102,23 +120,6 @@ public class MainActivity extends AppCompatActivity
 
         PlayerManager.getInstance().onNewActivity( this );
     }
-
-    private void start()
-    {
-
-        //        navigation.setSelectedItemId( R.id.navigation_music );
-//        navigation.setSelectedItemId( R.id.navigation_music );
-    }
-
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        this.menu = menu;
-//        getMenuInflater().inflate(R.menu.main_menu, menu);
-//        prepareSearchMenu();
-////        return super.onCreateOptionsMenu(menu);
-//        return true;
-//    }
 
     private boolean doSelection(MenuItem item)
     {
@@ -131,11 +132,13 @@ public class MainActivity extends AppCompatActivity
     {
         switch (id) {
             case R.id.navigation_music:
-                Log.d("Selecting_music", "Selected Music" );
-                MusicFragment.InitFragments( getSupportFragmentManager() );
+//                Log.d("Selecting_music", "Selected Music" );
+//                MusicFragment.InitFragments( getSupportFragmentManager() );
+                musicSwitch();
                 return true;
             case R.id.navigation_video:
-                VideoFragment.InitFragments( getSupportFragmentManager() );
+//                VideoFragment.InitFragments( getSupportFragmentManager() );
+                videoSwitch();
                 return true;
             default:
                 return false;
@@ -177,31 +180,10 @@ public class MainActivity extends AppCompatActivity
     private void init()
     {
         initPlayer();
-//        initACR();
     }
 
     private void initPlayer() {
         PlayerManager.init( this );
-    }
-
-    private void initACR()
-    {
-//        ACRFileService.initialize( this );
-
-//        ACRService.initialize( this );
-
-//        try {
-//            ACRFileService.getInstance().recognizeMusic( Uri.parse( "content://media/external/audio/media/12377" ) );
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        String path = Environment.getExternalStorageDirectory().toString()
-//                + "/acrcloud/model";
-//
-//        File file = new File(path);
-//        if(!file.exists()){
-//            file.mkdirs();
-//        }
     }
 
     @Override
@@ -223,85 +205,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public static void renderSession( Fragment fragment )
-    {
-        FragmentManager manager = application.getSupportFragmentManager();
-        FragmentTransaction transaction = manager.beginTransaction();
-//        Fragment layout = manager.findFragmentById(R.id.layout_main);
-//        transaction.remove( layout );
-//        transaction.add( R.id.layout_main, fragment);
-        transaction.replace( R.id.layout_main, fragment);
-        transaction.commitNowAllowingStateLoss();
-    }
-
-    public static void setToolbar(Toolbar toolbar)
-    {
-//        ActionBar supportActionBar = application.getSupportActionBar();
-        application.setSupportActionBar( toolbar );
-    }
-
-//    public static void renderSession( Fragment fragment )
-//    {
-//        FragmentManager manager = application.getSupportFragmentManager();
-//        FragmentTransaction transaction = manager.beginTransaction();
-//        View musicControl = application.findViewById(R.id.application_session);
-//        transaction.add( R.id.application_session, fragment);
-//        transaction.commit();
-//    }
-
-    public static void renderPlayer()
-    {
-        PlayerManager playerManager = PlayerManager.getInstance();
-        FragmentManager manager = application.getSupportFragmentManager();
-        FragmentTransaction transaction = manager.beginTransaction();
-        FragmentMusic fragmentMusic = FragmentMusic.newInstance();
-        View musicControl = playerManager.getActivity().findViewById(R.id.music_control);
-        musicControl.setVisibility( View.VISIBLE );
-        transaction.replace( R.id.music_control, fragmentMusic);
-        transaction.commit();
-    }
-
-    public void testYoutube()
-    {
-        YouTubeService youtube = YouTubeService.getIntance();
-        Helper.Worker.executeTask(() -> {
-            try {
-                List<Video> videos = youtube.getVideos("Under The Canopy Frank Edwards");
-                Log.d( "YouTube_API", "Videos " + videos );
-            } catch (IOException e) {
-                Log.d( "YouTube_API", "Error in getting videos" );
-                e.printStackTrace();
-            }
-            return () -> {};
-        });
-    }
-
-    private void getLyrics()
-    {
-        Helper.Worker.executeTask(() -> {
-            Log.d( "Music_Player", "getting lyrics" );
-            try {
-                String apiKey = "7d07b4f39f7722d3cd1f52cd45da73a2";
-                MusixMatch musixMatch = new MusixMatch(apiKey);
-                Track track = musixMatch.getTrack(124734511);
-                Subtitle subtitle = musixMatch.getSubtitle(124734511);
-                String subtitleBody = subtitle.getSubtitleBody();
-                Lyrics lyrics = musixMatch.getLyrics(124734511);
-//                Snippet snippet = musixMatch.getSnippet(124734511);
-//                snippet.setUpdatedTime( "20000" );
-//                String snippetBody = snippet.getSnippetBody();
-                String lyricsBody = lyrics.getLyricsBody();
-                Log.d( "Music_Player", "lyrics body " + lyricsBody );
-//                Log.d( "Music_Player", "snippet body - " + snippetBody );
-                Log.d( "Music_Player", "snippet body - " + subtitleBody );
-            } catch (MusixMatchException e) {
-                Log.d( "Music_Player", "lyrics error cause by " + e.getMessage() );
-                e.printStackTrace();
-            }
-            return () -> {};
-        });
-    }
-
     public void register(BackManager action) {
         backAction = action;
     }
@@ -314,5 +217,96 @@ public class MainActivity extends AppCompatActivity
         boolean goBack();
     }
 
+    public void musicSwitch()
+    {
+        videoTabs.setVisibility(View.GONE);
+        musicTabs.setVisibility(View.VISIBLE);
+
+        pager.setAdapter(musicAdapter);
+        pager.addOnPageChangeListener( mTabListener );
+        musicTabs.addOnTabSelectedListener( mPagerListener );
+        pager.invalidate();
+    }
+
+    public void videoSwitch()
+    {
+        musicTabs.setVisibility(View.GONE);
+        videoTabs.setVisibility(View.VISIBLE);
+
+        pager.setAdapter(videoAdapter);
+        pager.addOnPageChangeListener( vTabListener );
+        musicTabs.addOnTabSelectedListener( vPagerListener );
+        pager.invalidate();
+    }
+
+    public static class MusicAdapter extends FragmentPagerAdapter
+    {
+        private Fragment[] views;
+
+        public MusicAdapter(FragmentManager fm)
+        {
+            super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+            init();
+        }
+
+        public void init()
+        {
+            views = new Fragment[ 5 ];
+            views[ 0 ] = new AlbumFragment();
+            views[ 1 ] = new ArtistFragment();
+            views[ 2 ] = new TrackFragment();
+            views[ 3 ] = new GenreFragment();
+            views[ 4 ] = new FolderFragment();
+        }
+
+        @Override
+        public Fragment getItem(int position)
+        {
+            return views[ position ];
+        }
+
+        @Override
+        public int getCount() {
+            return 5;
+        }
+
+        public int getDefaultTabPos() {
+            return 2;
+        }
+    }
+
+    public static class VideoAdapter extends FragmentPagerAdapter
+    {
+        private Fragment[] views;
+
+        public VideoAdapter(FragmentManager fm) {
+            super(fm);
+            init();
+        }
+
+        public void init()
+        {
+            views = new Fragment[ 4 ];
+            views[ 0 ] = new Fragment();
+            views[ 1 ] = new com.gcodes.iplayer.video.FolderFragment();
+            views[ 2 ] = new SeriesFragment();
+            views[ 3 ] = new AllFragment();
+        }
+
+        @Override
+        public Fragment getItem(int position)
+        {
+            return views[ position ];
+        }
+
+        @Override
+        public int getCount() {
+            return 4;
+        }
+
+        public int getDefaultTabPos() {
+            return 2;
+        }
+    }
 
 }

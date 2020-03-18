@@ -188,6 +188,10 @@ public class MusicPlayer
         return musics.get( index );
     }
 
+    public int getPosition(Music music) {
+        return musics.indexOf( music );
+    }
+
     public SimpleExoPlayer getPlayerManager()
     {
         return playerManager.getPlayer();

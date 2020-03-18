@@ -6,6 +6,7 @@ import android.util.Log;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.services.ACRService;
 import com.gcodes.iplayer.services.MusixMatchLyricsService;
+import com.gcodes.iplayer.services.YouTubeService;
 import com.google.api.services.youtube.model.Video;
 import com.google.common.base.Joiner;
 import com.google.gson.JsonElement;
@@ -16,6 +17,7 @@ import org.jmusixmatch.entity.track.TrackData;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,6 +51,93 @@ public abstract class PlayerDatabase extends RoomDatabase
         if ( database == null )
             database = Room.databaseBuilder(context, PlayerDatabase.class, "ultimate_player").build();
         return database;
+    }
+
+    public MusicInfo getInfo( Music music )
+    {
+        MusicInfo info = playerDao().getMusicInfo(music);
+        Log.d("ACR_Service", "from database info is " + info );
+        if ( info == null )
+        {
+            info = ACRService.getInstance().recognizeMusic(music);
+            if ( info != null )
+                playerDao().addMusicInfo( info );
+        }
+        return info;
+    }
+
+    public List<Video> getMusicVideo(Music music )
+    {
+        YouTubeService youtube = YouTubeService.getIntance();
+        String query = String.format( "%s %s", music.getName(), music.getArtist() ) ;
+
+        List<Video> videos;
+        try {
+            videos = youtube.getVideos(query);
+        } catch (IOException e) {
+            e.printStackTrace();
+            videos = new ArrayList<>();
+        }
+        Log.d( "YouTube_API", "The Videos " + videos );
+        return videos;
+    }
+
+    public List<Video> getMusicVideo( MusicInfo music )
+    {
+        YouTubeService youtube = YouTubeService.getIntance();
+        String query = String.format( "%s %s", music.getTitle(), music.getAllArtists() ) ;
+
+        List<Video> videos;
+        try {
+            videos = youtube.getVideos(query);
+        } catch (IOException e) {
+            e.printStackTrace();
+            videos = new ArrayList<>();
+        }
+        Log.d( "YouTube_API", "The Videos " + videos );
+        return videos;
+    }
+
+    public MusicLyrics getLyrics(Music music)
+    {
+        MusicLyrics musicLyrics = playerDao().getDatabaseLyrics(music);
+        Log.d("ACR_Service", "from database musicLyrics is " + musicLyrics);
+        if ( musicLyrics == null )
+        {
+            MusixMatchLyricsService service = MusixMatchLyricsService.getInstance();
+            TrackData track = service.getTrack(music);
+            if ( track != null )
+            {
+                Lyrics lyrics = service.getLyrics(track);
+                if ( lyrics != null )
+                {
+                    musicLyrics = new MusicLyrics(music, track, lyrics);
+                    playerDao().addLyrics( musicLyrics );
+                }
+            }
+        }
+        return musicLyrics;
+    }
+
+    public MusicLyrics getLyrics(MusicInfo info)
+    {
+        MusicLyrics musicLyrics = playerDao().getDatabaseLyrics(info);
+        Log.d("ACR_Service", "from database musicLyrics is " + musicLyrics);
+        if ( musicLyrics == null )
+        {
+            MusixMatchLyricsService service = MusixMatchLyricsService.getInstance();
+            TrackData track = service.getTrack(info);
+            if ( track != null )
+            {
+                Lyrics lyrics = service.getLyrics(track);
+                if ( lyrics != null )
+                {
+                    musicLyrics = new MusicLyrics(info, track, lyrics);
+                    playerDao().addLyrics( musicLyrics );
+                }
+            }
+        }
+        return musicLyrics;
     }
 
     public static PlayerDatabase getInstance()
@@ -533,7 +622,7 @@ public abstract class PlayerDatabase extends RoomDatabase
         public abstract void addMusicVideo(MusicVideo... musicVideos );
 
         @Query("select * from musicinfo where media_id = :mediaKey")
-        public abstract MusicInfo findInfo(long mediaKey );
+        public abstract MusicInfo findInfo(long mediaKey);
 
         @Insert
         public abstract void addLyrics(MusicLyrics... lyrics );
@@ -597,61 +686,6 @@ public abstract class PlayerDatabase extends RoomDatabase
         public MusicLyrics getDatabaseLyrics(MusicInfo info )
         {
             MusicLyrics musicLyrics = findLyrics( info.getAcrid() );
-            return musicLyrics;
-        }
-
-        public MusicInfo getInfo( Music music )
-        {
-            MusicInfo info = getMusicInfo(music);
-            Log.d("ACR_Service", "from database info is " + info );
-            if ( info == null )
-            {
-                info = ACRService.getInstance().recognizeMusic(music);
-                if ( info != null )
-                    addMusicInfo( info );
-            }
-            return info;
-        }
-
-        public MusicLyrics getLyrics(Music music )
-        {
-            MusicLyrics musicLyrics = getDatabaseLyrics(music);
-            Log.d("ACR_Service", "from database musicLyrics is " + musicLyrics);
-            if ( musicLyrics == null )
-            {
-                MusixMatchLyricsService service = MusixMatchLyricsService.getInstance();
-                TrackData track = service.getTrack(music);
-                if ( track != null )
-                {
-                    Lyrics lyrics = service.getLyrics(track);
-                    if ( lyrics != null )
-                    {
-                        musicLyrics = new MusicLyrics(music, track, lyrics);
-                        addLyrics( musicLyrics );
-                    }
-                }
-            }
-            return musicLyrics;
-        }
-
-        public MusicLyrics getLyrics(MusicInfo info )
-        {
-            MusicLyrics musicLyrics = getDatabaseLyrics(info);
-            Log.d("ACR_Service", "from database musicLyrics is " + musicLyrics);
-            if ( musicLyrics == null )
-            {
-                MusixMatchLyricsService service = MusixMatchLyricsService.getInstance();
-                TrackData track = service.getTrack(info);
-                if ( track != null )
-                {
-                    Lyrics lyrics = service.getLyrics(track);
-                    if ( lyrics != null )
-                    {
-                        musicLyrics = new MusicLyrics(info, track, lyrics);
-                        addLyrics( musicLyrics );
-                    }
-                }
-            }
             return musicLyrics;
         }
 

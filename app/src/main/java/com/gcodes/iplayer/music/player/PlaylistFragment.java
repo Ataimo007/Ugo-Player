@@ -34,7 +34,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class PlaylistFragment extends Fragment
 {
-    public PlaylistFragment() {
+    private Music current;
+    private RecyclerView listView;
+    private CustomAdapter adapter;
+
+    public PlaylistFragment()
+    {
+
     }
 
     // try joining audio column to media column
@@ -48,32 +54,29 @@ public class PlaylistFragment extends Fragment
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.playlist_list, container, false);
-        CustomAdapter adapter = new CustomAdapter();
-        RecyclerView listView = view.findViewById( R.id.player_list );
+        adapter = new CustomAdapter();
+        listView = view.findViewById( R.id.player_list );
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
         listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
+        updateList( current );
         return view;
     }
 
+    public void updateMusic( Music music )
+    {
+        current = music;
+        if ( isAdded() )
+        {
+            updateList( music );
+        }
+    }
 
-
-//    public static void hide( FragmentManager fragmentManager ) {
-//        Fragment playlist = fragmentManager.findFragmentByTag("Playlist_View");
-//        FragmentTransaction transaction = fragmentManager.beginTransaction();
-//        transaction.remove( playlist );
-//        transaction.commit();
-//    }
-//
-//    public static void show(FragmentManager fragmentManager) {
-//
-//
-////        VideoTabFragment tabFragment = VideoTabFragment.InitTab(manager, R.layout.video_tabs);
-//        FragmentTransaction transaction = fragmentManager.beginTransaction();
-//        PlaylistFragment musicFragment = new PlaylistFragment();
-//        transaction.add( R.id.player_playlist, musicFragment, "Playlist_View" );
-//        transaction.commit();
-//    }
+    private void updateList(Music music) {
+        int position = MusicPlayer.getInstance().getPosition(music);
+        listView.scrollToPosition( position );
+        adapter.notifyItemChanged( position );
+    }
 
     public class CustomAdapter extends RecyclerView.Adapter<TrackItemHolder>
     {

@@ -1,5 +1,8 @@
 package com.gcodes.iplayer.music.player;
 
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,6 +27,8 @@ import com.gcodes.iplayer.services.YouTubeService;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.offline.Download;
+import com.google.android.material.tabs.TabItem;
+import com.google.android.material.tabs.TabLayout;
 import com.google.api.services.youtube.model.Video;
 
 import org.joda.time.DateTime;
@@ -33,9 +38,12 @@ import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
 
 import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.collection.SparseArrayCompat;
 import androidx.core.util.Consumer;
@@ -47,6 +55,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import at.huber.youtubeExtractor.YtFile;
 
+import static android.view.View.GONE;
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
 import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 
 //import android.support.annotation.NonNull;
@@ -68,11 +79,14 @@ public class MusicVideoFragment extends Fragment
 
     private Handler updateProgress;
     private Player.EventListener trackListener;
+    private View musicVideoTab;
+    private boolean loading = false;
+    private MusicPlayerActivity player;
 
     public MusicVideoFragment() {
     }
 
-    public void setMusic(Music music) {
+    public void updateMusic(Music music) {
         this.music = music;
     }
 
@@ -93,35 +107,22 @@ public class MusicVideoFragment extends Fragment
         this.showMusic = showMusic;
     }
 
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if ( context instanceof MusicPlayerActivity )
+        {
+            player = (MusicPlayerActivity) context;
+            musicVideoTab = player.getMusicVideoTab();
+        }
+    }
+
     // try joining audio column to media column
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         updateProgress = new Handler( getContext().getMainLooper() );
-    }
-
-    private void getMusicVideo( Music music )
-    {
-        YouTubeService youtube = YouTubeService.getIntance();
-//        String query = musicInfo != null ? String.format( "%s %s", musicInfo.getTitle(), musicInfo.getAllArtists() ) :
-//                String.format( "%s %s", music.getName(), music.getArtist() ) ;
-
-        String query = String.format( "%s %s", music.getName(), music.getArtist() ) ;
-
-        Helper.Worker.executeTask(() -> {
-            try {
-                videos = youtube.getVideos(query);
-            } catch (IOException e) {
-                e.printStackTrace();
-                videos = new ArrayList<>();
-            }
-            return () -> {
-                Log.d( "YouTube_API", "The Videos " + videos );
-                adapter.notifyDataSetChanged();
-            };
-        });
-
     }
 
     @Override
@@ -131,19 +132,35 @@ public class MusicVideoFragment extends Fragment
         initRecycleView( view );
 //        initButton( view );
 //        initFrame();
-        initMusicVideos();
+//        initMusicVideos();
         return view;
     }
 
-    private void initMusicVideos() {
-        trackListener = MusicPlayer.registerOnTrackChange(this::getMusicVideo);
-        MusicPlayer.consumeTrack( this::getMusicVideo );
+    public void updateMusicVideos( List<Video> videos ) {
+        this.videos = videos;
+        updateBadger( videos.size() );
+        adapter.notifyDataSetChanged();
+        loading = false;
     }
+
+//    @Override
+//    public void onAttach(@NonNull Context context) {
+//        super.onAttach(context);
+//        if ( context instanceof  MusicPlayerActivity )
+//        {
+//            MusicPlayerActivity player = ( MusicPlayerActivity ) context;
+//            TabItem mVideoTab = player.findViewById(R.id.player_music_video);
+//            mVideoTab.dra
+//            Drawable d;
+//            new Canvas();
+//
+//        }
+//    }
 
     private void initFrame()
     {
         FrameLayout lyricFrame = getActivity().findViewById(R.id.player_lyrics);
-        lyricFrame.setVisibility(View.VISIBLE);
+        lyricFrame.setVisibility(VISIBLE);
     }
 
     private void initRecycleView( View view )
@@ -152,6 +169,31 @@ public class MusicVideoFragment extends Fragment
         listView = view.findViewById( R.id.video_list );
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
+    }
+
+    public void onLoading()
+    {
+        loading = true;
+        if ( adapter != null )
+            adapter.notifyDataSetChanged();
+        if ( musicVideoTab != null )
+        {
+            updateBadger( 0, GONE );
+        }
+    }
+
+    private void updateBadger( int count )
+    {
+        if ( count > 0 )
+            updateBadger( count, VISIBLE );
+    }
+
+    private void updateBadger( int count, int visibility )
+    {
+        TextView badger = musicVideoTab.findViewById(R.id.badger_text);
+        badger.setText( String.valueOf( count ) );
+        badger.setVisibility( visibility );
+        player.updateTabView();
     }
 
     private void initButton( View view )
@@ -167,28 +209,28 @@ public class MusicVideoFragment extends Fragment
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.remove( playlist );
         FrameLayout lyricFrame = getActivity().findViewById(R.id.player_lyrics);
-        lyricFrame.setVisibility(View.GONE);
+        lyricFrame.setVisibility(GONE);
         transaction.commit();
     }
 
-    public static void show(FragmentManager fragmentManager, Music currentMusic) {
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        MusicVideoFragment musicFragment = new MusicVideoFragment();
-        musicFragment.setMusic( currentMusic );
-        transaction.add( R.id.player_lyrics, musicFragment, "Player_Lyrics" );
-        transaction.commit();
-    }
-
-    public static void show(FragmentManager fragmentManager, Music currentMusic, PlayerDatabase.MusicInfo musicInfo, Consumer<Void> showVideo, Consumer<Void> showMusic) {
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        MusicVideoFragment musicFragment = new MusicVideoFragment();
-        musicFragment.setMusic( currentMusic );
-        musicFragment.setMusicInfo( musicInfo );
-        musicFragment.setMusicPrepare( showMusic );
-        musicFragment.setVideoPrepare( showVideo );
-        transaction.add( R.id.player_lyrics, musicFragment, "Player_Lyrics" );
-        transaction.commit();
-    }
+//    public static void show(FragmentManager fragmentManager, Music currentMusic) {
+//        FragmentTransaction transaction = fragmentManager.beginTransaction();
+//        MusicVideoFragment musicFragment = new MusicVideoFragment();
+//        musicFragment.setMusic( currentMusic );
+//        transaction.add( R.id.player_lyrics, musicFragment, "Player_Lyrics" );
+//        transaction.commit();
+//    }
+//
+//    public static void show(FragmentManager fragmentManager, Music currentMusic, PlayerDatabase.MusicInfo musicInfo, Consumer<Void> showVideo, Consumer<Void> showMusic) {
+//        FragmentTransaction transaction = fragmentManager.beginTransaction();
+//        MusicVideoFragment musicFragment = new MusicVideoFragment();
+//        musicFragment.setMusic( currentMusic );
+//        musicFragment.setMusicInfo( musicInfo );
+//        musicFragment.setMusicPrepare( showMusic );
+//        musicFragment.setVideoPrepare( showVideo );
+//        transaction.add( R.id.player_lyrics, musicFragment, "Player_Lyrics" );
+//        transaction.commit();
+//    }
 
     public void prepareVideoPlayer()
     {
@@ -203,28 +245,65 @@ public class MusicVideoFragment extends Fragment
         return musicInfo;
     }
 
-    public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+    public class CustomAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     {
         private SparseArrayCompat< Runnable > progresses = new SparseArrayCompat<>();
         private final int PROGRESS_DELAY = 1000;
 
         @NonNull
         @Override
-        public ItemHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.video_view_item, parent, false);
-            return new ItemHolder(view);
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view;
+            if ( viewType == 0 )
+            {
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.video_view_item, parent, false);
+                return new ItemHolder(view);
+            }
+            else
+            {
+                view = LayoutInflater.from(parent.getContext()).inflate(R.layout.music_video_empty, parent, false);
+                return new EmptyHolder(view);
+            }
         }
 
         @Override
-        public void onViewRecycled(@NonNull ItemHolder holder) {
+        public int getItemViewType(int position) {
+            if ( videos.size() > 0 )
+                return 0;
+            else
+                return 1;
+        }
+
+        @Override
+        public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
             int pos = holder.getAdapterPosition();
             Runnable current = progresses.get(pos);
             updateProgress.removeCallbacks( current );
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            if ( videos.size() > 0 )
+                bindMusicVideo((ItemHolder) holder, position);
+            else
+                bindEmptyVideos((EmptyHolder) holder);
+        }
+
+        private void bindEmptyVideos(EmptyHolder holder) {
+            if ( loading )
+            {
+                holder.reason.setText(String.format( "Please Wait we are loading the music video for %s", music.getName() ) );
+                return;
+            }
+            if ( !Helper.isDeviceOnline( player ) )
+            {
+                holder.reason.setText(String.format( "Please ensure you are connected to the internet to get music video for %s", music.getName() ));
+                return;
+            }
+            holder.reason.setText(String.format( "No music video found for %s", music.getName() ));
+        }
+
+        private void bindMusicVideo(ItemHolder holder, int position) {
             Video video = videos.get(position);
             holder.setTitle( video.getSnippet().getTitle() );
             DateTime publishedAt = DateTime.parse(video.getSnippet().getPublishedAt().toString());
@@ -307,10 +386,24 @@ public class MusicVideoFragment extends Fragment
 
         @Override
         public int getItemCount() {
-            return videos.size();
+            int size = videos.size();
+            if ( size == 0 )
+                return 1;
+            return size;
         }
 
 
+    }
+
+    public class EmptyHolder extends RecyclerView.ViewHolder
+    {
+
+        private final TextView reason;
+
+        public EmptyHolder(@NonNull View itemView) {
+            super(itemView);
+            reason = itemView.findViewById(R.id.empty_reason);
+        }
     }
 
     public class ItemHolder extends RecyclerView.ViewHolder
@@ -334,20 +427,20 @@ public class MusicVideoFragment extends Fragment
 
         public void beginDownload()
         {
-            progress.setVisibility(View.VISIBLE);
-            download.setVisibility(View.INVISIBLE);
+            progress.setVisibility(VISIBLE);
+            download.setVisibility(INVISIBLE);
         }
 
         public void completeDownload()
         {
-            progress.setVisibility(View.GONE);
-            download.setVisibility(View.GONE);
+            progress.setVisibility(GONE);
+            download.setVisibility(GONE);
         }
 
         public void stopDownload()
         {
-            progress.setVisibility(View.GONE);
-            download.setVisibility(View.VISIBLE);
+            progress.setVisibility(GONE);
+            download.setVisibility(VISIBLE);
         }
 
         public String getTitle() {

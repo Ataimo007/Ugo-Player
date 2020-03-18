@@ -4,6 +4,7 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,6 +13,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -23,6 +25,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -47,16 +51,25 @@ public class MusicPlayerFragment extends Fragment
 //    private PlayerView playerView;
 //    private Menu menu;
 //    private Toolbar toolbar;
-    private int currentTrack = -1;
 //    private Music currentMusic;
-    private Player.EventListener trackListener;
 //    private PlayerDatabase.MusicInfo musicInfo;
+
+    private int currentTrack = -1;
+//    private Player.EventListener trackListener;
     private PlayerControlView control;
     private TextView musicName;
     private TextView artistName;
     private ImageView image;
+    private ImageView background;
     private CardView art;
     private Player.EventListener eventListener;
+
+    private String[] lyrics = new String[0];
+    private RecyclerView listView;
+    private CustomAdapter adapter;
+    private ImageButton lyricsButton;
+    private ImageButton videoButton;
+    private Music currentMusic;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -64,6 +77,7 @@ public class MusicPlayerFragment extends Fragment
         AppCompatActivity activity = (AppCompatActivity) context;
         musicName = activity.findViewById( R.id.song_name );
         artistName = activity.findViewById( R.id.artist_name );
+        background = activity.findViewById( R.id.player_background );
     }
 
     @Override
@@ -74,38 +88,27 @@ public class MusicPlayerFragment extends Fragment
         control = content.findViewById(R.id.music_control_view2);
         image = content.findViewById( R.id.player_art );
         art = content.findViewById(R.id.player_album_art);
+        lyricsButton = content.findViewById( R.id.player_show_lyrics );
+        videoButton = content.findViewById( R.id.player_show_video );
+        initView();
+
+        initRecycleView( content );
+        initButton();
+
 //        musicName = content.findViewById( R.id.song_name );
 //        artistName = content.findViewById( R.id.artist_name );
-        initView();
 
         return content;
     }
 
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_music_player2);
-//
-//        toolbar = findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
-//
-//        initView();
-//    }
-
-//    private void prepareMusicPlayer()
-//    {
-//        AspectRatioFrameLayout videoScreen = findViewById(R.id.exo_player_content_frame);
-//        videoScreen.setVisibility( View.GONE );
-//        ConstraintLayout coverArt = findViewById(R.id.player_art_view);
-//        coverArt.setVisibility(View.VISIBLE);
-//    }
-//
-//    private void prepareVideoPlayer()
-//    {
-//        AspectRatioFrameLayout videoScreen = findViewById(R.id.exo_player_content_frame);
-//        videoScreen.setVisibility( View.VISIBLE );
-//        ConstraintLayout coverArt = findViewById(R.id.player_art_view);
-//        coverArt.setVisibility(View.GONE);
-//    }
+    private void initButton() {
+        lyricsButton.setOnClickListener( v -> {
+            if ( isLyricsVisible() )
+                hideLyrics();
+            else
+                showLyrics();
+        });
+    }
 
     private void initView()
     {
@@ -113,17 +116,25 @@ public class MusicPlayerFragment extends Fragment
     }
 
 
-//    public void showLyrics(View view)
-//    {
-//        LyricsFragment.show( getSupportFragmentManager(), currentMusic, musicInfo );
-//    }
+    private void showLyrics()
+    {
+        getView().findViewById( R.id.lyrics_view ).setVisibility( View.VISIBLE );
+    }
 
-//    public void showMusicVideo(View view)
-//    {
-////        MusicVideoFragment.show( getSupportFragmentManager(), currentMusic );
-//        MusicVideoFragment.show( getSupportFragmentManager(), currentMusic, musicInfo, t -> prepareVideoPlayer(),
-//                t1 -> prepareMusicPlayer() );
-//    }
+    public void enableLyrics( boolean enable )
+    {
+        getView().findViewById( R.id.lyrics_view ).setEnabled( enable );
+    }
+
+    private boolean isLyricsVisible()
+    {
+        return getView().findViewById( R.id.lyrics_view ).getVisibility() == View.VISIBLE;
+    }
+
+    private void hideLyrics()
+    {
+        getView().findViewById( R.id.lyrics_view ).setVisibility( View.GONE );
+    }
 
     private void initPlayer()
     {
@@ -131,14 +142,17 @@ public class MusicPlayerFragment extends Fragment
         control.setShowTimeoutMs( -1 );
         control.setPlayer( MusicPlayer.getInstance().getPlayerManager() );
 
+        if ( currentMusic != null )
+            setImage( currentMusic );
+
 //        playerView = findViewById(R.id.music_player_view);
 //        playerView.showController();
 //        playerView.setControllerShowTimeoutMs(-1);
 //        playerView.setControllerHideOnTouch( false );
 //        playerView.setPlayer( MusicPlayer.getInstance().getPlayerManager() );
 
-        trackListener = MusicPlayer.registerOnTrackChange(this::consumeTrack);
-        MusicPlayer.consumeTrack( this::consumeTrack );
+//        trackListener = MusicPlayer.registerOnTrackChange(this::consumeTrack);
+//        MusicPlayer.consumeTrack( this::consumeTrack );
 
     }
 
@@ -148,17 +162,7 @@ public class MusicPlayerFragment extends Fragment
         initRotateAnim();
     }
 
-    @Override
-    public void onStop() {
-        super.onStop();
-        if ( eventListener != null )
-            MusicPlayer.unRegisterOnTrackChange( trackListener );
-        if ( trackListener != null )
-            MusicPlayer.unRegisterOnTrackChange( trackListener );
-    }
-
     private void initRotateAnim() {
-
         eventListener = MusicPlayer.onStateChange(art);
     }
 
@@ -168,87 +172,48 @@ public class MusicPlayerFragment extends Fragment
 //        super.onDestroy();
 //    }
 
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        this.menu = menu;
-//        getMenuInflater().inflate(R.menu.menu_music_activity, menu);
-//        prepareSearchMenu();
-////        return super.onCreateOptionsMenu(menu);
-//        return true;
-//    }
-
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item)
-//    {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        switch  ( id )
-//        {
-//            case R.id.action_playlist:
-//                if  ( item.isChecked() )
-//                    PlaylistFragment.hide( getSupportFragmentManager() );
-//                else
-//                    PlaylistFragment.show( getSupportFragmentManager() );
-//                item.setChecked( !item.isChecked() );
-//                break;
-//        }
-        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_user)
-//        {
-//            Intent user = new Intent( this, LoginUser.class );
-//            startActivity( user );
-//            return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
-//    }
-
-//    private void prepareSearchMenu() {
-//        MenuItem searchItem = menu.findItem(R.id.action_search);
-//
-//        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-//
-//        SearchView searchView = null;
-//        if (searchItem != null) {
-//            searchView = (SearchView) searchItem.getActionView();
-//        }
-//        if (searchView != null) {
-//            searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
-//        }
-//    }
-
-    private void consumeTrack( Music music )
+    public void updateMusic(Music music)
     {
         Log.d("Music_Player", " Consuming track " + music.getName() );
         int newTrack = MusicPlayer.getCurrentTrack();
         if ( currentTrack != -1 || currentTrack != newTrack )
         {
-            setImage( music );
-            musicName.setText( music.getName() );
-            artistName.setText( music.getArtist() );
+            if ( isAdded() )
+                setImage( music );
+            currentMusic = music;
             currentTrack = newTrack;
-//            getLyricsIfExist( music );
         }
+    }
 
-        // get online music info
-//        PlayerDatabase database = PlayerDatabase.getInstance();
-//        Helper.Worker.executeTask( () -> {
-//            musicInfo = database.playerDao().getInfo(music);
-//            return () -> {};
-//        });
+    public void updateInfo(PlayerDatabase.MusicInfo info )
+    {
+        Log.d("Music_Player", " Consuming track " + info.getTitle() );
+        //            setImage( info );
+        //            setBackground( info );
+        musicName.setText( info.getTitle() );
+        artistName.setText( info.getAllArtists() );
+    }
 
-//        update();
-//        recognizeMusic( music );
+    public void updateLyrics(PlayerDatabase.MusicLyrics lyrics )
+    {
+        if ( lyrics != null )
+        {
+            String lyricsBody = lyrics.getLyricsBody();
+            this.lyrics = lyricsBody.split("\n");
+            adapter.notifyDataSetChanged();
+        }
     }
 
     public void setImage(Music music)
     {
         GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( this, music ) )
                 .placeholder( R.drawable.u_song_art_padded ).apply( circleCropTransform() ).into( image );
+    }
+
+    public void setBackground(Music music)
+    {
+        GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( this, music ) )
+                .placeholder( R.drawable.u_song_art_padded ).into( background );
     }
 
 //    private void recognizeMusic( Music music )
@@ -279,32 +244,66 @@ public class MusicPlayerFragment extends Fragment
         });
     }
 
-    private void update() {
+    private void initRecycleView( View view )
+    {
+        adapter = new CustomAdapter();
+        listView = view.findViewById( R.id.lyrics_list );
+        listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
+        listView.setAdapter(adapter);
+        listView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                super.getItemOffsets(outRect, view, parent, state);
+                outRect.top = 20;
+                outRect.bottom = 20;
 
+                if ( parent.getChildAdapterPosition( view ) == 0 )
+                    outRect.top = 10;
+
+                if ( parent.getChildAdapterPosition( view ) == parent.getAdapter().getItemCount() - 1 )
+                    outRect.bottom = 10;
+            }
+        });
     }
 
-//    public void imageToToolbar(String path)
-//    {
-//        if ( path != null && !path.isEmpty() )
-//        {
-//            Bitmap bitmap = BitmapFactory.decodeFile(path);
-//            if ( bitmap != null )
-//            {
-//                Bitmap smallBitmap = Bitmap.createScaledBitmap(bitmap, 70, 70, true);
-//                if ( bitmap != null )
-//                {
-//                    BitmapDrawable art = new BitmapDrawable(getResources(), smallBitmap);
-//                    Glide.with( this ).load( bitmap )
-//                            .apply( RequestOptions.bitmapTransform(new BlurTransformation( 10, 1 ) ) )
-//                            .into( ( ImageView ) findViewById(R.id.music_background) );
-//                    toolbar.setLogo( art );
-//                    return;
-//                }
-//            }
-//        }
-//        int resId = getResources().getIdentifier("ic_track_black_24dp", "drawable", getPackageName());
-//        Glide.with( this ).load( R.drawable.ic_track_black_24dp )
-//                .into( ( ImageView ) findViewById(R.id.music_background) );
-//        toolbar.setLogo( resId );
-//    }
+    public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
+    {
+        @NonNull
+        @Override
+        public ItemHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.single_item, parent, false);
+            return new ItemHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
+            String lyric = lyrics[position];
+            holder.setItemName( lyric );
+        }
+
+        @Override
+        public int getItemCount() {
+            return lyrics.length;
+        }
+    }
+
+    public class ItemHolder extends RecyclerView.ViewHolder
+    {
+        private TextView itemName;
+
+        public ItemHolder(@NonNull View itemView) {
+            super(itemView);
+            itemName = itemView.findViewById(R.id.item_name);
+        }
+
+        public String getItemName() {
+            return String.valueOf(itemName.getText());
+        }
+
+        public void setItemName(String text) {
+            this.itemName.setText( text );
+        }
+    }
+
 }

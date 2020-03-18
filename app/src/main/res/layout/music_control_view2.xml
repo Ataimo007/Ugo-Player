@@ -3,9 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="120dp"
+    android:layout_height="130dp"
     android:layout_gravity="bottom"
-    android:background="?attr/colorPrimary">
+    android:background="@drawable/player_tab_background">
 
     <com.google.android.exoplayer2.ui.DefaultTimeBar
         android:id="@+id/exo_progress"
@@ -27,11 +27,10 @@
         android:id="@+id/constraintLayout3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/imageButton"
         app:layout_constraintEnd_toEndOf="@+id/exo_progress"
         app:layout_constraintStart_toStartOf="@+id/exo_progress"
-        app:layout_constraintTop_toBottomOf="@+id/exo_progress"
-        app:layout_constraintVertical_bias="0.3">
+        app:layout_constraintTop_toBottomOf="@+id/exo_position">
 
         <ImageView
             android:id="@+id/exo_pause"
@@ -138,5 +137,36 @@
         android:text="0:00"
         android:textColor="@color/colorAccent2"
         app:layout_constraintEnd_toEndOf="@+id/exo_progress"
-        app:layout_constraintTop_toBottomOf="@+id/exo_progress" />
+        app:layout_constraintTop_toTopOf="@+id/exo_position" />
+
+    <ImageButton
+        android:id="@+id/player_remove_voice"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginBottom="8dp"
+        android:adjustViewBounds="true"
+        android:background="@android:color/transparent"
+        android:backgroundTint="@android:color/transparent"
+        android:cropToPadding="true"
+        android:scaleType="centerCrop"
+        android:tint="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/exo_progress"
+        app:srcCompat="@drawable/u_nomic" />
+
+    <ImageButton
+        android:id="@+id/player_show_lyrics"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginBottom="8dp"
+        android:adjustViewBounds="true"
+        android:background="@android:color/transparent"
+        android:backgroundTint="@android:color/transparent"
+        android:cropToPadding="true"
+        android:scaleType="centerCrop"
+        android:tint="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/exo_progress"
+        app:srcCompat="@drawable/exo_icon_subtitle" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

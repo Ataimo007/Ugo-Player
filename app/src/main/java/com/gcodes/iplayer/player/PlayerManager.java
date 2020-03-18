@@ -74,7 +74,8 @@ public class PlayerManager
         this.context = context;
 
         PlayerDatabase.initialize( context );
-        ACRService.getInstance( context );
+        ACRService.initialize(context);
+//        ACRService.getInstance( context );
     }
 
     private void initPlayerControl()
