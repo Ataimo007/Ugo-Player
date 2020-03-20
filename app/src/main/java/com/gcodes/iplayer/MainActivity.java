@@ -8,20 +8,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 
 import com.gcodes.iplayer.music.MusicFragment;
-import com.gcodes.iplayer.music.album.AlbumFragment;
-import com.gcodes.iplayer.music.artist.ArtistFragment;
-import com.gcodes.iplayer.music.folder.FolderFragment;
-import com.gcodes.iplayer.music.genre.GenreFragment;
-import com.gcodes.iplayer.music.track.TrackFragment;
 import com.gcodes.iplayer.player.PlayerManager;
-import com.gcodes.iplayer.video.AllFragment;
-import com.gcodes.iplayer.video.SeriesFragment;
 import com.gcodes.iplayer.video.VideoFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.tabs.TabLayout;
 
 import java.util.function.Supplier;
 
@@ -34,6 +25,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager.widget.ViewPager;
 
 public class MainActivity extends AppCompatActivity
@@ -46,16 +38,21 @@ public class MainActivity extends AppCompatActivity
             = this::doSelection;
     private Menu menu;
     private BackManager backAction;
-
-    private TabLayout.ViewPagerOnTabSelectedListener mPagerListener;
-    private TabLayout.TabLayoutOnPageChangeListener mTabListener;
-    private MusicAdapter musicAdapter;
-    private TabLayout musicTabs;
     private ViewPager pager;
-    private TabLayout videoTabs;
-    private VideoAdapter videoAdapter;
-    private TabLayout.TabLayoutOnPageChangeListener vTabListener;
-    private TabLayout.ViewPagerOnTabSelectedListener vPagerListener;
+    private AppPagerAdapter adapter;
+
+//    private MusicFragment music;
+//    private VideoFragment video;
+
+//    private TabLayout.ViewPagerOnTabSelectedListener mPagerListener;
+//    private TabLayout.TabLayoutOnPageChangeListener mTabListener;
+//    private TabLayout musicTabs;
+//    private TabLayout videoTabs;
+//    private TabLayout.TabLayoutOnPageChangeListener vTabListener;
+//    private TabLayout.ViewPagerOnTabSelectedListener vPagerListener;
+
+//    private MusicAdapter musicAdapter;
+//    private VideoAdapter videoAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,18 +97,38 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    private void initContent() {
-        musicTabs = findViewById(R.id.music_tabs);
-        pager = findViewById( R.id.content_viewpager );
-        musicAdapter = new MusicAdapter(getSupportFragmentManager());
-        mTabListener = new TabLayout.TabLayoutOnPageChangeListener(musicTabs);
-        mPagerListener = new TabLayout.ViewPagerOnTabSelectedListener(pager);
+//    private void initContent() {
+//        music = new MusicFragment();
+//        video = new VideoFragment();
+//
+//    }
 
-        videoTabs = findViewById(R.id.video_tabs);
-        videoAdapter = new VideoAdapter(getSupportFragmentManager());
-        vTabListener = new TabLayout.TabLayoutOnPageChangeListener(musicTabs);
-        vPagerListener = new TabLayout.ViewPagerOnTabSelectedListener(pager);
+    private void switchFragment(Fragment fragment)
+    {
+        FragmentManager manager = getSupportFragmentManager();
+        FragmentTransaction transaction = manager.beginTransaction();
+        transaction.replace( R.id.layout_main, fragment);
+        transaction.commit();
     }
+
+    private void initContent() {
+        adapter = new AppPagerAdapter(getSupportFragmentManager());
+        pager = findViewById( R.id.layout_main );
+        pager.setAdapter( adapter );
+    }
+
+//    private void initContent() {
+//        musicTabs = findViewById(R.id.music_tabs);
+//        pager = findViewById( R.id.content_viewpager );
+//        musicAdapter = new MusicAdapter(getSupportFragmentManager());
+//        mTabListener = new TabLayout.TabLayoutOnPageChangeListener(musicTabs);
+//        mPagerListener = new TabLayout.ViewPagerOnTabSelectedListener(pager);
+//
+//        videoTabs = findViewById(R.id.video_tabs);
+//        videoAdapter = new VideoAdapter(getSupportFragmentManager());
+//        vTabListener = new TabLayout.TabLayoutOnPageChangeListener(musicTabs);
+//        vPagerListener = new TabLayout.ViewPagerOnTabSelectedListener(pager);
+//    }
 
     @Override
     protected void onStart() {
@@ -132,13 +149,17 @@ public class MainActivity extends AppCompatActivity
     {
         switch (id) {
             case R.id.navigation_music:
+//                MusicFragment.InitFragments( this );
+//                musicSwitch();
 //                Log.d("Selecting_music", "Selected Music" );
-//                MusicFragment.InitFragments( getSupportFragmentManager() );
-                musicSwitch();
+//                switchFragment( music );
+                pager.setCurrentItem( 0 );
                 return true;
             case R.id.navigation_video:
-//                VideoFragment.InitFragments( getSupportFragmentManager() );
-                videoSwitch();
+//                VideoFragment.InitFragments( this );
+//                videoSwitch();
+//                switchFragment( video );
+                pager.setCurrentItem( 1 );
                 return true;
             default:
                 return false;
@@ -217,96 +238,134 @@ public class MainActivity extends AppCompatActivity
         boolean goBack();
     }
 
-    public void musicSwitch()
+    public static class AppPagerAdapter extends FragmentPagerAdapter
     {
-        videoTabs.setVisibility(View.GONE);
-        musicTabs.setVisibility(View.VISIBLE);
+        private final MusicFragment music;
+        private final VideoFragment video;
 
-        pager.setAdapter(musicAdapter);
-        pager.addOnPageChangeListener( mTabListener );
-        musicTabs.addOnTabSelectedListener( mPagerListener );
-        pager.invalidate();
-    }
-
-    public void videoSwitch()
-    {
-        musicTabs.setVisibility(View.GONE);
-        videoTabs.setVisibility(View.VISIBLE);
-
-        pager.setAdapter(videoAdapter);
-        pager.addOnPageChangeListener( vTabListener );
-        musicTabs.addOnTabSelectedListener( vPagerListener );
-        pager.invalidate();
-    }
-
-    public static class MusicAdapter extends FragmentPagerAdapter
-    {
-        private Fragment[] views;
-
-        public MusicAdapter(FragmentManager fm)
+        public AppPagerAdapter(FragmentManager fm)
         {
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
-            init();
-        }
-
-        public void init()
-        {
-            views = new Fragment[ 5 ];
-            views[ 0 ] = new AlbumFragment();
-            views[ 1 ] = new ArtistFragment();
-            views[ 2 ] = new TrackFragment();
-            views[ 3 ] = new GenreFragment();
-            views[ 4 ] = new FolderFragment();
+            music = new MusicFragment();
+            video = new VideoFragment();
         }
 
         @Override
         public Fragment getItem(int position)
         {
-            return views[ position ];
+            switch ( position )
+            {
+                case 0:
+                    return music;
+
+                case 1:
+                    return video;
+
+                default:
+                    return new Fragment();
+            }
         }
 
         @Override
         public int getCount() {
-            return 5;
+            return 2;
         }
 
         public int getDefaultTabPos() {
-            return 2;
+            return 0;
         }
     }
 
-    public static class VideoAdapter extends FragmentPagerAdapter
-    {
-        private Fragment[] views;
-
-        public VideoAdapter(FragmentManager fm) {
-            super(fm);
-            init();
-        }
-
-        public void init()
-        {
-            views = new Fragment[ 4 ];
-            views[ 0 ] = new Fragment();
-            views[ 1 ] = new com.gcodes.iplayer.video.FolderFragment();
-            views[ 2 ] = new SeriesFragment();
-            views[ 3 ] = new AllFragment();
-        }
-
-        @Override
-        public Fragment getItem(int position)
-        {
-            return views[ position ];
-        }
-
-        @Override
-        public int getCount() {
-            return 4;
-        }
-
-        public int getDefaultTabPos() {
-            return 2;
-        }
-    }
+//    public void musicSwitch()
+//    {
+//        videoTabs.setVisibility(View.GONE);
+//        musicTabs.setVisibility(View.VISIBLE);
+//
+//        pager.setAdapter(musicAdapter);
+//        pager.addOnPageChangeListener( mTabListener );
+//        musicTabs.addOnTabSelectedListener( mPagerListener );
+//        pager.invalidate();
+//    }
+//
+//    public void videoSwitch()
+//    {
+//        musicTabs.setVisibility(View.GONE);
+//        videoTabs.setVisibility(View.VISIBLE);
+//
+//        pager.setAdapter(videoAdapter);
+//        pager.addOnPageChangeListener( vTabListener );
+//        musicTabs.addOnTabSelectedListener( vPagerListener );
+//        pager.invalidate();
+//    }
+//
+//    public static class MusicAdapter extends FragmentPagerAdapter
+//    {
+//        private Fragment[] views;
+//
+//        public MusicAdapter(FragmentManager fm)
+//        {
+//            super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+//            init();
+//        }
+//
+//        public void init()
+//        {
+//            views = new Fragment[ 5 ];
+//            views[ 0 ] = new AlbumFragment();
+//            views[ 1 ] = new ArtistFragment();
+//            views[ 2 ] = new TrackFragment();
+//            views[ 3 ] = new GenreFragment();
+//            views[ 4 ] = new FolderFragment();
+//        }
+//
+//        @Override
+//        public Fragment getItem(int position)
+//        {
+//            return views[ position ];
+//        }
+//
+//        @Override
+//        public int getCount() {
+//            return 5;
+//        }
+//
+//        public int getDefaultTabPos() {
+//            return 2;
+//        }
+//    }
+//
+//    public static class VideoAdapter extends FragmentPagerAdapter
+//    {
+//        private Fragment[] views;
+//
+//        public VideoAdapter(FragmentManager fm) {
+//            super(fm);
+//            init();
+//        }
+//
+//        public void init()
+//        {
+//            views = new Fragment[ 4 ];
+//            views[ 0 ] = new Fragment();
+//            views[ 1 ] = new com.gcodes.iplayer.video.FolderFragment();
+//            views[ 2 ] = new SeriesFragment();
+//            views[ 3 ] = new AllFragment();
+//        }
+//
+//        @Override
+//        public Fragment getItem(int position)
+//        {
+//            return views[ position ];
+//        }
+//
+//        @Override
+//        public int getCount() {
+//            return 4;
+//        }
+//
+//        public int getDefaultTabPos() {
+//            return 2;
+//        }
+//    }
 
 }

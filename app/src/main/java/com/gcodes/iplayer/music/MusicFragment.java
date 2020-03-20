@@ -12,8 +12,10 @@ import com.gcodes.iplayer.music.artist.ArtistFragment;
 import com.gcodes.iplayer.music.folder.FolderFragment;
 import com.gcodes.iplayer.music.genre.GenreFragment;
 import com.gcodes.iplayer.music.track.TrackFragment;
+import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -46,12 +48,18 @@ public class MusicFragment extends Fragment
         this.tabLayout = tabLayout;
     }
 
-    public static void InitFragments(FragmentManager manager )
+    public static void InitFragments(AppCompatActivity activity)
     {
-        MusicTabFragment tabFragment = MusicTabFragment.InitTab(manager, R.layout.music_tabs);
+//        MusicTabFragment tabFragment = MusicTabFragment.InitTab(manager, R.layout.music_tabs);
+        FragmentManager manager = activity.getSupportFragmentManager();
+        activity.findViewById( R.id.video_tabs ).setVisibility( View.GONE );
+        TabLayout musicTabs = activity.findViewById(R.id.music_tabs);
+        musicTabs.setVisibility( View.VISIBLE );
+        Log.d( "Music_Tabs", "Music tabs " + musicTabs );
+
         FragmentTransaction transaction = manager.beginTransaction();
         MusicFragment fragment = new MusicFragment();
-        fragment.setTabLayout( tabFragment.getTab() );
+        fragment.setTabLayout( musicTabs );
         transaction.replace( R.id.main_content, fragment);
         transaction.commit();
     }
@@ -65,13 +73,14 @@ public class MusicFragment extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View content = inflater.inflate(R.layout.music_view_pager, container, false);
 //        mSectionsPagerAdapter = new SectionsPagerAdapter( getFragmentManager() );
-        mViewPager = content.findViewById( R.id.music_viewpager );
-        tabLayout = getActivity().findViewById( R.id.app_tabs );
+        View content = inflater.inflate(R.layout.music_fragment, container, false);
+        mViewPager = content.findViewById( R.id.main_content );
+        tabLayout = content.findViewById( R.id.music_tabs );
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
-        getTabLayout().addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
+        tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
+
 //        tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
 
         initState( savedInstanceState );

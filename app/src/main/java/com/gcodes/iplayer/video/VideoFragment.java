@@ -9,6 +9,7 @@ import com.gcodes.iplayer.R;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.tabs.TabLayout;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -46,12 +47,16 @@ public class VideoFragment extends Fragment
         this.tabLayout = tabLayout;
     }
 
-    public static void InitFragments(FragmentManager manager )
+    public static void InitFragments(AppCompatActivity activity)
     {
-        VideoTabFragment tabFragment = VideoTabFragment.InitTab(manager, R.layout.video_tabs);
+        FragmentManager manager = activity.getSupportFragmentManager();
+        activity.findViewById( R.id.music_tabs ).setVisibility( View.GONE );
+        TabLayout videoTabs = activity.findViewById(R.id.video_tabs);
+        videoTabs.setVisibility( View.VISIBLE );
+
         FragmentTransaction transaction = manager.beginTransaction();
         VideoFragment fragment = new VideoFragment();
-        fragment.setTabLayout( tabFragment.getTab() );
+        fragment.setTabLayout( videoTabs );
         transaction.replace( R.id.main_content, fragment);
         transaction.commit();
     }
@@ -59,17 +64,18 @@ public class VideoFragment extends Fragment
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mSectionsPagerAdapter = new SectionsPagerAdapter( getChildFragmentManager() );
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View content = inflater.inflate(R.layout.video_view_pager, container, false);
-        mSectionsPagerAdapter = new SectionsPagerAdapter( getChildFragmentManager() );
-        mViewPager = (ViewPager) content;
+        View content = inflater.inflate(R.layout.video_fragment, container, false);
+        mViewPager = content.findViewById( R.id.main_content );
+        tabLayout = content.findViewById( R.id.video_tabs );
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
-        getTabLayout().addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
+        tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
 
         getTabLayout().getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
         return content;
