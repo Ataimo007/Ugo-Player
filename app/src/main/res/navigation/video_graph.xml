@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/music_graph"
+    app:startDestination="@id/videoFragment">
+    <fragment
+        android:id="@+id/videoFragment"
+        android:name="com.gcodes.iplayer.video.VideoFragment"
+        android:label="video_fragment"
+        tools:layout="@layout/video_fragment" >
+        <action
+            android:id="@+id/action_videoFragment_to_seriesPlayerFragment"
+            app:destination="@id/seriesPlayerFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/seriesPlayerFragment"
+        android:name="com.gcodes.iplayer.video.series.SeriesPlayerFragment"
+        android:label="series_player"
+        tools:layout="@layout/series_player" />
+</navigation>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/control_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:minHeight="70dp"
+    tools:context=".music.player.FragmentMusic">
+
+    <com.google.android.exoplayer2.ui.DefaultTimeBar
+        android:id="@+id/exo_progress"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:bar_height="0.5dp"
+        app:buffered_color="@color/colorAccent3"
+        app:color="@color/colorAccent3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/exo_track"
+        app:layout_constraintStart_toStartOf="@+id/exo_track"
+        app:layout_constraintTop_toBottomOf="@+id/exo_track"
+        app:played_color="@color/colorPrimaryDark"
+        app:unplayed_color="@color/colorAccent3" />
+
+    <TextView
+        android:id="@+id/exo_track"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="10dp"
+        android:lines="1"
+        android:overScrollMode="ifContentScrolls"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:singleLine="true"
+        android:text="Name Of Video"
+        android:textColor="@color/colorAccent5"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toTopOf="@+id/exo_progress"
+        app:layout_constraintEnd_toStartOf="@+id/constraintLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/exo_position"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0:00"
+        android:textColor="@color/colorAccent5"
+        app:layout_constraintBottom_toBottomOf="@+id/exo_progress"
+        app:layout_constraintEnd_toEndOf="@+id/exo_stop"
+        app:layout_constraintStart_toStartOf="@+id/constraintLayout"
+        app:layout_constraintTop_toTopOf="@+id/exo_progress" />
+
+    <ImageView
+        android:id="@+id/exo_stop"
+        android:layout_width="18dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="10dp"
+        app:srcCompat="@drawable/u_stop"
+        app:layout_constraintBottom_toBottomOf="@+id/constraintLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/constraintLayout" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout"
+        android:layout_width="18dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="10dp"
+        app:layout_constraintBottom_toBottomOf="@+id/exo_track"
+        app:layout_constraintEnd_toStartOf="@+id/exo_stop"
+        app:layout_constraintTop_toTopOf="@+id/exo_track">
+
+        <ImageView
+            android:id="@+id/exo_pause"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:src="@drawable/u_pause"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@android:color/black" />
+
+        <ImageView
+            android:id="@+id/exo_play"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:adjustViewBounds="false"
+            android:cropToPadding="false"
+            android:src="@drawable/u_play"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@android:color/black" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
