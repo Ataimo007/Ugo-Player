@@ -2,35 +2,49 @@ package com.gcodes.iplayer.video;
 
 import android.database.Cursor;
 import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.provider.MediaStore;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.gcodes.iplayer.helpers.Helper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 import java.io.Serializable;
+
+import static com.gcodes.iplayer.helpers.Helper.gson;
 
 public class Video implements Comparable< Video >, Serializable
 {
     private final String name;
     private final long id;
     private final long duration;
+    private final long date;
     private final String data;
-    private static final Gson gson = new Gson();
 
-
-    public Video(String name, long id, long duration, String data) {
+    public Video(String name, long id, long duration, long date, String data) {
         this.name = name;
         this.id = id;
+        this.date = date;
         this.data = data;
         this.duration = duration;
     }
 
-    public static Video getIntance( Bundle bundle )
+    public DateTime getDate()
+    {
+        return new DateTime( Duration.standardSeconds( date ).getMillis() );
+    }
+
+    public String getDateString()
+    {
+        return Helper.getDate( new DateTime( Duration.standardSeconds( date ).getMillis() ) );
+    }
+
+    public static Video getIntance(Bundle bundle )
     {
         return new Video( bundle.getString("name"), bundle.getLong("id"), bundle.getLong( "duration" ),
-                bundle.getString("data") );
+                bundle.getLong( "date" ), bundle.getString("data") );
     }
 
     public static Video getIntance( Cursor cursor )
@@ -38,6 +52,7 @@ public class Video implements Comparable< Video >, Serializable
         return new Video( cursor.getString( cursor.getColumnIndex(MediaStore.Video.Media.TITLE)),
                 cursor.getLong( cursor.getColumnIndex(MediaStore.Video.Media._ID)),
                 cursor.getLong( cursor.getColumnIndex(MediaStore.Video.Media.DURATION)),
+                cursor.getLong( cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)),
                 cursor.getString( cursor.getColumnIndex(MediaStore.Video.Media.DATA)) );
     }
 
@@ -71,24 +86,34 @@ public class Video implements Comparable< Video >, Serializable
 
     public Bundle toBundle()
     {
+
         Bundle vid = new Bundle();
         vid.putString( "name", name );
         vid.putLong( "id", id );
         vid.putLong( "duration", duration );
+        vid.putLong( "date", date );
         vid.putString( "data", data );
         return vid;
     }
 
     public String toGson()
     {
-//        Gson gson = new Gson();
         return gson.toJson(this );
+    }
+
+    public JsonObject toJson()
+    {
+        return JsonParser.parseString(gson.toJson(this)).getAsJsonObject();
     }
 
     public static Video fromGson( String json )
     {
-//        Gson gson = new Gson();
         return gson.fromJson( json, Video.class );
+    }
+
+    public static Video fromJson( JsonObject json )
+    {
+        return gson.fromJson( json.toString(), Video.class );
     }
 
 }

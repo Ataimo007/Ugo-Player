@@ -2,12 +2,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/navigation_music"
+        android:id="@id/musicFragment"
         android:icon="@drawable/u_music"
         android:title="Music" />
 
     <item
-        android:id="@+id/navigation_video"
+        android:id="@id/videoFragment"
         android:icon="@drawable/u_movie"
         android:title="Video" />
 

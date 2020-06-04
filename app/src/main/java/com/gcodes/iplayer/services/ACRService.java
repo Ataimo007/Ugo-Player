@@ -1,6 +1,7 @@
 package com.gcodes.iplayer.services;
 
 import android.content.Context;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.util.Log;
 
@@ -14,6 +15,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.joda.time.Duration;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -23,6 +26,8 @@ public class ACRService
 {
     private static ACRService acrService;
     private final Context context;
+
+    private final static Duration DURATION_LIMIT = Duration.standardMinutes( 20 );
 
     private final ACRCloudRecognizer acr;
 
@@ -61,6 +66,9 @@ public class ACRService
         JsonObject info = null;
         try {
             String result = recognizeMusicOnline(music, context);
+            if ( result == null )
+                return null;
+
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             info = gson.fromJson(result, JsonObject.class);
             Log.d( "ACR_Service", "The info " + info );
@@ -79,13 +87,34 @@ public class ACRService
         return null;
     }
 
-    public String recognizeMusicOnline(Music music, Context context ) throws IOException {
-        Uri uri = music.toUri();
-        InputStream inputStream = context.getContentResolver().openInputStream(uri);
-        byte[] bufferMusic = Helper.copyToBuffer( inputStream );
-        Log.d( "ACR_Service", "The music buffer length " + bufferMusic.length );
-        String result = acr.recognizeByFileBuffer(bufferMusic, bufferMusic.length, 10);
-        Log.d( "ACR_Service", "ACR result " + result );
-        return result;
+    private boolean isWithin(Music music, Context context) throws Exception
+    {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        retriever.setDataSource(context, music.toUri());
+        String milliDuration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        Duration duration = Duration.millis(Long.parseLong(milliDuration));
+        Log.d("ACR_Service", String.format("ACR music %s, duration %s, limit %s", music.getName(), duration.getStandardMinutes(), DURATION_LIMIT.getStandardMinutes() ) );
+        return duration.isShorterThan( DURATION_LIMIT );
+    }
+
+    public String recognizeMusicOnline(Music music, Context context) throws IOException {
+
+        try {
+            if ( isWithin(music, context) )
+            {
+                Uri uri = music.toUri();
+                InputStream inputStream = context.getContentResolver().openInputStream(uri);
+                byte[] bufferMusic = Helper.copyToBuffer( inputStream );
+                Log.d( "ACR_Service", "The music buffer length " + bufferMusic.length );
+                String result = acr.recognizeByFileBuffer(bufferMusic, bufferMusic.length, 10);
+                Log.d( "ACR_Service", "ACR result " + result );
+                return result;
+            }
+        } catch (Exception e) {
+            Log.d( "ACR_Service", "Music Data doesn't exist" );
+            return null;
+        }
+        Log.d( "ACR_Service", "The music is longer than duration" );
+        return null;
     }
 }

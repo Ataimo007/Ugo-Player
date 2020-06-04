@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.services.ACRService;
+import com.gcodes.iplayer.services.LyricsOVH;
 import com.gcodes.iplayer.services.MusixMatchLyricsService;
 import com.gcodes.iplayer.services.YouTubeService;
 import com.google.api.services.youtube.model.Video;
@@ -36,6 +37,8 @@ import androidx.room.RoomDatabase;
 import androidx.room.Transaction;
 import androidx.room.TypeConverter;
 import androidx.room.TypeConverters;
+
+import retrofit2.Call;
 
 @Database( entities = {PlayerDatabase.MusicInfo.class, PlayerDatabase.MusicLyrics.class,
         PlayerDatabase.MusicVideo.class}, version = 1, exportSchema = false )
@@ -108,11 +111,20 @@ public abstract class PlayerDatabase extends RoomDatabase
             TrackData track = service.getTrack(music);
             if ( track != null )
             {
-                Lyrics lyrics = service.getLyrics(track);
-                if ( lyrics != null )
+                LyricsOVH.Lyrics lyric = LyricsOVH.getLyrics(music.getArtist(), music.getName());
+                if ( lyric != null )
                 {
-                    musicLyrics = new MusicLyrics(music, track, lyrics);
+                    musicLyrics = new MusicLyrics(music, track, lyric);
                     playerDao().addLyrics( musicLyrics );
+                }
+                else
+                {
+                    Lyrics lyrics = service.getLyrics(track);
+                    if ( lyrics != null )
+                    {
+                        musicLyrics = new MusicLyrics(music, track, lyrics);
+                        playerDao().addLyrics( musicLyrics );
+                    }
                 }
             }
         }
@@ -129,11 +141,19 @@ public abstract class PlayerDatabase extends RoomDatabase
             TrackData track = service.getTrack(info);
             if ( track != null )
             {
-                Lyrics lyrics = service.getLyrics(track);
-                if ( lyrics != null )
+                LyricsOVH.Lyrics lyric = LyricsOVH.getLyrics(info.getAllArtists(), info.getTitle());
+                Log.d("ACR_Service", "from database Lyrics is " + lyric);
+                if ( lyric != null )
                 {
-                    musicLyrics = new MusicLyrics(info, track, lyrics);
+                    musicLyrics = new MusicLyrics(info, track, lyric);
                     playerDao().addLyrics( musicLyrics );
+                }
+                else {
+                    Lyrics lyrics = service.getLyrics(track);
+                    if (lyrics != null) {
+                        musicLyrics = new MusicLyrics(info, track, lyrics);
+                        playerDao().addLyrics(musicLyrics);
+                    }
                 }
             }
         }
@@ -356,6 +376,14 @@ public abstract class PlayerDatabase extends RoomDatabase
             pixelTrackingURL = lyrics.getPixelTrackingURL();
         }
 
+        public MusicLyrics(Music music, TrackData data, LyricsOVH.Lyrics lyrics )
+        {
+            mediaId = music.getMediaId();
+            trackId = data.getTrackId();
+            albumArt = data.getAlbumCoverart800x800();
+            lyricsBody = lyrics.getLyrics();
+        }
+
         public MusicLyrics(String acrid, long mediaId, long trackId, String albumArt, String lyricsBody, String lyricsCopyright, int lyricsId, String lyricsLanguage, String pixelTrackingURL, String scriptTrackingURL) {
             this.acrid = acrid;
             this.mediaId = mediaId;
@@ -367,6 +395,14 @@ public abstract class PlayerDatabase extends RoomDatabase
             this.lyricsLanguage = lyricsLanguage;
             this.pixelTrackingURL = pixelTrackingURL;
             this.scriptTrackingURL = scriptTrackingURL;
+        }
+
+        public MusicLyrics(MusicInfo info, TrackData data, LyricsOVH.Lyrics lyric) {
+            acrid = info.getAcrid();
+            mediaId = info.getMediaId();
+            trackId = data.getTrackId();
+            albumArt = data.getAlbumCoverart800x800();
+            lyricsBody = lyric.getLyrics();
         }
 
         @Override

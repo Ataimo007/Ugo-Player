@@ -6,25 +6,26 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.gcodes.iplayer.R;
+import com.gcodes.iplayer.video.folder.FolderFragment;
+import com.gcodes.iplayer.video.series.SeriesFragment;
+import com.gcodes.iplayer.video.videos.AllFragment;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.tabs.TabLayout;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.MutableLiveData;
+import androidx.navigation.NavBackStackEntry;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager.widget.ViewPager;
 
 
-///**
-// * A simple {@link Fragment} subclass.
-// * Activities that contain this fragment must implement the
-// * {@link UtilityFragment.OnFragmentInteractionListener} interface
-// * to handle interaction events.
-// * Use the {@link UtilityFragment#newInstance} factory method to
-// * create an instance of this fragment.
-// */
 public class VideoFragment extends Fragment
 {
 
@@ -34,32 +35,6 @@ public class VideoFragment extends Fragment
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private ViewPager mViewPager;
     private TabLayout tabLayout;
-
-//    public UtilityFragment() {
-//        // Required empty public constructor
-//    }
-
-    public TabLayout getTabLayout() {
-        return tabLayout;
-    }
-
-    public void setTabLayout(TabLayout tabLayout) {
-        this.tabLayout = tabLayout;
-    }
-
-    public static void InitFragments(AppCompatActivity activity)
-    {
-        FragmentManager manager = activity.getSupportFragmentManager();
-        activity.findViewById( R.id.music_tabs ).setVisibility( View.GONE );
-        TabLayout videoTabs = activity.findViewById(R.id.video_tabs);
-        videoTabs.setVisibility( View.VISIBLE );
-
-        FragmentTransaction transaction = manager.beginTransaction();
-        VideoFragment fragment = new VideoFragment();
-        fragment.setTabLayout( videoTabs );
-        transaction.replace( R.id.main_content, fragment);
-        transaction.commit();
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -73,30 +48,45 @@ public class VideoFragment extends Fragment
         View content = inflater.inflate(R.layout.video_fragment, container, false);
         mViewPager = content.findViewById( R.id.main_content );
         tabLayout = content.findViewById( R.id.video_tabs );
+        Toolbar appbar = content.findViewById(R.id.app_toolbar);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
 
-        getTabLayout().getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
+        tabLayout.getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
+
+        mViewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener(){
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                appbar.setTitle( mSectionsPagerAdapter.getPageTitle( position ) );
+            }
+        });
+
+        NavHostFragment.findNavController( this ).getBackStackEntry(R.id.videoFragment).getSavedStateHandle().getLiveData("Page_Title_Changed").observe( getViewLifecycleOwner(),
+                hasChanged -> {
+                    appbar.setTitle( mSectionsPagerAdapter.getPageTitle( mViewPager.getCurrentItem() ) );
+                });
+
+        // current Title
+        appbar.setTitle( mSectionsPagerAdapter.getPageTitle( mViewPager.getCurrentItem() ) );
+
         return content;
     }
 
+
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
     {
-        private Fragment[] views;
+        private final Fragment[] views;
+//        private final String[] fragmentTitles;
 
         public SectionsPagerAdapter(FragmentManager fm) {
-            super(fm);
-            init();
-        }
-
-        public void init()
-        {
-            views = new Fragment[ 4 ];
-            views[ 0 ] = new Fragment();
-            views[ 1 ] = new FolderFragment();
-            views[ 2 ] = new SeriesFragment();
-            views[ 3 ] = new AllFragment();
+            super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+            views = new Fragment[ 3 ];
+            views[ 0 ] = new AllFragment();
+            views[ 1 ] = new SeriesFragment();
+            views[ 2 ] = new FolderFragment();
+//            fragmentTitles = new String[]{ "Videos", "Series", "Folders"  };
         }
 
         @Override
@@ -105,13 +95,39 @@ public class VideoFragment extends Fragment
             return views[ position ];
         }
 
+        @Nullable
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return (( PageTitle ) views[ position ]).getTitle();
+        }
+
         @Override
         public int getCount() {
-            return 4;
+            return views.length;
         }
 
         public int getDefaultTabPos() {
-            return 2;
+            return 1;
+        }
+
+        public static interface PageTitle
+        {
+            String getTitle();
         }
     }
+
+//    public class VideoViewModel extends ViewModel
+//    {
+//        private MutableLiveData<Boolean> isPlaying = new MutableLiveData<>(false);
+//
+//        public LiveData<Boolean> isPlaying()
+//        {
+//            return this.isPlaying;
+//        }
+//
+//        public void setIsPlaying(Boolean isPlaying )
+//        {
+//            this.isPlaying.setValue( isPlaying );
+//        }
+//    }
 }

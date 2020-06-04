@@ -18,7 +18,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <FrameLayout
-        android:id="@+id/music_control"
+        android:id="@+id/player_control"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"
@@ -41,7 +41,7 @@
         app:elevation="10dp"
         app:fabSize="auto"
         app:hideMotionSpec="@android:anim/fade_out"
-        app:layout_constraintBottom_toTopOf="@+id/music_control"
+        app:layout_constraintBottom_toTopOf="@+id/player_control"
         app:layout_constraintEnd_toEndOf="parent"
         app:rippleColor="@color/colorPrimary"
         app:showMotionSpec="@android:anim/fade_in"

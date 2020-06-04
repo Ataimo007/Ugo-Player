@@ -2,7 +2,6 @@ package com.gcodes.iplayer.music.album;
 
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
@@ -13,9 +12,11 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.ui.UIConstance;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
+import androidx.navigation.NavHostController;
+import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -113,11 +114,13 @@ public class AlbumFragment extends Fragment {
 //                AlbumSession album = new AlbumSession();
 //                Bundle args = new Bundle();
 
-                Intent intent = new Intent( AlbumFragment.this.getContext(), AlbumActivity.class );
-                intent.putExtra( "from", "album" );
-                intent.putExtra( "album_key", albumKey );
-                intent.putExtra( "album_name", albumName );
-                intent.putExtra( "album_art", albumArt );
+                Bundle bundle = new Bundle();
+                bundle.putString( "from", "album" );
+                bundle.putString( "album_key", albumKey );
+                bundle.putString( "album_name", albumName );
+                bundle.putString( "album_art", albumArt );
+
+                Navigation.findNavController( getView() ).navigate( R.id.action_musicFragment_to_mainAlbumFragment, bundle );
 
 //                args.putString( "from", "album" );
 //                args.putString( "album_key", albumKey );
@@ -126,11 +129,10 @@ public class AlbumFragment extends Fragment {
 
 //                album.setArguments( args );
 
-                AlbumFragment.this.startActivity( intent );
+//                AlbumFragment.this.startActivity( intent );
 
 //                MainActivity.renderSession( album );
             });
         }
-
     }
 }

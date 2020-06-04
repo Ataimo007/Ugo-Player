@@ -24,6 +24,8 @@ import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.player.PlayerDownloadService;
 import com.gcodes.iplayer.services.YouTubeService;
+import com.gcodes.iplayer.ui.UIConstance;
+import com.gcodes.iplayer.video.player.VideoPlayer;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.offline.Download;
@@ -169,6 +171,7 @@ public class MusicVideoFragment extends Fragment
         listView = view.findViewById( R.id.video_list );
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
+        listView.addItemDecoration(UIConstance.AppItemDecorator.AppItemDecoratorToolBarOffset(getContext()));
     }
 
     public void onLoading()
@@ -292,12 +295,12 @@ public class MusicVideoFragment extends Fragment
         private void bindEmptyVideos(EmptyHolder holder) {
             if ( loading )
             {
-                holder.reason.setText(String.format( "Please Wait we are loading the music video for %s", music.getName() ) );
+                holder.reason.setText(String.format( "Please Wait we are loading the music video for: \n%s", music.getName() ) );
                 return;
             }
             if ( !Helper.isDeviceOnline( player ) )
             {
-                holder.reason.setText(String.format( "Please ensure you are connected to the internet to get music video for %s", music.getName() ));
+                holder.reason.setText(String.format( "Please ensure you are connected to the internet to get music video for: \n%s", music.getName() ));
                 return;
             }
             holder.reason.setText(String.format( "No music video found for %s", music.getName() ));
@@ -314,7 +317,7 @@ public class MusicVideoFragment extends Fragment
             Period period = Period.parse( video.getContentDetails().getDuration() );
             PeriodFormatter periodFormatter = new PeriodFormatterBuilder().minimumPrintedDigits(2).appendHours()
                     .appendSeparatorIfFieldsBefore(":").minimumPrintedDigits(2).appendMinutes()
-                    .appendSeparatorIfFieldsBefore(":").minimumPrintedDigits(2).appendSeconds().toFormatter();
+                    .appendSeparatorIfFieldsBefore(":").minimumPrintedDigits(2).printZeroAlways().appendSeconds().toFormatter();
             holder.setSubtitle( period.toString( periodFormatter ) );
             continueProgress( holder );
 
@@ -323,7 +326,7 @@ public class MusicVideoFragment extends Fragment
 //                    MusicPlayer musicPlayer = MusicPlayer.getInstance();
 //                    musicPlayer.playVideo( ytFile.getUrl(), music );
 //                    showVideo.accept(null);
-                    VideoPlayerActivity.play( getContext(), ytFile.getUrl() );
+                    VideoPlayer.play( getActivity(), ytFile.getUrl() );
                 }, getContext() );
             });
 
@@ -462,7 +465,7 @@ public class MusicVideoFragment extends Fragment
         public void setImage(String url) {
             Uri uri = Uri.parse(url);
             GlideApp.with( MusicVideoFragment.this ).load( uri  )
-                    .placeholder( R.drawable.ic_track_black_24dp ).apply( centerCropTransform() ).into( image );
+                    .placeholder( R.drawable.u_song_art_padded ).apply( centerCropTransform() ).into( image );
         }
 
 

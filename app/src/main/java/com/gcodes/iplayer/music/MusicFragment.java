@@ -1,7 +1,6 @@
 package com.gcodes.iplayer.music;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,57 +11,20 @@ import com.gcodes.iplayer.music.artist.ArtistFragment;
 import com.gcodes.iplayer.music.folder.FolderFragment;
 import com.gcodes.iplayer.music.genre.GenreFragment;
 import com.gcodes.iplayer.music.track.TrackFragment;
-import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.tabs.TabLayout;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.fragment.app.FragmentStatePagerAdapter;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager.widget.ViewPager;
 
-
-///**
-// * A simple {@link Fragment} subclass.
-// * Activities that contain this fragment must implement the
-// * {@link UtilityFragment.OnFragmentInteractionListener} interface
-// * to handle interaction events.
-// * Use the {@link UtilityFragment#newInstance} factory method to
-// * create an instance of this fragment.
-// */
 public class MusicFragment extends Fragment
 {
 
 //    private AppBarLayout appBar;
     private SectionsPagerAdapter mSectionsPagerAdapter;
-    private ViewPager mViewPager;
-    private TabLayout tabLayout;
-
-    public TabLayout getTabLayout() {
-        return tabLayout;
-    }
-
-    public void setTabLayout(TabLayout tabLayout) {
-        this.tabLayout = tabLayout;
-    }
-
-    public static void InitFragments(AppCompatActivity activity)
-    {
-//        MusicTabFragment tabFragment = MusicTabFragment.InitTab(manager, R.layout.music_tabs);
-        FragmentManager manager = activity.getSupportFragmentManager();
-        activity.findViewById( R.id.video_tabs ).setVisibility( View.GONE );
-        TabLayout musicTabs = activity.findViewById(R.id.music_tabs);
-        musicTabs.setVisibility( View.VISIBLE );
-        Log.d( "Music_Tabs", "Music tabs " + musicTabs );
-
-        FragmentTransaction transaction = manager.beginTransaction();
-        MusicFragment fragment = new MusicFragment();
-        fragment.setTabLayout( musicTabs );
-        transaction.replace( R.id.main_content, fragment);
-        transaction.commit();
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -73,50 +35,57 @@ public class MusicFragment extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-//        mSectionsPagerAdapter = new SectionsPagerAdapter( getFragmentManager() );
         View content = inflater.inflate(R.layout.music_fragment, container, false);
-        mViewPager = content.findViewById( R.id.main_content );
-        tabLayout = content.findViewById( R.id.music_tabs );
+        ViewPager mViewPager = content.findViewById(R.id.main_content);
+        TabLayout tabLayout = content.findViewById(R.id.music_tabs);
+        Toolbar appbar = content.findViewById(R.id.app_toolbar);
+
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
+        mViewPager.setCurrentItem( mSectionsPagerAdapter.getDefaultTabPos(), true );
 
-//        tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
+        mViewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener(){
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                appbar.setTitle( mSectionsPagerAdapter.getPageTitle( position ) );
+            }
+        });
 
-        initState( savedInstanceState );
+        // current Title
+        appbar.setTitle( mSectionsPagerAdapter.getPageTitle( mViewPager.getCurrentItem() ) );
+
         return content;
-    }
-
-    private void initState(Bundle savedInstanceState) {
-        Log.d("navigation_debug", "Go to tab 2" );
-        getTabLayout().getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
-//        tabLayout.getTabAt( mSectionsPagerAdapter.getDefaultTabPos() ).select();
     }
 
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
     {
-        private Fragment[] views;
+        private final Fragment[] views;
+        private final String[] fragmentTitles;
 
         public SectionsPagerAdapter(FragmentManager fm)
         {
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
-            init();
-        }
-
-        public void init()
-        {
             views = new Fragment[ 5 ];
             views[ 0 ] = new AlbumFragment();
             views[ 1 ] = new ArtistFragment();
             views[ 2 ] = new TrackFragment();
             views[ 3 ] = new GenreFragment();
             views[ 4 ] = new FolderFragment();
+            fragmentTitles = new String[]{ "Albums", "Artists", "Songs", "Genres", "Folders" };
         }
 
         @Override
         public Fragment getItem(int position)
         {
             return views[ position ];
+        }
+
+        @Nullable
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return fragmentTitles[ position ];
         }
 
         @Override

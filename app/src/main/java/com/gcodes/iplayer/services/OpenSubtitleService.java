@@ -2,19 +2,42 @@ package com.gcodes.iplayer.services;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.os.ParcelFileDescriptor;
+import android.os.Process;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 
+import com.gcodes.iplayer.R;
+import com.gcodes.iplayer.music.track.TrackItemHolder;
+import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
+import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,21 +47,26 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.DataFormatException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.util.Consumer;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import de.timroes.axmlrpc.XMLRPCCallback;
 import de.timroes.axmlrpc.XMLRPCClient;
 import de.timroes.axmlrpc.XMLRPCException;
 import de.timroes.axmlrpc.XMLRPCServerException;
-
-import static com.gcodes.iplayer.helpers.Helper.*;
 
 public class OpenSubtitleService
 {
@@ -52,19 +80,104 @@ public class OpenSubtitleService
     private boolean login = false;
     private String token;
 
-    public static OpenSubtitleService getIntance()
+    private PopupWindow notification;
+    private PopupWindow selection;
+    private PopupWindow suggestion;
+
+    private PlayerView player;
+    private Handler notifier;
+    private Handler suggestor;
+    private Handler applier;
+//    private Handler selector;
+
+    private class Title
     {
-        if ( subtitle == null )
-            subtitle = new OpenSubtitleService();
-        return subtitle;
+        private final String episode;
+        private final String season;
+        private final String kind;
+        private final String name;
+        private final String IMDBMovie;
+        private final String IMDBEpisode;
+
+        public Title( JsonObject guess )
+        {
+            name = guess.getAsJsonPrimitive("MovieName").getAsString();
+            kind = guess.getAsJsonPrimitive("MovieKind").getAsString();
+            IMDBMovie = guess.getAsJsonPrimitive("IDMovieIMDB").getAsString();
+            if (kind.equals("tv series"))
+            {
+                episode = guess.has("Episode") ? guess.getAsJsonPrimitive("Episode").getAsString() : String.valueOf(1);
+                season = guess.has("Season") ? guess.getAsJsonPrimitive("Season").getAsString() : String.valueOf(1);
+                IMDBEpisode = guess.has("IMDBEpisode") ? guess.getAsJsonPrimitive("IMDBEpisode").getAsString() : null;
+            }
+            else
+                episode = season = IMDBEpisode = null;
+        }
+
+        public Title( JsonObject stringGuest, JsonObject guest )
+        {
+            name = stringGuest.getAsJsonPrimitive("MovieName").getAsString();
+            kind = stringGuest.getAsJsonPrimitive("MovieKind").getAsString();
+            IMDBMovie = stringGuest.getAsJsonPrimitive("IDMovieIMDB").getAsString();
+            if (kind.equals("tv series"))
+            {
+                episode = guest.getAsJsonPrimitive("episode").getAsString();
+                season = guest.getAsJsonPrimitive("season").getAsString();
+                IMDBEpisode = guest.has("IMDBEpisode") ? guest.getAsJsonPrimitive("IMDBEpisode").getAsString() : null ;
+            }
+            else
+                episode = season = IMDBEpisode = null;
+        }
+
+        public boolean isSeries() {
+            return kind.equals("tv series");
+        }
+
+        private HashMap< String, String > getMovieParams()
+        {
+            HashMap< String, String > movieParam = new HashMap<>();
+            movieParam.put( "imdbid", IMDBMovie );
+            if ( isSeries() )
+            {
+                movieParam.put( "episode", episode );
+                movieParam.put( "season", season );
+            }
+            movieParam.put( "sublanguageid", "eng" );
+            return movieParam;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return String.format("%s%s", name, isSeries() ? String.format(Locale.ENGLISH, " Season %s Episode %s", season, episode ) : "" );
+        }
     }
 
-    public OpenSubtitleService()
+    private class TitleHolder extends RecyclerView.ViewHolder
+    {
+        private final TextView title;
+
+        public TitleHolder(@NonNull View itemView) {
+            super(itemView);
+            title = itemView.findViewById(R.id.item_name);
+        }
+    }
+
+
+//    public static OpenSubtitleService getInstance(PlayerView player)
+//    {
+//        if ( subtitle == null )
+//            subtitle = new OpenSubtitleService(player);
+//        return subtitle;
+//    }
+
+    public OpenSubtitleService(PlayerView player)
     {
         XMLRPCClient client1;
         try
         {
             client1 = new XMLRPCClient( new URL( host ));
+            initSubUI( player );
         } catch (MalformedURLException e) {
             client1 = null;
             e.printStackTrace();
@@ -72,96 +185,520 @@ public class OpenSubtitleService
         client = client1;
     }
 
+    private void initSubUI(PlayerView player)
+    {
+        this.player = player;
+        LayoutInflater inflater = LayoutInflater.from(player.getContext());
+        View notify = inflater.inflate(R.layout.subtitle_notification, null);
+        View select = inflater.inflate(R.layout.subtitle_selection, null);
+        View suggest = inflater.inflate(R.layout.subtitle_sugestion, null);
+        notification = new PopupWindow(notify, ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                true);
+        selection = new PopupWindow(select, ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                true);
+        suggestion = new PopupWindow(suggest, ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                true);
+
+        initNotifier();
+        initSuggestor();
+        initApplier();
+    }
+
+    private void initApplier() {
+        applier = new Handler(Looper.getMainLooper()){
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                ConcatenatingMediaSource source = (ConcatenatingMediaSource) msg.obj;
+                VideoPlayerActivity videoPlayer = getVideoPlayer();
+                if ( videoPlayer != null )
+                {
+                    videoPlayer.switchSource( source );
+                    notifyView("Done");
+                }
+            }
+        };
+    }
+
+    public void destroy()
+    {
+        notifier = null;
+        suggestor = null;
+//        selector = null;
+    }
+
+    private void initNotifier()
+    {
+        notifier = new Handler(Looper.getMainLooper()){
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                String message = (String) msg.obj;
+
+                TextView messageView = notification.getContentView().findViewById(R.id.subtitle_message);
+                messageView.setText( message );
+                notification.showAtLocation( player, Gravity.TOP | Gravity.END, 0, 0 );
+
+                super.handleMessage(msg);
+            }
+        };
+    }
+
+    private void suggest(JsonObject suggestions, Video video)
+    {
+        String query = suggestions.getAsJsonObject("data").keySet().toArray(new String[]{})[0];
+        JsonElement bestGuess = suggestions.getAsJsonObject("data").getAsJsonObject(query).get("BestGuess");
+        if ( bestGuess.isJsonObject() && bestGuess.getAsJsonObject().getAsJsonPrimitive("Reason").getAsString().equals("Data Intersection") )
+        {
+            Title title = new Title( bestGuess.getAsJsonObject() );
+            downloadSubtitle( title, video );
+        }
+        else
+        {
+            suggestions.add("video", video.toJson() );
+            Message suggestion = suggestor.obtainMessage(0, suggestions);
+            suggestion.sendToTarget();
+        }
+    }
+
+    private void initSuggestor()
+    {
+        suggestor = new Handler(Looper.getMainLooper()){
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                TextView title = suggestion.getContentView().findViewById(R.id.title_suggestion);
+                Button yes = suggestion.getContentView().findViewById(R.id.suggestion_yes);
+                Button no = suggestion.getContentView().findViewById(R.id.suggestion_no);
+
+                JsonObject guesses = (JsonObject) msg.obj;
+                Video video = Video.fromJson( guesses.getAsJsonObject("video") );
+
+                String query = guesses.getAsJsonObject("data").keySet().toArray(new String[]{})[0];
+                JsonElement guess = guesses.getAsJsonObject("data").getAsJsonObject(query).get("GuessIt");
+                JsonElement bestGuess = guesses.getAsJsonObject("data").getAsJsonObject(query).get("BestGuess");
+                JsonArray stringGuesses = guesses.getAsJsonObject("data").getAsJsonObject(query).getAsJsonArray("GuessMovieFromString");
+
+                if ( bestGuess.isJsonObject() )
+                {
+                    JsonObject bestGuessObj = bestGuess.getAsJsonObject();
+                    if ( ( bestGuessObj.getAsJsonPrimitive("Reason").getAsString().equals("GuessMovieFromString") ||
+                            bestGuessObj.getAsJsonPrimitive("Reason").getAsString().equals("GetIMDBSuggest") ) &&  stringGuesses.size() == 1 )
+                    {
+                        JsonObject stringGuess = stringGuesses.get( 0 ).getAsJsonObject();
+                        if ( stringGuess.getAsJsonPrimitive("MovieKind").getAsString().equals("tv series") && guess.isJsonObject() )
+                        {
+                            JsonObject guessObj = guess.getAsJsonObject();
+                            title.setText( String.format(Locale.ENGLISH, "%s Season %d Epison %d", stringGuess.getAsJsonPrimitive("MovieName").getAsString(),
+                                    guessObj.getAsJsonPrimitive("season").getAsInt(), guessObj.getAsJsonPrimitive("episode").getAsInt() ) );
+
+                            yes.setOnClickListener(v -> {
+                                Title suggestion = new Title(stringGuess, guessObj);
+                                downloadSubtitle( suggestion, video );
+                            });
+                        }
+                        else {
+                            if ( stringGuess.getAsJsonPrimitive("MovieKind").getAsString().equals("movie") )
+                            {
+                                title.setText( stringGuess.getAsJsonPrimitive("MovieName").getAsString() );
+                            }
+
+                            yes.setOnClickListener(v -> {
+                                Title suggestion = new Title(stringGuess);
+                                downloadSubtitle( suggestion, video );
+                            });
+                        }
+                    }
+                    else
+                    {
+                        if ( bestGuessObj.getAsJsonPrimitive("MovieKind").getAsString().equals("tv series") )
+                        {
+                            title.setText( String.format(Locale.ENGLISH, "%s Season %d Epison %d", bestGuessObj.getAsJsonPrimitive("MovieName").getAsString(),
+                                    bestGuessObj.getAsJsonPrimitive("Season").getAsInt(), bestGuessObj.getAsJsonPrimitive("Episode").getAsInt() ) );
+                        }
+
+                        if ( bestGuessObj.getAsJsonPrimitive("MovieKind").getAsString().equals("movie") )
+                        {
+                            title.setText( bestGuessObj.getAsJsonPrimitive("MovieName").getAsString() );
+                        }
+
+                        yes.setOnClickListener(v -> {
+                            Title suggestion = new Title(bestGuessObj);
+                            downloadSubtitle( suggestion, video );
+                        });
+                    }
+                }
+
+                no.setOnClickListener(v -> {
+                    manuallySuggest( guesses );
+                });
+
+                suggestion.showAtLocation( player, Gravity.CENTER, 0, 0 );
+
+                super.handleMessage(msg);
+            }
+        };
+    }
+
+    private void manuallySuggest(JsonObject guesses) {
+        Video video = Video.fromJson( guesses.get("video").getAsJsonObject() );
+        RecyclerView suggestions = selection.getContentView().findViewById(R.id.suggestion_list);
+        ArrayList<Title> tittles = getTittles(guesses);
+        suggestions.setLayoutManager( new LinearLayoutManager( player.getContext() ) );
+        suggestions.addItemDecoration(new UIConstance.AlternateItemDecorator());
+        RecyclerView.Adapter<TitleHolder> adapter = new RecyclerView.Adapter<TitleHolder>() {
+            @NonNull
+            @Override
+            public TitleHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                View view = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.single_title, parent, false);
+                return new TitleHolder(view);
+            }
+
+            @Override
+            public void onBindViewHolder(@NonNull TitleHolder holder, int position) {
+                Title title = tittles.get(position);
+                holder.title.setText(title.toString());
+                holder.itemView.setOnClickListener(v -> {
+                    downloadSubtitle(title, video);
+                });
+            }
+
+            @Override
+            public int getItemCount() {
+                return tittles.size();
+            }
+        };
+        suggestions.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        Button ok = selection.getContentView().findViewById(R.id.suggestion_ok);
+        ok.setOnClickListener(v -> {
+            TextInputEditText manualGuest = selection.getContentView().findViewById(R.id.manual_suggestion);
+            String guess = manualGuest.getText().toString();
+            downloadSubtitle( guess, video );
+        });
+        selection.showAtLocation( player, Gravity.CENTER, 0, 0 );
+    }
+
+    private ArrayList<Title> getTittles(JsonObject guesses )
+    {
+        ArrayList<Title> titles = new ArrayList<>();
+        String query = guesses.getAsJsonObject("data").keySet().toArray(new String[]{})[0];
+        JsonElement guess = guesses.getAsJsonObject("data").getAsJsonObject(query).get("GuessIt");
+        JsonArray stringGuesses = guesses.getAsJsonObject("data").getAsJsonObject(query).getAsJsonArray("GuessMovieFromString");
+        JsonObject IMDBguesses = guesses.getAsJsonObject("data").getAsJsonObject(query).getAsJsonObject("GetIMDBSuggest");
+        for (JsonElement stringGuess : stringGuesses)
+            titles.add(new Title(stringGuess.getAsJsonObject()));
+        for (Map.Entry<String, JsonElement> suggestion : IMDBguesses.entrySet())
+            titles.add(new Title(suggestion.getValue().getAsJsonObject()));
+        return titles;
+    }
+
+    private void downloadSubtitle(Title title, Video video)
+    {
+        Runnable download = () -> {
+            String name = title.kind.equals("tv series") ? String.format(Locale.ENGLISH, "%s Season %s Episode %s", title.name, title.season, title.episode) : title.name;
+            notifyView("Downloading Subtitle for " + name);
+            HashMap<String, String> movieParams = title.getMovieParams();
+            String subtitleFileID = getSubtitleFileID(movieParams);
+            if ( subtitleFileID == null )
+            {
+                notifyView("Unable to Download Subtitle for " + name );
+                return;
+            }
+            String subtitle = downloadSubtitle(subtitleFileID);
+            String subtitleHash = osHash(String.valueOf(video.getId()), player.getContext());
+            if ( subtitleHash == null )
+            {
+                notifyView("Unable to Save the Subtitle of " + name );
+                return;
+            }
+            File subtitleFile = save(subtitle, player.getContext(), subtitleHash);
+            applySubtitle(subtitleFile, video);
+        };
+
+        if  ( Looper.myLooper() == Looper.getMainLooper() )
+        {
+            Thread thread = new Thread(download);
+            thread.start();
+        }
+        else
+            download.run();
+    }
+
+    private void downloadSubtitle(String title, Video video)
+    {
+        Thread thread = new Thread(() -> {
+            JsonObject suggestions = guessMovie( title  );
+            String query = suggestions.getAsJsonObject("data").keySet().toArray(new String[]{})[0];
+            JsonElement bestGuess = suggestions.getAsJsonObject("data").getAsJsonObject(query).get("BestGuess");
+            if ( bestGuess.isJsonObject() && bestGuess.getAsJsonObject().getAsJsonPrimitive("Reason").getAsString().equals("Data Intersection") )
+            {
+                Title suggestedTitle = new Title( bestGuess.getAsJsonObject() );
+                downloadSubtitle( suggestedTitle, video );
+            }
+            else
+            {
+                notifyView("Unable to Identify the Suggested Title");
+            }
+        });
+        thread.start();
+    }
+
+    private void applySubtitle(File subtitleFile, Video video) {
+        notifyView("Applying the Subtitle");
+        VideoPlayerActivity videoPlayer = getVideoPlayer();
+        if ( videoPlayer != null )
+        {
+            ConcatenatingMediaSource source = videoPlayer.generateSource(subtitleFile, video);
+            Message message = applier.obtainMessage(0, source);
+            message.sendToTarget();
+        }
+    }
+
+    private VideoPlayerActivity getVideoPlayer()
+    {
+        if  ( player.getContext() instanceof VideoPlayerActivity )
+            return (VideoPlayerActivity) player.getContext();
+        return null;
+    }
+
+    public File save(String subtitle, Context context, String name ) {
+        byte[] decode = Base64.decode(subtitle, Base64.DEFAULT);
+        Log.w( "Subtitle_Activities", "Base64 decode " + subtitle );
+        File strFile = getFile(context, name);
+        try ( FileOutputStream subFile = new FileOutputStream(strFile);
+              GZIPInputStream unzipped = new GZIPInputStream(new ByteArrayInputStream(decode)))
+        {
+            byte[] raw = new byte[ 1024 ];
+            for ( int len; ( len = unzipped.read( raw )) > 0; )
+                subFile.write( raw, 0, len );
+
+            Log.w( "Subtitle_Activities", "Written to file " + strFile );
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return strFile;
+    }
+
+    public String downloadSubtitle(String idSubtitleFile) {
+        Log.w( "Subtitle_Activities", "downloading subtitle... " );
+        Object subFileResponse = null;
+        try {
+            subFileResponse = client.call("DownloadSubtitles", token, new Object[]{idSubtitleFile});
+            JsonObject subtitleFile = null;
+            if ( subFileResponse != null )
+            {
+                subtitleFile = parseObject( subFileResponse );
+                JsonArray subtitles = subtitleFile.getAsJsonArray("data");
+                if ( subtitles.size() != 0 )
+                {
+                    String subtitle = subtitles.get(0).getAsJsonObject().getAsJsonPrimitive("data").getAsString();
+                    return subtitle;
+                }
+            }
+        } catch (XMLRPCException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return null;
+    }
+
+    public String getSubtitleFileID( HashMap< String, String > movieParam ) {
+        Log.w( "Subtitle_Activities", "Search Subtitles Parameters " + movieParam );
+        JsonObject subtitles = null;
+        Object subResponse = null;
+        try {
+            subResponse = client.call("SearchSubtitles", token, new HashMap<?, ?>[]{movieParam});
+            if ( subResponse != null )
+            {
+                Log.w( "Subtitle_Activities", "Subtitle Details " + subResponse );
+                subtitles = parseObject(subResponse);
+                Log.w( "Subtitle_Activities", "Subtitle Details " + subtitles );
+                JsonArray subs = subtitles.getAsJsonArray("data");
+                if ( subs.size() != 0 )
+                {
+                    String idSubtitleFile = subs.get(0).getAsJsonObject().getAsJsonPrimitive("IDSubtitleFile").getAsString();
+                    return idSubtitleFile;
+                }
+            }
+        } catch (XMLRPCException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return null;
+    }
+
+//    private HashMap< String, String > getMovieParams( Map< String, Object > movie )
+//    {
+//        HashMap< String, String > movieParam = new HashMap<>();
+//        movieParam.put( "imdbid", String.valueOf( movie.get("IDMovieIMDB") ) );
+//        String kind = String.valueOf(movie.get("MovieKind"));
+//        if ( kind.contains( "series" ) )
+//        {
+//            movieParam.put( "episode", String.valueOf( movie.get("Episode") ) );
+//            movieParam.put( "season", String.valueOf( movie.get("Season") ) );
+//        }
+//        movieParam.put( "sublanguageid", "eng" );
+//        return movieParam;
+//    }
+
+    private void notifyView(String message)
+    {
+        Message notification = notifier.obtainMessage(0, message);
+        notification.sendToTarget();
+    }
 
     public void login( XMLRPCCallback listener )
     {
         client.callAsync( listener, "LogIn", username, password, "", userAgent );
     }
 
-    public File getSavedSubtitle(Video video, Context context)
+    public File getSavedSubtitle(Video video)
     {
+        String name = osHash(String.valueOf(video.getId()), player.getContext());
+        File file = new File( player.getContext().getExternalFilesDir( null ), "subtitle/" + name + ".str" );
+        if ( file.exists() )
+            return file;
+        return null;
+    }
+
+    private void runOnBackground()
+    {
+        android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+    }
+
+    public void beginSubtitling(Video video)
+    {
+        Thread thread = new Thread(() -> {
+            boolean exist = showIfExist(video);
+            if ( exist )
+                return;
+
+            notifyView("Suggesting a Title");
+            boolean login = login();
+            if ( !login )
+            {
+                notifyView("Please ensure you are connected to the internet");
+                return;
+            }
+
+            Log.w( "Subtitle_Activities", "Suggesting Movie" );
+            JsonObject guesses = guessMovie(video.getName());
+            if ( guesses == null )
+            {
+                notifyView("Unable to Suggest Movie");
+                return;
+            }
+
+            suggest( guesses, video );
+        });
+        thread.start();
+    }
+
+    private boolean showIfExist(Video video) {
+        File savedSubtitle = getSavedSubtitle(video);
+        if ( savedSubtitle != null )
+        {
+            applySubtitle( savedSubtitle, video );
+            return true;
+        }
+        return false;
+    }
+
+//    public File getSubtitle(Video video, Context context, PlayerView player)
+//    {
+//        try {
+//            login();
+//            String idSubtitleFile = getIdSubtitleFile(video, context);
+//            Log.w( "Subtitle_Activities", "Obtained Id SubtitleFile " + idSubtitleFile );
+//
+//            Object datum = getSubtitleFile( idSubtitleFile );
+//            File subtitle = save(datum, context, osHash(String.valueOf(video.getId()), context));
+//            return subtitle;
+//        } catch (XMLRPCException e) {
+//            e.printStackTrace();
+//        } catch ( Exception e )
+//        {
+//            e.printStackTrace();
+//            Log.w( "Subtitle_Activities", "Error in parsing" );
+//        }
+//        return null;
+//    }
+
+//    public File getSubtitle(Video video, Context context, Consumer< String > messager )
+//    {
+//        try {
+//            login();
+//            String idSubtitleFile = getIdSubtitleFile(video, context);
+//            Log.w( "Subtitle_Activities", "Obtained Id SubtitleFile " + idSubtitleFile );
+////            messager.accept( "found movie" );
+//            Object datum = getSubtitleFile( idSubtitleFile );
+////            messager.accept( "downloaded movie" );
+//            File subtitle = save(datum, context, osHash(String.valueOf(video.getId()), context));
+////            messager.accept( "saving subtitle" );
+//            return subtitle;
+//        } catch (XMLRPCException e) {
+//            e.printStackTrace();
+//        } catch ( Exception e )
+//        {
+//            e.printStackTrace();
+//            Log.w( "Subtitle_Activities", "Error in parsing" );
+//        }
+//        return null;
+//    }
+
+//    private String getIdSubtitleFile( Video video, Context context ) throws IOException, XMLRPCException {
+//        HashMap<String, String> oshashParams = addOSHash(String.valueOf(video.getId()), context);
+//        String idSubtitleFile = getSubtitleFileID( oshashParams );;
+//        if ( idSubtitleFile == null )
+//        {
+//            Log.w( "Subtitle_Activities", "Subtitle Search by OS Hash failed" );
+////            HashMap<String, String> movieParams = guessMovie( video.getName() );
+//            guessMovie( video.getName() );
+////            idSubtitleFile = getSubtitleFileID( movieParams );;
+//        }
+//        return idSubtitleFile;
+//    }
+
+//    private String getSuggestions( Video video, Context context ) throws IOException, XMLRPCException {
+//        HashMap<String, String> oshashParams = addOSHash(String.valueOf(video.getId()), context);
+//        String idSubtitleFile = getSubtitleFileID( oshashParams );;
+//        if ( idSubtitleFile == null )
+//        {
+//            Log.w( "Subtitle_Activities", "Subtitle Search by OS Hash failed" );
+//            guessMovie( video.getName() );
+//        }
+//        return idSubtitleFile;
+//    }
+
+    private String osHash(String mediaId, Context context){
+        Uri media = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, String.valueOf( mediaId ) );
+        ParcelFileDescriptor mediaDescriptor = null;
         try {
-            String name = osHash(String.valueOf(video.getId()), context);
-            File file = new File( context.getExternalFilesDir( null ), "subtitle/" + name + ".str" );
-            if ( file.exists() )
-                return file;
+            mediaDescriptor = context.getContentResolver().openFileDescriptor(media, "r");
+            FileDescriptor fileDescriptor = mediaDescriptor.getFileDescriptor();
+            FileInputStream stream = new FileInputStream( fileDescriptor );
+            String movieHash = OpenSubtitlesHasher.computeHash(stream, stream.getChannel().size());
+            return movieHash;
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-        return null;
     }
 
-    public File getSubtitle(Video video, Context context )
-    {
-        try {
-            login();
-            String idSubtitleFile = getIdSubtitleFile(video, context);
-            Log.d( "Subtitle_Activities", "Obtained Id SubtitleFile " + idSubtitleFile );
-
-            Object datum = getSubtitleFile( idSubtitleFile );
-            File subtitle = save(datum, context, osHash(String.valueOf(video.getId()), context));
-            return subtitle;
-        } catch (XMLRPCException e) {
-            e.printStackTrace();
-        } catch ( Exception e )
-        {
-            e.printStackTrace();
-            Log.d( "Subtitle_Activities", "Error in parsing" );
-        }
-        return null;
-    }
-
-    public File getSubtitle(Video video, Context context, Consumer< String > messager )
-    {
-        try {
-            login();
-            String idSubtitleFile = getIdSubtitleFile(video, context);
-            Log.d( "Subtitle_Activities", "Obtained Id SubtitleFile " + idSubtitleFile );
-//            messager.accept( "found movie" );
-            Object datum = getSubtitleFile( idSubtitleFile );
-//            messager.accept( "downloaded movie" );
-            File subtitle = save(datum, context, osHash(String.valueOf(video.getId()), context));
-//            messager.accept( "saving subtitle" );
-            return subtitle;
-        } catch (XMLRPCException e) {
-            e.printStackTrace();
-        } catch ( Exception e )
-        {
-            e.printStackTrace();
-            Log.d( "Subtitle_Activities", "Error in parsing" );
-        }
-        return null;
-    }
-
-    private String getIdSubtitleFile( Video video, Context context ) throws IOException, XMLRPCException {
-        HashMap<String, String> oshashParams = addOSHash(String.valueOf(video.getId()), context);
-        String idSubtitleFile = getSubtitleFileID( oshashParams );;
-        if ( idSubtitleFile == null )
-        {
-            Log.d( "Subtitle_Activities", "Subtitle Search by OS Hash failed" );
-            HashMap<String, String> movieParams = guessMovie( video.getName() );
-            idSubtitleFile = getSubtitleFileID( movieParams );;
-        }
-        return idSubtitleFile;
-    }
-
-    private String osHash(String mediaId, Context context) throws IOException {
+    private String getMovieName(String mediaId, Context context) {
         Uri media = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, String.valueOf( mediaId ) );
-        ParcelFileDescriptor mediaDescriptor = context.getContentResolver().openFileDescriptor(media, "r");
-        FileDescriptor fileDescriptor = mediaDescriptor.getFileDescriptor();
-        FileInputStream stream = new FileInputStream( fileDescriptor );
-        String movieHash = OpenSubtitlesHasher.computeHash(stream, stream.getChannel().size());
-        return movieHash;
-    }
-
-    private String getMovieName(String mediaId, Context context) throws IOException {
-        Uri media = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, String.valueOf( mediaId ) );
-        ParcelFileDescriptor mediaDescriptor = context.getContentResolver().openFileDescriptor(media, "r");
-        FileDescriptor fileDescriptor = mediaDescriptor.getFileDescriptor();
-        FileInputStream stream = new FileInputStream( fileDescriptor );
-        String movieHash = OpenSubtitlesHasher.computeHash(stream, stream.getChannel().size());
-
-        return movieHash;
+        ParcelFileDescriptor mediaDescriptor = null;
+        try {
+            mediaDescriptor = context.getContentResolver().openFileDescriptor(media, "r");
+            FileDescriptor fileDescriptor = mediaDescriptor.getFileDescriptor();
+            FileInputStream stream = new FileInputStream( fileDescriptor );
+            String movieHash = OpenSubtitlesHasher.computeHash(stream, stream.getChannel().size());
+            return movieHash;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private HashMap<String, String> addOSHash(String mediaId, Context context) throws IOException
@@ -174,48 +711,34 @@ public class OpenSubtitleService
         String movieHash = OpenSubtitlesHasher.computeHash(stream, stream.getChannel().size());
         movieParams.put( "moviehash", movieHash );
         movieParams.put( "moviebytesize", String.valueOf(stream.getChannel().size()));
-        Log.d( "Subtitle_Activities", "add os hash to params " + movieParams );
+        Log.w( "Subtitle_Activities", "add os hash to params " + movieParams );
         return movieParams;
-    }
-
-    public void downloadSubtitle()
-    {
-
-    }
-
-    public File save(Object datum, Context context, String name ) throws IOException {
-        String data = String.valueOf(datum);
-//        byte[] decode = Base64.decode(data, Base64.DEFAULT);
-        byte[] decode = Base64.decode(data, Base64.DEFAULT);
-//        String subZip = new String(decode, StandardCharsets.UTF_8);
-//        Log.d( "Subtitle_Activities", "Base64 decode " + subZip );
-
-        File strFile = getFile(context, name);
-        try ( FileOutputStream subFile = new FileOutputStream(strFile);
-              GZIPInputStream unzipped = new GZIPInputStream(new ByteArrayInputStream(decode)))
-        {
-            byte[] raw = new byte[ 1024 ];
-            for ( int len; ( len = unzipped.read( raw )) > 0; )
-                subFile.write( raw, 0, len );
-
-            Log.d( "Subtitle_Activities", "Written to file " + strFile );
-        }
-        return strFile;
     }
 
     public File save2(Object datum, Context context, String name) throws IOException, DataFormatException {
         Inflater decompresser = new Inflater();
         String data = String.valueOf( datum );
-        decompresser.setInput( data.getBytes(StandardCharsets.UTF_8) );
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            decompresser.setInput( data.getBytes(StandardCharsets.UTF_8) );
+        }
+        else
+        {
+            decompresser.setInput( data.getBytes(Charset.forName("UTF-8")) );
+        }
         byte[] strRaw = new byte[ 0 ];
         decompresser.inflate( strRaw );
-        Log.d( "Subtitle_Activities", "inflated " + strRaw );
-        Log.d( "Subtitle_Activities", "inflated " + new String( strRaw, StandardCharsets.UTF_8) );
-
+        Log.w( "Subtitle_Activities", "inflated " + strRaw );
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            Log.w( "Subtitle_Activities", "inflated " + new String( strRaw, StandardCharsets.UTF_8) );
+        }
+        else
+        {
+            Log.w( "Subtitle_Activities", "inflated " + new String( strRaw, Charset.forName("UTF-8")) );
+        }
         File strFile = getFile(context, name);
         FileOutputStream str = new FileOutputStream( strFile );
         str.write( strRaw );
-        Log.d( "Subtitle_Activities", "Written Subtitle to file" );
+        Log.w( "Subtitle_Activities", "Written Subtitle to file" );
         return strFile;
     }
 
@@ -224,143 +747,177 @@ public class OpenSubtitleService
         File parent = new File( context.getExternalFilesDir( null ), "subtitle" );
         File file = new File( context.getExternalFilesDir( null ), "subtitle/" + name + ".str" );
         parent.mkdirs();
-        Log.d( "Subtitle_Activities", "create subtitle file " + file );
+        Log.w( "Subtitle_Activities", "create subtitle file " + file );
         return file;
     }
 
-    public HashMap< String, String > guessMovie( String name ) throws XMLRPCException {
-        Map<String, Object> movies = (Map<String, Object>) client.call( "GuessMovieFromString",
-                token, new String[]{ name } );
-        Log.d( "Subtitle_Activities", "movies " + movies );
-        Map< String, Object > gueses = (Map<String, Object>) movies.get( "data" );
-        Log.d( "Subtitle_Activities", "movies data " + gueses );
-        Object[] guese = gueses.values().toArray();
-        Map<String, Object> bestMovie = (Map<String, Object>) guese[0];
-        Map< String, Object > movie = (Map<String, Object>) bestMovie.get( "BestGuess" );
-        Log.d( "Subtitle_Activities", "best guess for first movies " + movie );
-//        Object idMovieIMDB = movie.get("IDMovieIMDB");
-        HashMap<String, String> movieParams = getMovieParams(movie);
-        Log.d( "Subtitle_Activities", "params of the guess movie " + movieParams );
-//        return String.valueOf( idMovieIMDB );
-        return movieParams;
-    }
+//    public void guessMovie( String name ) throws XMLRPCException {
+////        Object guessMovies = client.call("SuggestMovie", token, new String[]{name});
+//        Object guessMovies = client.call("SuggestMovie", token, name);
+//        if ( guessMovies != null )
+//        {
+//            Log.w( "Subtitle_Activities", "movies " + guessMovies.toString() );
+//            Map<String, Object> movies = (Map<String, Object>) guessMovies;
+//            Log.w( "Subtitle_Activities", "movies " + movies );
+//        }
+////        Log.w( "Subtitle_Activities", "movies " + movies );
+////        Map< String, Object > gueses = (Map<String, Object>) movies.get( "data" );
+////        Log.w( "Subtitle_Activities", "movies data " + gueses );
+////        Object[] guese = gueses.values().toArray();
+////        Map<String, Object> bestMovie = (Map<String, Object>) guese[0];
+////        Map< String, Object > movie = (Map<String, Object>) bestMovie.get( "BestGuess" );
+////        Log.w( "Subtitle_Activities", "best guess for first movies " + movie );
+//////        Object idMovieIMDB = movie.get("IDMovieIMDB");
+////        HashMap<String, String> movieParams = getMovieParams(movie);
+////        Log.w( "Subtitle_Activities", "params of the guess movie " + movieParams );
+//////        return String.valueOf( idMovieIMDB );
+////        return movieParams;
+//    }
 
-    private HashMap< String, String > getMovieParams( Map< String, Object > movie )
-    {
-        HashMap< String, String > movieParam = new HashMap<>();
-        movieParam.put( "imdbid", String.valueOf( movie.get("IDMovieIMDB") ) );
-        String kind = String.valueOf(movie.get("MovieKind"));
-        if ( kind.contains( "series" ) )
-        {
-            movieParam.put( "episode", String.valueOf( movie.get("Episode") ) );
-            movieParam.put( "season", String.valueOf( movie.get("Season") ) );
+    public JsonObject guessMovie( String name ) {
+        JsonObject jsonObject = null;
+        Object guessMovies = null;
+        try {
+            guessMovies = client.call( "GuessMovieFromString", token, new String[]{ name } );
+            if ( guessMovies != null )
+            {
+                jsonObject = parseObject(guessMovies);
+                Log.w( "Subtitle_Activities", "movies " + jsonObject );
+            }
+            return jsonObject;
+        } catch (XMLRPCException e) {
+            e.printStackTrace();
         }
-        movieParam.put( "sublanguageid", "eng" );
-        return movieParam;
+        return null;
     }
 
-    public String getSubtitleFileID( HashMap< String, String > movieParam ) throws XMLRPCException {
-//        HashMap< String, String > movieParam = new HashMap<>();
-//        movieParam.put( "imdbid", imdb );
-//        movieParam.put( "sublanguageid", "eng" );
-        Log.d( "Subtitle_Activities", "Search Subtitles Parameters " + movieParam );
-        Map< String, Object > subtitles = (Map<String, Object>) client.call("SearchSubtitles", token, new HashMap<?, ?>[]{movieParam});
-        Log.d( "Subtitle_Activities", "subtitles " + subtitles );
-        Object[] subtitleData = (Object[]) subtitles.get("data");
-        Log.d( "Subtitle_Activities", "subtitles data " + subtitleData );
-        if ( subtitleData.length == 0 )
-            return null;
-        Map< String, Object > subtitle = (Map<String, Object>) subtitleData[ 0 ];
-        Log.d( "Subtitle_Activities", "first subtitles data " + subtitle );
-        String idSubtitleFile = (String) subtitle.get("IDSubtitleFile");
-        Log.d( "Subtitle_Activities", "first subtitles data file id " + idSubtitleFile );
-        return idSubtitleFile;
-    }
-
-    public Object getSubtitleFile(String idSubtitleFile ) throws XMLRPCException {
-        Log.d( "Subtitle_Activities", "downloading subtitle... " );
-        Map< String, Object > subtitleFile = (Map<String, Object>) client.call("DownloadSubtitles", token, new Object[]{idSubtitleFile});
-        Log.d( "Subtitle_Activities", "subtitleFile " + subtitleFile );
-        Object data[] = (Object[]) subtitleFile.get("data");
-        Map< String, Object > subtitleDatum = (Map<String, Object>) data[0];
-        Object datum = subtitleDatum.get("data");
-        Log.d( "Subtitle_Activities", "datum " + datum );
-        return  datum;
-    }
-
-    public void downloadSubtitle(Video video, Context context)
+    private JsonObject parseObject( Object object )
     {
-        Worker.executeTask( () ->
+//        Log.w( "Subtitle_Activities", "parsing Object " + object );
+        JsonObject jObject = new JsonObject();
+        if ( object instanceof Map )
         {
-            File subtitle = getSavedSubtitle( video, context );
-            if ( subtitle == null )
-                subtitle = getSubtitle(video, context);
-
-            if ( subtitle == null )
+            Map<String, Object> obj = (Map<String, Object>) object;
+            for ( Map.Entry<String, Object> entry : obj.entrySet() )
             {
-                Log.d( "Subtitle_Activities", "Unable to find subtitle" );
-                return () -> {};
+//                Log.w( "Subtitle_Activities", "parsing entry " + entry );
+
+                Object value = entry.getValue();
+                if ( value instanceof Map )
+                {
+                    JsonObject val = parseObject(value);
+//                    Log.w( "Subtitle_Activities", "entry value " + val );
+                    jObject.add( entry.getKey(), val);
+                }
+                else if ( value instanceof Object[] )
+                {
+                    Object[] values = (Object[]) value;
+//                    Log.w( "Subtitle_Activities", "object value " + Arrays.toString(values) + " array length " + values.length );
+                    JsonArray jArray = new JsonArray();
+                    for ( Object val : values )
+                    {
+                        if ( val instanceof Map )
+                            jArray.add( parseObject( val ) );
+                        else
+                            jObject.add( entry.getKey(), new JsonPrimitive( val.toString() ));
+                    }
+                    jObject.add( entry.getKey(), jArray );
+                }
+                else
+                {
+//                    Log.w( "Subtitle_Activities", "entry value " + entry.getValue() );
+                    jObject.add( entry.getKey(), new JsonPrimitive( entry.getValue().toString() ));
+                }
             }
-            return () -> {};
-        });
+        }
+        return jObject;
     }
 
-    public void showSubtitle(Video video, int position, Context context, BiFunction< File, Integer, ConcatenatingMediaSource > build,
-                                    Consumer<ConcatenatingMediaSource> update, Consumer< String > messager)
-    {
-        renderSubtitle( video, position, context, build, update, messager, false );
-    }
+//    public void downloadSubtitle(Video video, Context context)
+//    {
+//        Worker.executeTask( () ->
+//        {
+//            File subtitle = getSavedSubtitle( video, context );
+//            if ( subtitle == null )
+//                subtitle = getSubtitle(video, context);
+//
+//            if ( subtitle == null )
+//            {
+//                Log.w( "Subtitle_Activities", "Unable to find subtitle" );
+//                return () -> {};
+//            }
+//            return () -> {};
+//        });
+//    }
 
-    public File retrieveSubtitle(Video video, Context context, Consumer< String > messager )
-    {
-        File subtitle = getSavedSubtitle( video, context );
-        if ( subtitle == null )
-            subtitle = getSubtitle(video, context, messager);
-        return subtitle;
-    }
+//    public void showSubtitle(Video video, int position, Context context, BiFunction< File, Integer, ConcatenatingMediaSource > build,
+//                                    Consumer<ConcatenatingMediaSource> update, Consumer< String > messager)
+//    {
+//        renderSubtitle( video, position, context, build, update, messager, false );
+//    }
 
-    public void renderSubtitle(Video video, int position, Context context, BiFunction< File, Integer, ConcatenatingMediaSource > build,
-                                    Consumer<ConcatenatingMediaSource> update, Consumer< String > messager, boolean connectivity )
-    {
-        Worker.executeTask( () ->
-        {
-            File subtitle = getSavedSubtitle( video, context );
-            if ( subtitle == null )
-                subtitle = getSubtitle(video, context, messager);
+//    public File retrieveSubtitle(Video video, Context context, PlayerView player)
+//    {
+//        File subtitle = getSavedSubtitle( video, context );
+//        if ( subtitle == null )
+//            subtitle = getSubtitle(video, context, player);
+//        return subtitle;
+//    }
 
-            if ( subtitle == null )
-            {
-                Log.d( "Subtitle_Activities", "Unable to find subtitle" );
-                return () -> {};
-            }
+//    public void retrieveSubtitle(Video video, Context context, PlayerView player)
+//    {
+//        beginSubtitling(video, context, player);
+//    }
 
-//            File finalSubtitle = subtitle;
-            ConcatenatingMediaSource source = build.apply(subtitle,position);
+//    public void renderSubtitle(Video video, int position, Context context, BiFunction< File, Integer, ConcatenatingMediaSource > build,
+//                                    Consumer<ConcatenatingMediaSource> update, Consumer< String > messager, boolean connectivity )
+//    {
+//        Worker.executeTask( () ->
+//        {
+//            File subtitle = getSavedSubtitle( video, context );
+//            if ( subtitle == null )
+//                subtitle = getSubtitle(video, context, messager);
+//
+//            if ( subtitle == null )
+//            {
+//                Log.w( "Subtitle_Activities", "Unable to find subtitle" );
+//                return () -> {};
+//            }
+//
+////            File finalSubtitle = subtitle;
+//            ConcatenatingMediaSource source = build.apply(subtitle,position);
+//
+////            if ( connectivity )
+////                doneWithConnectivity();
+//
+//            return () -> {
+////                messager.accept( "rendering movie" );
+//                update.accept(source);
+//            };
+//        });
+//    }
 
-//            if ( connectivity )
-//                doneWithConnectivity();
-
-            return () -> {
-//                messager.accept( "rendering movie" );
-                update.accept(source);
-            };
-        });
-    }
-
-    public void login() throws XMLRPCException {
+    public boolean login() {
         if ( !login )
         {
-            Map<String, Object> access = (Map<String, Object>) client.call( "LogIn", username, password, "", userAgent );
-            token = String.valueOf(access.get("token"));
-            login = true;
+            Map<String, Object> access = null;
+            try {
+                access = (Map<String, Object>) client.call( "LogIn", username, password, "", userAgent );
+                token = String.valueOf(access.get("token"));
+                login = true;
+            } catch (XMLRPCException e) {
+                e.printStackTrace();
+                login = false;
+            }
         }
+        return login;
     }
 
     public void displaySubtitle() {
         XMLRPCCallback action = generateCallback(o ->
         {
-            Log.d("Subtitle_Activities", "login...");
-            Log.d("Subtitle_Activities", "result " + o);
+            Log.w("Subtitle_Activities", "login...");
+            Log.w("Subtitle_Activities", "result " + o);
         });
         login( action );
     }
@@ -475,5 +1032,7 @@ public class OpenSubtitleService
     public interface Action {
         void perform();
     }
+
+
 
 }

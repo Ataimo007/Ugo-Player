@@ -3,20 +3,21 @@ package com.gcodes.iplayer;
 import android.Manifest;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.gcodes.iplayer.music.MusicFragment;
 import com.gcodes.iplayer.player.PlayerManager;
-import com.gcodes.iplayer.video.VideoFragment;
+import com.gcodes.iplayer.video.player.VideoPlayer;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.function.Supplier;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
@@ -25,7 +26,11 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavBackStackEntry;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager.widget.ViewPager;
 
 public class MainActivity extends AppCompatActivity
@@ -38,8 +43,12 @@ public class MainActivity extends AppCompatActivity
             = this::doSelection;
     private Menu menu;
     private BackManager backAction;
-    private ViewPager pager;
+    private NavigationPager pager;
     private AppPagerAdapter adapter;
+    private int currentPage;
+
+//    public static final int REQUEST_VIDEO = 1000;
+
 
 //    private MusicFragment music;
 //    private VideoFragment video;
@@ -61,10 +70,33 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        PlayerManager.getInstance().onDestroyActivity();
+        Log.w("Destroy_Main", "Destroying Main Activity" );
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
-        PlayerManager.getInstance().onDestroyActivity( this );
+//        PlayerManager.getInstance().onDestroyActivity( this );
     }
+
+//    @Override
+//    public void onBackPressed() {
+//        boolean popped = NavHostFragment.findNavController(adapter.getItem(currentPage)).popBackStack();
+//        if ( !popped )
+//        {
+//            if ( backAction != null )
+//            {
+//                boolean back = backAction.goBack();
+//                if ( !back )
+//                    super.onBackPressed();
+//            }
+//            else
+//                super.onBackPressed();
+//        }
+//    }
 
     @Override
     public void onBackPressed() {
@@ -72,99 +104,96 @@ public class MainActivity extends AppCompatActivity
         {
             boolean back = backAction.goBack();
             if ( !back )
-                super.onBackPressed();
+                back();
         }
-        super.onBackPressed();
+        else
+            back();
+    }
+
+    private void back()
+    {
+        boolean popped = NavHostFragment.findNavController(adapter.getItem(currentPage)).popBackStack();
+        if ( !popped )
+        {
+            super.onBackPressed();
+        }
     }
 
     private void begin()
     {
         //        setContentView(R.layout.activity_main);
-        setContentView(R.layout.activity_main_default);
+        setContentView(R.layout.activity_main_default4);
 
         Toolbar toolbar = findViewById(R.id.app_toolbar);
         setSupportActionBar( toolbar );
 
-        initContent();
-
-        BottomNavigationView navigation = findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-
         init();
         application = this;
 
-        navigation.setSelectedItemId( R.id.navigation_music );
+        if ( checkPermissions() )
+            beginApp();
+        else
+            getPermission();
 
+//        navigation.setSelectedItemId( R.id.navigation_music );
     }
 
-//    private void initContent() {
-//        music = new MusicFragment();
-//        video = new VideoFragment();
-//
-//    }
-
-    private void switchFragment(Fragment fragment)
+    private void beginApp()
     {
-        FragmentManager manager = getSupportFragmentManager();
-        FragmentTransaction transaction = manager.beginTransaction();
-        transaction.replace( R.id.layout_main, fragment);
-        transaction.commit();
+        initContent();
+
+        BottomNavigationView navigation = findViewById(R.id.navigation);
+
+//        NavController navController = Navigation.findNavController(this, R.id.app_internal_nav);
+//        NavigationUI.setupWithNavController( navigation, navController );
+
+        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        pager.setCurrentItem(AppPagerAdapter.defaultPage);
     }
 
     private void initContent() {
         adapter = new AppPagerAdapter(getSupportFragmentManager());
         pager = findViewById( R.id.layout_main );
         pager.setAdapter( adapter );
+        pager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener(){
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                currentPage = position;
+            }
+        });
     }
 
-//    private void initContent() {
-//        musicTabs = findViewById(R.id.music_tabs);
-//        pager = findViewById( R.id.content_viewpager );
-//        musicAdapter = new MusicAdapter(getSupportFragmentManager());
-//        mTabListener = new TabLayout.TabLayoutOnPageChangeListener(musicTabs);
-//        mPagerListener = new TabLayout.ViewPagerOnTabSelectedListener(pager);
-//
-//        videoTabs = findViewById(R.id.video_tabs);
-//        videoAdapter = new VideoAdapter(getSupportFragmentManager());
-//        vTabListener = new TabLayout.TabLayoutOnPageChangeListener(musicTabs);
-//        vPagerListener = new TabLayout.ViewPagerOnTabSelectedListener(pager);
+//    @Override
+//    protected void onStart() {
+//        super.onStart();
 //    }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        getPermission();
-
-        PlayerManager.getInstance().onNewActivity( this );
-    }
+//    private boolean doSelection(MenuItem item)
+//    {
+//        if ( checkPermissions() )
+//            return doSelection( item.getItemId() );
+//        return false;
+//    }
 
     private boolean doSelection(MenuItem item)
     {
-        if ( checkPermissions() )
-            return doSelection( item.getItemId() );
-        return false;
-    }
-
-    private boolean doSelection( int id )
-    {
-        switch (id) {
-            case R.id.navigation_music:
-//                MusicFragment.InitFragments( this );
-//                musicSwitch();
-//                Log.d("Selecting_music", "Selected Music" );
-//                switchFragment( music );
+        switch (item.getItemId()) {
+            case R.id.musicFragment:
                 pager.setCurrentItem( 0 );
                 return true;
-            case R.id.navigation_video:
-//                VideoFragment.InitFragments( this );
-//                videoSwitch();
-//                switchFragment( video );
+            case R.id.videoFragment:
                 pager.setCurrentItem( 1 );
                 return true;
             default:
                 return false;
         }
     }
+
+//    private boolean doSelection( int id )
+//    {
+//
+//    }
 
     private void prepareSearchMenu() {
         MenuItem searchItem = menu.findItem(R.id.action_search);
@@ -190,12 +219,17 @@ public class MainActivity extends AppCompatActivity
     private void getPermission()
     {
         // Here, thisActivity is the current activity
-        if ( !checkPermissions() ) {
-            Log.d("Selecting_music", "Getting Permissions is " + checkPermissions() );
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    requestCode );
-        }
+//        if ( !checkPermissions() ) {
+//            Log.d("Selecting_music", "Getting Permissions is " + checkPermissions() );
+//            ActivityCompat.requestPermissions(this,
+//                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+//                    requestCode );
+//        }
+
+        Log.d("Selecting_music", "Getting Permissions is " + checkPermissions() );
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                requestCode );
     }
 
     private void init()
@@ -220,11 +254,34 @@ public class MainActivity extends AppCompatActivity
 //            }
             if ( grantResults.length > 0 && grantResults[ 0 ] == PackageManager.PERMISSION_GRANTED
                     && grantResults[ 1 ] == PackageManager.PERMISSION_GRANTED  )
-                doSelection(R.id.navigation_music);
-//            begin();
-
+                beginApp();
         }
     }
+
+//    @Override
+//    protected void onPostResume() {
+//        super.onPostResume();
+//        VideoPlayer.getInstance().tryRenderVideoPlayer();
+//    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.w("Video_Player", "Rendering Video Controller");
+//        VideoPlayer.getInstance().tryRenderVideoPlayer();
+    }
+
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//        if ( requestCode == REQUEST_VIDEO)
+//        {
+//            if ( resultCode == VideoPlayer.RESULT_PLAYING )
+//            {
+////                VideoPlayer.getInstance().renderVideoPlayer();
+//            }
+//        }
+//    }
 
     public void register(BackManager action) {
         backAction = action;
@@ -240,30 +297,18 @@ public class MainActivity extends AppCompatActivity
 
     public static class AppPagerAdapter extends FragmentPagerAdapter
     {
-        private final MusicFragment music;
-        private final VideoFragment video;
+        private static final int defaultPage = 0;
+        private final Fragment[] host = {new Fragment(R.layout.music_host), new Fragment(R.layout.video_host)};
 
         public AppPagerAdapter(FragmentManager fm)
         {
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
-            music = new MusicFragment();
-            video = new VideoFragment();
         }
 
         @Override
         public Fragment getItem(int position)
         {
-            switch ( position )
-            {
-                case 0:
-                    return music;
-
-                case 1:
-                    return video;
-
-                default:
-                    return new Fragment();
-            }
+            return host[ position ];
         }
 
         @Override
@@ -347,7 +392,7 @@ public class MainActivity extends AppCompatActivity
 //        {
 //            views = new Fragment[ 4 ];
 //            views[ 0 ] = new Fragment();
-//            views[ 1 ] = new com.gcodes.iplayer.video.FolderFragment();
+//            views[ 1 ] = new com.gcodes.iplayer.video.folder.FolderFragment();
 //            views[ 2 ] = new SeriesFragment();
 //            views[ 3 ] = new AllFragment();
 //        }

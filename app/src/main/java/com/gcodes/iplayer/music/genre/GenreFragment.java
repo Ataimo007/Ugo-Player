@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
@@ -17,12 +16,12 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.artist.ArtistFragment;
 import com.gcodes.iplayer.ui.UIConstance;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -132,12 +131,12 @@ public class GenreFragment extends Fragment
                 @Override
                 public void onClick(View v)
                 {
-                    Intent intent = new Intent( GenreFragment.this.getContext(), GenreActivity.class );
+                    Bundle args = new Bundle();
 //                    intent.putExtra( "artist_key", artistKey );
-                    intent.putExtra( "genre_id", genreId );
-                    intent.putExtra( "genre", genre );
+                    args.putLong( "genre_id", genreId );
+                    args.putString( "genre", genre );
 //                    intent.putExtra( "album_art", albumArt );
-                    GenreFragment.this.startActivity( intent );
+                    NavHostFragment.findNavController( GenreFragment.this ).navigate(R.id.action_musicFragment_to_mainGenreFragment, args);
                 }
             });
         }

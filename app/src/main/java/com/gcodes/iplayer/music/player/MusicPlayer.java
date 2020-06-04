@@ -22,9 +22,9 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.util.Consumer;
+import androidx.fragment.app.FragmentActivity;
 
 public class MusicPlayer
 {
@@ -55,13 +55,13 @@ public class MusicPlayer
         play( new ArrayList< Music >(Collections.singletonList(music)) );
     }
 
-    public static void play(ArrayList<Music> music, AppCompatActivity activity )
+    public static void play(ArrayList<Music> music, FragmentActivity activity )
     {
         getInstance().playAll( music );
 //        FragmentMusic.render( activity );
     }
 
-    public static void play(Music music, AppCompatActivity activity ) {
+    public static void play(Music music, FragmentActivity activity ) {
         play(new ArrayList<>(Collections.singletonList(music)), activity  );
     }
 
@@ -80,9 +80,16 @@ public class MusicPlayer
         musicPlayer.play();
     }
 
+    public static void play( int position )
+    {
+        MusicPlayer musicPlayer = getInstance();
+        PlayerManager playerManager = musicPlayer.getMainPlayerManager();
+        playerManager.playTrack( position );
+    }
+
     public void play()
     {
-        playerManager.playOnForeground();
+        playerManager.playMusic();
     }
 
     public static MusicPlayer getInstance()
@@ -96,10 +103,11 @@ public class MusicPlayer
     {
         SimpleExoPlayer player = musicPlayer.getPlayerManager();
         int index = player.getCurrentPeriodIndex();
+//        Duration duration = Duration.millis(player.getDuration());
 //        int index = player.getCurrentWindowIndex();
         Music music = musicPlayer.getMusic( index );
-        Log.d( "Music_Player", "playing new song " + music );
-
+//        Log.d( "Music_Player", "playing new song " + music + "duration " + duration );
+//        music.setDuration( duration );
         playing.accept( music );
     }
 
@@ -188,6 +196,10 @@ public class MusicPlayer
         return musics.get( index );
     }
 
+    public boolean isMusicPlaying() {
+        return musics != null;
+    }
+
     public int getPosition(Music music) {
         return musics.indexOf( music );
     }
@@ -220,10 +232,10 @@ public class MusicPlayer
                 Log.d("Music_Player", i + " is null" );
         }
         source = new ConcatenatingMediaSource(musicSource.toArray( new ProgressiveMediaSource[]{}));
-        playerManager.prepare( source, true, true );
+        this.musics = musics;
+        playerManager.prepare( source, true, true, PlayerManager.MediaType.MUSIC );
         playerManager.shuffle();
         playerManager.repeatAll();
-        this.musics = musics;
         initError();
     }
 
@@ -251,7 +263,7 @@ public class MusicPlayer
 //                source.removeMediaSource( trackNo );
                 String message = String.format("The track %s does not exist or %s", music.getName(), error.getMessage());
                 Toast.makeText( MusicPlayer.this.playerManager.getContext(), message, Toast.LENGTH_SHORT).show();
-                player.prepare( source );
+                playerManager.prepare( source, PlayerManager.MediaType.MUSIC );
                 player.setPlayWhenReady( true );
             }
         });

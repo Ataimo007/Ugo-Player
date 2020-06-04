@@ -1,47 +1,43 @@
 package com.gcodes.iplayer.music.player;
 
-import android.app.SearchManager;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.PointF;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
+import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SearchView;
-import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.helpers.GlideApp;
-import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.player.PlayerManager;
+import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.PlayerControlView;
-import com.google.android.exoplayer2.ui.PlayerView;
 
-import jp.wasabeef.glide.transformations.BlurTransformation;
+import org.joda.time.Duration;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
@@ -64,12 +60,91 @@ public class MusicPlayerFragment extends Fragment
     private CardView art;
     private Player.EventListener eventListener;
 
-    private String[] lyrics = new String[0];
+    private String[] lyrics;
     private RecyclerView listView;
     private CustomAdapter adapter;
-    private ImageButton lyricsButton;
+    private ToggleButton lyricsButton;
+    private ToggleButton voiceButton;
     private ImageButton videoButton;
     private Music currentMusic;
+
+    private final int LYRICSYNCER = 1000;
+    private final int LYRICIDLENESS = 5000;
+    private Handler handler = new Handler();
+    private int currentPos = 0;
+    private long lyricSpanSec = 0;
+
+    private boolean synced;
+    private final Runnable syncer = new Runnable() {
+        int count = 0;
+        boolean flag = true;
+        @Override
+        public void run() {
+            sync();
+            handler.postDelayed(syncer, LYRICSYNCER);
+        }
+    };
+
+    private void syncPost()
+    {
+        if ( !synced )
+        {
+            handler.postDelayed(syncer, LYRICSYNCER);
+            synced = true;
+        }
+    }
+
+    private void syncPost( long delay )
+    {
+        if ( !synced )
+        {
+            handler.postDelayed(syncer, delay);
+            synced = true;
+        }
+    }
+
+    private void deSync()
+    {
+        if ( synced )
+        {
+            handler.removeCallbacks( syncer );
+            synced = false;
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        deSync();
+    }
+
+    private void sync()
+    {
+        Duration playback = Duration.millis( PlayerManager.getInstance().getCurrentPosition() );
+        int pos = (int) (playback.getStandardSeconds() / lyricSpanSec);
+        Log.d("Lyrics_Sync", String.format( "Sync lyrics %d %d %d %d", playback.getStandardSeconds(), pos, lyricSpanSec, lyrics.length ) );
+        if ( currentPos != pos )
+        {
+            currentPos = pos;
+            listView.smoothScrollToPosition(currentPos);
+        }
+    }
+
+    private void initScroll()
+    {
+        Duration duration = getDuration();
+        lyricSpanSec = duration.getStandardSeconds() / lyrics.length;
+        currentPos = 0;
+        syncPost();
+    }
+
+    private Duration getDuration()
+    {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        retriever.setDataSource(PlayerManager.getInstance().getContext(), currentMusic.toUri());
+        String milliDuration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        return Duration.millis(Long.parseLong(milliDuration));
+    }
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -89,6 +164,7 @@ public class MusicPlayerFragment extends Fragment
         image = content.findViewById( R.id.player_art );
         art = content.findViewById(R.id.player_album_art);
         lyricsButton = content.findViewById( R.id.player_show_lyrics );
+        voiceButton = content.findViewById( R.id.player_remove_voice );
         videoButton = content.findViewById( R.id.player_show_video );
         initView();
 
@@ -102,11 +178,27 @@ public class MusicPlayerFragment extends Fragment
     }
 
     private void initButton() {
-        lyricsButton.setOnClickListener( v -> {
-            if ( isLyricsVisible() )
-                hideLyrics();
-            else
-                showLyrics();
+        if ( lyrics == null )
+            lyricsButton.setEnabled( false );
+
+        lyricsButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if ( isChecked )
+                    showLyrics();
+                else
+                    hideLyrics();
+            }
+        });
+
+        if ( false ) // condition for no voice
+            voiceButton.setEnabled( false );
+
+        voiceButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+            }
         });
     }
 
@@ -201,7 +293,14 @@ public class MusicPlayerFragment extends Fragment
             String lyricsBody = lyrics.getLyricsBody();
             this.lyrics = lyricsBody.split("\n");
             adapter.notifyDataSetChanged();
+            lyricsButton.setEnabled( true );
+            initScroll();
         }
+    }
+
+    public void updateNoVoice()
+    {
+        voiceButton.setEnabled(true);
     }
 
     public void setImage(Music music)
@@ -216,54 +315,47 @@ public class MusicPlayerFragment extends Fragment
                 .placeholder( R.drawable.u_song_art_padded ).into( background );
     }
 
-//    private void recognizeMusic( Music music )
-//    {
-//        Helper.Worker.executeTask(() -> {
-//            try {
-//                String info = ACRService.getInstance().recognizeMusic(music);
-//                Log.d( "ACR_Service", "The music info is " + info );
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//                Log.d( "ACR_Service", "Error in getting music info " + e.getMessage() );
-//            }
-//
-//            return () -> {};
-//
-//        });
-//    }
-
-    private void recognizeMusic( Music music )
-    {
-        Log.d( "ACR_Service", "Getting musis info ..." );
-        Helper.Worker.executeTask(() -> {
-
-
-
-            return () -> {};
-
-        });
-    }
-
     private void initRecycleView( View view )
     {
         adapter = new CustomAdapter();
         listView = view.findViewById( R.id.lyrics_list );
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
+//        listView.setLayoutManager( new CustomLinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
-        listView.addItemDecoration(new RecyclerView.ItemDecoration() {
+        listView.addItemDecoration(UIConstance.AppItemDecorator.AppItemDecoratorToolBarOffset(getContext(), UIConstance.AppItemDecorator.DEFAULT_TOP, 130 + UIConstance.AppItemDecorator.DEFAULT_TOP ));
+
+        listView.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-                super.getItemOffsets(outRect, view, parent, state);
-                outRect.top = 20;
-                outRect.bottom = 20;
-
-                if ( parent.getChildAdapterPosition( view ) == 0 )
-                    outRect.top = 10;
-
-                if ( parent.getChildAdapterPosition( view ) == parent.getAdapter().getItemCount() - 1 )
-                    outRect.bottom = 10;
+            public boolean onTouch(View v, MotionEvent event) {
+                Log.d("Lyrics_Sync", "Sync lyrics remove" );
+                deSync();
+                syncPost( LYRICIDLENESS );
+                return false;
             }
         });
+
+//        listView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+//            @Override
+//            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+//                super.onScrollStateChanged(recyclerView, newState);
+//                if ( newState != RecyclerView.SCROLL_STATE_IDLE )
+//                {
+//                    handler.removeCallbacks( runnable );
+//                    handler.postDelayed(() -> {
+//                        handler.postDelayed(runnable, lyricSyncChecker);
+//                    }, 20000);
+//                }
+//            }
+//        });
+    }
+
+    public void onLoading() {
+        lyrics = null;
+        if ( lyricsButton != null )
+            lyricsButton.setEnabled( false );
+        if ( voiceButton != null )
+            voiceButton.setEnabled( false );
+        deSync();
     }
 
     public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>
@@ -284,6 +376,8 @@ public class MusicPlayerFragment extends Fragment
 
         @Override
         public int getItemCount() {
+            if ( lyrics == null )
+                return 0;
             return lyrics.length;
         }
     }
@@ -303,6 +397,42 @@ public class MusicPlayerFragment extends Fragment
 
         public void setItemName(String text) {
             this.itemName.setText( text );
+        }
+    }
+
+    public class CustomLinearLayoutManager extends LinearLayoutManager {
+        public CustomLinearLayoutManager(Context context) {
+            super(context);
+        }
+
+        public CustomLinearLayoutManager(Context context, int orientation, boolean reverseLayout) {
+            super(context, orientation, reverseLayout);
+        }
+
+        public CustomLinearLayoutManager(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+            super(context, attrs, defStyleAttr, defStyleRes);
+        }
+
+        @Override
+        public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, int position) {
+            final LinearSmoothScroller linearSmoothScroller =
+                    new LinearSmoothScroller(recyclerView.getContext()) {
+                        private static final float MILLISECONDS_PER_INCH = 25f;
+
+                        @Override
+                        public PointF computeScrollVectorForPosition(int targetPosition) {
+                            return CustomLinearLayoutManager.this
+                                    .computeScrollVectorForPosition(targetPosition);
+                        }
+
+                        @Override
+                        protected float calculateSpeedPerPixel
+                                (DisplayMetrics displayMetrics) {
+                            return MILLISECONDS_PER_INCH / displayMetrics.densityDpi;
+                        }
+                    };
+            linearSmoothScroller.setTargetPosition(position);
+            startSmoothScroll(linearSmoothScroller);
         }
     }
 

@@ -7,12 +7,43 @@
     android:fitsSystemWindows="true"
     tools:context=".music.player.MusicPlayerActivity">
 
+    <ImageView
+        android:id="@+id/player_background"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:adjustViewBounds="true"
+        android:cropToPadding="true"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:srcCompat="@tools:sample/backgrounds/scenic" />
+
+    <View
+        android:id="@+id/view4"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/colorAccent9"
+        app:layout_constraintBottom_toTopOf="@+id/player_tabs"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/player_pager"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/player_tabs"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar2"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        android:elevation="10dp"
+        android:background="@drawable/top_music_control_background"
         android:gravity="center|fill"
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
@@ -27,7 +58,6 @@
             android:id="@+id/player_video_bar"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/colorPrimary"
             android:maxHeight="?attr/actionBarSize"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
@@ -53,7 +83,6 @@
             android:id="@+id/playerlist_bar"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/colorPrimary"
             android:maxHeight="?attr/actionBarSize"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
@@ -79,7 +108,6 @@
             android:id="@+id/player_bar"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/colorPrimary"
             android:maxHeight="?attr/actionBarSize"
             android:visibility="visible"
             app:layout_constraintEnd_toEndOf="parent"
@@ -127,20 +155,6 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <ImageView
-        android:id="@+id/player_background"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:adjustViewBounds="true"
-        android:cropToPadding="true"
-        android:scaleType="centerCrop"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompat="@tools:sample/backgrounds/scenic" />
-
-
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/player_tabs"
         android:layout_width="match_parent"
@@ -177,16 +191,5 @@
             android:layout_height="wrap_content"
             android:icon="@drawable/ic_playlist_black_24dp" />
     </com.google.android.material.tabs.TabLayout>
-
-    <androidx.viewpager.widget.ViewPager
-        android:id="@+id/player_pager"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@color/colorAccent9"
-        android:elevation="2dp"
-        app:layout_constraintBottom_toTopOf="@+id/player_tabs"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar2" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

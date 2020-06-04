@@ -5,8 +5,6 @@
     android:id="@+id/linearLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="3dp"
-    android:paddingBottom="3dp"
     android:visibility="visible">
 
     <TextView
@@ -42,11 +40,24 @@
         app:layout_constraintStart_toStartOf="@+id/item_title"
         app:layout_constraintTop_toBottomOf="@+id/item_title" />
 
+    <View
+        android:id="@+id/item_selected"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/colorAccent3"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <androidx.cardview.widget.CardView
         android:id="@+id/item_card"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginStart="10dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
         android:transitionGroup="false"
         app:cardCornerRadius="25dp"
         app:cardElevation="4dp"
@@ -66,5 +77,14 @@
             android:elevation="10dp"
             app:srcCompat="@drawable/u_song_art_padded" />
     </androidx.cardview.widget.CardView>
+
+    <View
+        android:id="@+id/view5"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@color/colorAccent12"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/item_title"
+        app:layout_constraintStart_toStartOf="@id/item_title" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,7 @@
 package com.gcodes.iplayer.music.player;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -35,22 +36,17 @@ import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
 public class MusicPlayerActivity extends AppCompatActivity{
 
-    private PlayerView playerView;
-    private Menu menu;
-    private Toolbar toolbar;
-    private int currentTrack = -1;
     private Music currentMusic;
     private Player.EventListener trackListener;
     private PlayerDatabase.MusicInfo musicInfo;
     private PlayerControlView control;
     private TextView musicName;
     private TextView artistName;
-    private ImageView image;
     private SectionsPagerAdapter pagerAdapter;
     private PlayerDatabase manager;
 
-    private String[] lyrics = new String[0];
     private ImageView background;
+    private final Handler handler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,21 +146,75 @@ public class MusicPlayerActivity extends AppCompatActivity{
         MusicPlayer.consumeTrack( this::consumeTrack );
     }
 
-    private void consumeTrack( Music music )
-    {
-        updatePlayer( music );
-        pagerAdapter.updatePlayer( music );
-        pagerAdapter.updatePlaylist( music );
-        pagerAdapter.updateMusicVideos( music );
+    private final int NETWORKWATCHER = 1000;
+    private boolean watching = false;
+    private final Runnable runnable = new Runnable() {
+        int count = 0;
+        boolean flag = true;
+        @Override
+        public void run() {
 
+            boolean deviceOnline = Helper.isDeviceOnline( MusicPlayerActivity.this );
+            Log.d("Music_Player_Service", "is the device online " + deviceOnline );
+            if (  deviceOnline )
+            {
+                retrieveInfoOnline( currentMusic );
+            }
+            else
+            {
+                handler.postDelayed( runnable, NETWORKWATCHER );
+            }
+        }
+    };
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacks( runnable );
+    }
+
+    private void retrieveInfo(Music music)
+    {
+        boolean deviceOnline = Helper.isDeviceOnline(this);
+        Log.d("Music_Player_Service", "is the device online " + deviceOnline );
+        if (  !deviceOnline && !watching )
+        {
+            handler.postDelayed( runnable, NETWORKWATCHER );
+            watching = true;
+        }
+        retrieveInfoOnline( music );
+    }
+
+//    private void retrieveInfo(Music music)
+//    {
+//        boolean deviceOnline = Helper.isDeviceOnline(this);
+//        Log.d("Music_Player_Service", "is the device online " + deviceOnline );
+//        if (  deviceOnline )
+//        {
+//            handler.removeCallbacks( runnable );
+//            watching = false;
+//        }
+//        else
+//        {
+//            if ( !watching )
+//            {
+//                watching = true;
+//                handler.postDelayed( runnable, NETWORKWATCHER );
+//            }
+//        }
+//        retrieveInfoOnline( music );
+//    }
+
+    private void retrieveInfoOnline(Music music)
+    {
         Helper.Worker.executeTask(() -> {
-            pagerAdapter.onMusicVideoLoad();
             PlayerDatabase.MusicInfo info = manager.getInfo(music);
             List<Video> musicVideo = null;
             PlayerDatabase.MusicLyrics lyrics = null;
 
             if ( info != null )
             {
+                Log.d("Music_Player", "The info is " + info );
                 lyrics = manager.getLyrics( info );
                 musicVideo = manager.getMusicVideo( info );
             }
@@ -188,10 +238,21 @@ public class MusicPlayerActivity extends AppCompatActivity{
                 pagerAdapter.updateMusicVideos( finalMusicVideo );
             };
         });
-
-
-
     }
+
+    private void consumeTrack( Music music )
+    {
+        updatePlayer( music );
+        pagerAdapter.updatePlayer( music );
+        pagerAdapter.updatePlaylist( music );
+        pagerAdapter.updateMusicVideos( music );
+        pagerAdapter.onLoading();
+
+        retrieveInfo( music );
+        currentMusic = music;
+    }
+
+
 
     private void updatePlayer(Music music) {
         musicName.setText( music.getName() );
@@ -342,8 +403,9 @@ public class MusicPlayerActivity extends AppCompatActivity{
             return 1;
         }
 
-        public void onMusicVideoLoad() {
+        public void onLoading() {
             musicVideo.onLoading();
+            player.onLoading();
         }
 
 //        public void setToolbar( int pos )

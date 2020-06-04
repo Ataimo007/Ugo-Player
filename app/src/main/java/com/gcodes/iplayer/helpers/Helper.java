@@ -11,6 +11,12 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.gson.Gson;
+import com.jarvanmo.exoplayerview.gesture.OnVideoGestureChangeListener;
+
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.DateTimeFormatterBuilder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,6 +31,11 @@ public class Helper
 {
     private static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     private static final int DEFAULT_BUFFER_SIZE = 1 * 1024 * 1024; // 1 mega byte
+
+    private static final DateTimeFormatter yearFormat = new DateTimeFormatterBuilder().appendMonthOfYearText().appendLiteral(" ").appendDayOfMonth(2).toFormatter();
+    private static final DateTimeFormatter dateFormat = new DateTimeFormatterBuilder().appendMonthOfYearText().appendLiteral(" ").appendDayOfMonth(2).appendLiteral( " " ).appendYear( 0, 4 ).toFormatter();
+
+    public static final Gson gson = new Gson();
 
     public static class Worker extends AsyncTask< BackgroundAction, Void, UIAction >
     {
@@ -47,6 +58,35 @@ public class Helper
         public static void executeAllTask(BackgroundAction... backgroundActions )
         {
             new Worker().execute( backgroundActions );
+        }
+    }
+
+    public static class ProgressWorker extends AsyncTask< BackgroundAction, UIAction, UIAction >
+    {
+        @Override
+        protected UIAction doInBackground(BackgroundAction... backgroundActions) {
+            return backgroundActions[ 0 ].perform();
+        }
+
+        @Override
+        protected void onProgressUpdate(UIAction... values) {
+            super.onProgressUpdate(values);
+        }
+
+        @Override
+        protected void onPostExecute(UIAction done) {
+            done.perform();
+            super.onPostExecute(done);
+        }
+
+        public static void executeTask(BackgroundAction backAction )
+        {
+            new ProgressWorker().execute( backAction );
+        }
+
+        public static void executeAllTask(BackgroundAction... backgroundActions )
+        {
+            new ProgressWorker().execute( backgroundActions );
         }
     }
 
@@ -141,4 +181,37 @@ public class Helper
 
         return outputStream.toByteArray();
     }
+
+    public static String getDate(DateTime date)
+    {
+        if ( date.getYear() == DateTime.now().getYear() )
+            return date.toString( yearFormat );
+        else
+            return date.toString( dateFormat );
+
+    }
+
+    public static class VideoGestureChangeListener implements OnVideoGestureChangeListener
+    {
+        @Override
+        public void onVolumeChanged(int range, int type) {
+
+        }
+
+        @Override
+        public void onBrightnessChanged(int brightnessPercent) {
+
+        }
+
+        @Override
+        public void onNoGesture() {
+
+        }
+
+        @Override
+        public void onShowSeekSize(long seekSize, boolean fastForward) {
+
+        }
+    }
+
 }

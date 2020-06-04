@@ -16,11 +16,14 @@ import com.gcodes.iplayer.R;
 import com.google.gson.Gson;
 
 import java.io.Serializable;
+import org.joda.time.Duration;
 import java.util.Objects;
 
 import androidx.annotation.Nullable;
 import androidx.loader.content.CursorLoader;
 import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
+
+import static com.gcodes.iplayer.helpers.Helper.gson;
 
 public class Music implements Comparable<Music>, Serializable
 {
@@ -30,9 +33,7 @@ public class Music implements Comparable<Music>, Serializable
     private final String artist;
     private final String album;
     private final String artPath;
-
-    private static final Gson gson = new Gson();
-
+//    private Duration duration;
 
     public Music(String name, long mediaId, long albumId, String artist, String album, String artPath) {
         this.name = name;
@@ -42,15 +43,6 @@ public class Music implements Comparable<Music>, Serializable
         this.album = album;
         this.artPath = artPath;
     }
-
-//    public Music(String name, long mediaId, long albumId, String artist, String album) {
-//        this.name = name;
-//        this.mediaId = mediaId;
-//        this.albumId = albumId;
-//        this.artist = artist;
-//        this.album = album;
-//        artPath = "";
-//    }
 
     public static Music getIntance(Bundle bundle )
     {

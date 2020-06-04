@@ -5,16 +5,17 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
-    android:background="@color/video_popup">
+    android:layout_marginTop="20dp"
+    android:background="@drawable/popup_background">
 
     <TextView
         android:id="@+id/popup_seek_to"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="30dp"
+        android:layout_margin="10dp"
         android:text="TextView"
-        android:textColor="@android:color/white"
-        android:textSize="36sp"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

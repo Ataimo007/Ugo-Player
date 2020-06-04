@@ -97,11 +97,14 @@ public class TrackFragment extends Fragment
     private void loadMusic()
     {
         musics = new ArrayList<>();
-        cursor.moveToFirst();
-        do
+        if  ( cursor.getCount() > 0 )
         {
-            musics.add( Music.getIntance(cursor, artLoader) );
-        } while ( cursor.moveToNext() );
+            cursor.moveToFirst();
+            do
+            {
+                musics.add( Music.getIntance(cursor, artLoader) );
+            } while ( cursor.moveToNext() );
+        }
     }
 
     @Override

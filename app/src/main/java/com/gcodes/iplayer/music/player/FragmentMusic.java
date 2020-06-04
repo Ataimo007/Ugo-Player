@@ -3,6 +3,7 @@ package com.gcodes.iplayer.music.player;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,7 @@ import com.gcodes.iplayer.music.folder.FolderFragment;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -46,48 +48,6 @@ public class FragmentMusic extends Fragment {
         // Required empty public constructor
     }
 
-//    public static void renderPlayer(AppCompatActivity activity)
-//    {
-//        PlayerManager playerManager = PlayerManager.getInstance();
-//        FragmentManager manager = playerManager.getActivity().getSupportFragmentManager();
-//        FragmentTransaction transaction = manager.beginTransaction();
-//        FragmentMusic fragmentMusic = newInstance();
-//        View musicControl = activity.findViewById(R.id.music_control);
-//        musicControl.setVisibility( View.VISIBLE );
-//        transaction.replace( R.id.music_control, fragmentMusic);
-////        transaction.add( R.id.music_control, fragmentMusic);
-//        transaction.commit();
-//    }
-
-//    public static void render() {
-//        PlayerManager playerManager = PlayerManager.getInstance();
-//        FragmentManager manager = playerManager.getActivity().getSupportFragmentManager();
-//        FragmentTransaction transaction = manager.beginTransaction();
-//        FragmentMusic fragmentMusic = newInstance();
-//        View musicControl = playerManager.getActivity().findViewById(R.id.music_control);
-//        musicControl.setVisibility( View.VISIBLE );
-//        transaction.replace( R.id.music_control, fragmentMusic);
-////        transaction.add( R.id.music_control, fragmentMusic);
-//        transaction.commit();
-//    }
-//
-//    public static void render(AppCompatActivity activity ) {
-//        PlayerManager playerManager = PlayerManager.getInstance();
-//        FragmentManager manager = activity.getSupportFragmentManager();
-//        FragmentTransaction transaction = manager.beginTransaction();
-//        FragmentMusic fragmentMusic = newInstance();
-//        View musicControl = activity.findViewById(R.id.music_control);
-//        musicControl.setVisibility( View.VISIBLE );
-//        transaction.replace( R.id.music_control, fragmentMusic);
-////        transaction.add( R.id.music_control, fragmentMusic);
-//        transaction.commit();
-//    }
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @return A new instance of fragment FragmentMusic.
-     */
     // TODO: Rename and change types and number of parameters
     public static FragmentMusic newInstance() {
         FragmentMusic fragment = new FragmentMusic();
@@ -97,8 +57,6 @@ public class FragmentMusic extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        initPlayer();
-//        initSources();
         init();
     }
 
@@ -114,33 +72,21 @@ public class FragmentMusic extends Fragment {
 
     public void startAnimation()
     {
-        CardView art = controlView.findViewById(R.id.exo_album_art);
-        art.startAnimation( rotate );
+        if ( controlView != null )
+        {
+            CardView art = controlView.findViewById(R.id.exo_album_art);
+            art.startAnimation( rotate );
+        }
     }
 
     public void pauseAnimation()
     {
-        CardView art = controlView.findViewById(R.id.exo_album_art);
-        art.clearAnimation();
+        if ( controlView != null )
+        {
+            CardView art = controlView.findViewById(R.id.exo_album_art);
+            art.clearAnimation();
+        }
     }
-
-//    private void initSources()
-//    {
-//        factory = new DefaultDataSourceFactory(getContext(), Util.getUserAgent(getContext(), getResources().getString(R.string.app_name)));
-//        String gsonMusic = getArguments().getString("music");
-//        Music music = Music.fromGson(gsonMusic);
-//        ExtractorMediaSource musicSource = getMusicSource(music);
-//        player.prepare( musicSource );
-//    }
-
-//    private ExtractorMediaSource getMusicSource( Music music )
-//    {
-//        Uri media = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf( music.getMediaId() ) );
-////        Log.d( "Music_Player", "Music " + id );
-////        Log.d( "Music_Player", "Music " + media.getPath() );
-//        ExtractorMediaSource source = new ExtractorMediaSource.Factory(factory).createMediaSource(media);
-//        return source;
-//    }
 
     private void initView()
     {
@@ -153,13 +99,21 @@ public class FragmentMusic extends Fragment {
         controlView.setOnClickListener( v -> {
             showMusicPlayer();
         });
-//        initRotateAnim();
+        initRotateAnim();
     }
 
 //    private void initRotateAnim() {
 //        CardView art = controlView.findViewById(R.id.exo_album_art);
 //        MusicPlayer.onStateChange( art );
 //    }
+
+    private void initRotateAnim() {
+        MusicPlayer musicPlayer = MusicPlayer.getInstance();
+        if ( musicPlayer.getPlayerManager().getPlayWhenReady() && musicPlayer.getPlayerManager().getPlaybackState() == Player.STATE_READY )
+            startAnimation();
+        else
+            pauseAnimation();
+    }
 
     private void showMusicPlayer()
     {
@@ -183,8 +137,9 @@ public class FragmentMusic extends Fragment {
 
     public void setImage(Music music, ImageView image)
     {
-        GlideApp.with( FragmentMusic.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( FragmentMusic.this.getContext(), music ) )
-                .placeholder( R.drawable.u_song_art_padded ).apply( circleCropTransform() ).into( image );
+        if  ( FragmentMusic.this.isAdded() )
+            GlideApp.with( FragmentMusic.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( FragmentMusic.this.getContext(), music ) )
+                    .placeholder( R.drawable.u_song_art_padded ).apply( circleCropTransform() ).into( image );
     }
 
 

@@ -1,21 +1,16 @@
 package com.gcodes.iplayer.video.player;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.util.Consumer;
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
-import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -29,23 +24,14 @@ import android.widget.Toast;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.backup.CustomVideoGesture;
-import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.services.OpenSubtitleService;
 import com.gcodes.iplayer.video.Video;
 import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.MergingMediaSource;
 import com.google.android.exoplayer2.source.SingleSampleMediaSource;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.PlayerView;
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
-import com.google.android.exoplayer2.util.MimeTypes;
-import com.google.android.exoplayer2.util.Util;
-import com.google.gson.Gson;
 import com.jarvanmo.exoplayerview.gesture.OnVideoGestureChangeListener;
 
 import java.io.File;
@@ -55,13 +41,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
 //    private static SimpleExoPlayer player;
     private final PlayerManager playerManager = PlayerManager.getInstance();
-    private ConcatenatingMediaSource mediaSource;
+
     private PopupWindow seekToPopup;
     private PlayerView playerView;
     private final Handler videoHandler = new Handler();
     private PopupWindow brightnessPopup;
     private PopupWindow volumePopup;
-    private int begin;
+    private VideoPlayer player;
+    private OpenSubtitleService openSubtitleService;
 //    private DefaultDataSourceFactory factory;
 
     @Override
@@ -73,6 +60,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
         initPlayer();
 
         initPopup();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        player.saveState();
+        Log.w("Video_Player", String.format("Video Controller state setting back result" ) );
+        setResult( VideoPlayer.RESULT_PLAYING );
     }
 
     private void initPopup()
@@ -101,37 +96,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
         mVisible = false;
     }
 
-    public static void play(Context context, Video ...videos)
-    {
-        Intent intent = new Intent( context, VideoPlayerActivity.class );
-        String gsonVideos[] = new String[ videos.length ];
-        for ( int i = 0; i < videos.length; ++i )
-            gsonVideos[ i ] = videos[ i ].toGson();
-        intent.putExtra( "medias", gsonVideos );
-        intent.putExtra( "data_type", "video" );
-        context.startActivity( intent );
-    }
-
-    public static void play(Context context, String url )
-    {
-        Intent intent = new Intent( context, VideoPlayerActivity.class );
-        intent.putExtra( "medias", new String[]{ url } );
-        intent.putExtra( "data_type", "url" );
-        context.startActivity( intent );
-    }
-
-    public static void play(Context context, int pos, Video ...videos)
-    {
-        Intent intent = new Intent( context, VideoPlayerActivity.class );
-        String gsonVideos[] = new String[ videos.length ];
-        for ( int i = 0; i < videos.length; ++i )
-            gsonVideos[ i ] = videos[ i ].toGson();
-        intent.putExtra( "medias", gsonVideos );
-        intent.putExtra( "data_type", "video" );
-        intent.putExtra( "begin", pos );
-        context.startActivity( intent );
-    }
-
     private void showStatus()
     {
         Log.d( "Video_Player", "Showing Status " );
@@ -151,67 +115,116 @@ public class VideoPlayerActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        play();
-    }
-
-    private void playNow()
-    {
-        playerManager.play();
-        if  ( begin >= 0 )
-            playerManager.playAt( begin );
+        if ( !isFromController() )
+            play();
     }
 
     private void play()
     {
-        playNow();
+        player.playNow();
     }
 
     private Video getVideoAt( int position )
     {
-        String[] medias = getIntent().getStringArrayExtra("medias");
-        return Video.fromGson( medias[ position ] );
+        return player.getVideo( position );
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 //        player.stop();
-        playerManager.pause();
+//        playerManager.pause();
+//        playerManager.stop();
+//        playerView.setPlayer(null);
     }
+
+//    @Override
+//    protected void onStop() {
+//        super.onStop();
+//        playerManager.stop();
+//        playerView.setPlayer(null);
+//    }
 
     private void initPlayer()
     {
         initView();
 
-        if ( playerManager.isReady() )
-            playerManager.saveState();
+//        if ( playerManager.isReady() )
+//            playerManager.saveState();
+
+        player = VideoPlayer.getInstance();
 
         initSource();
 //        initAutoSubtitle();
+        initSubtitle();
+
         initControls();
+    }
+
+    private void initSubtitle() {
+        openSubtitleService = new OpenSubtitleService(playerView);
     }
 
     @Override
     protected void onDestroy()
     {
         super.onDestroy();
-        if ( playerManager.hasState() )
-            playerManager.restoreState();
+        openSubtitleService.destroy();
+        openSubtitleService = null;
+//        if ( playerManager.hasState() )
+//            playerManager.restoreState();
     }
 
     private void initControls() {
         ImageView subtitleButton = findViewById(R.id.exo_custom_subtitle);
         subtitleButton.setOnClickListener( v -> {
-            Log.d( "Subtitle_Activities", "The current window is " + playerManager.getCurrentTrack() );
+            Log.d( "Subtitle_Activities", "The current window is " + playerManager.getCurrentWindow() );
             showSubtitle();
         });
     }
 
     private void showSubtitle()
     {
-        int position = playerManager.getCurrentTrack();
+        int position = playerManager.getCurrentWindow();
         Video video = getVideoAt(position);
         showSubtitle( video, position );
+    }
+
+//    private void showSubtitle(Video video, int position )
+//    {
+//        Log.d( "Subtitle_Activities", "Initializing Video audio conversion in VideoPlayerActivity" );
+//
+//        Helper.Worker.executeTask( () -> {
+//            Looper.prepare();
+////            File subtitle = OpenSubtitleService.getIntance().retrieveSubtitle(video, this, messageCallback());
+//            player.retrieveSubtitle(video, playerView );
+////            ConcatenatingMediaSource newSource = player.buildNewSourceOnSubtitle(subtitleSource, position);
+//
+////            SingleSampleMediaSource subtitleSource = player.retrieveSubtitle(video, playerView );
+////            ConcatenatingMediaSource newSource = player.buildNewSourceOnSubtitle(subtitleSource, position);
+//            return () -> {
+////                player.switchSources( newSource );
+//            };
+//        });
+//    }
+
+    private void showSubtitle(Video video, int position )
+    {
+        Log.d( "Subtitle_Activities", "Initializing Video audio conversion in VideoPlayerActivity" );
+
+        openSubtitleService.beginSubtitling(video);
+
+    }
+
+    public ConcatenatingMediaSource generateSource(File subtitleFile, Video video) {
+        int videoIndex = player.getCurrentVideo() == video ? player.getCurrentIndex() : player.findIndex( video );
+        SingleSampleMediaSource subtitleSource = player.getSubtitle(subtitleFile);
+        return player.buildNewSourceOnSubtitle(subtitleSource, videoIndex);
+    }
+
+    public void switchSource(ConcatenatingMediaSource source)
+    {
+        player.switchSources( source );
     }
 
     private void autoSubtitle()
@@ -220,17 +233,17 @@ public class VideoPlayerActivity extends AppCompatActivity {
             @Override
             public void onPositionDiscontinuity(int reason) {
                 showSubtitle();
-                Log.d( "Video_Player", "The current window is " + playerManager.getCurrentTrack() );
+                Log.d( "Video_Player", "The current window is " + playerManager.getCurrentWindow() );
             }
         });
     }
 
-    private void initAutoSubtitle() {
-        if ( isDisplaySubtitle() )
-        {
-           autoSubtitle();
-        }
-    }
+//    private void initAutoSubtitle() {
+//        if ( isDisplaySubtitle() )
+//        {
+//           autoSubtitle();
+//        }
+//    }
 
     private Consumer< String > messageCallback()
     {
@@ -241,75 +254,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
         };
     }
 
-    @NonNull
-    public ConcatenatingMediaSource BuildNewSourceOnSubtitle(File file, int position )
-    {
-        SingleSampleMediaSource subtitleSource = getSubtitle( file );
-        MediaSource[] sources = new MediaSource[ mediaSource.getSize() ];
-        for ( int i = 0; i < mediaSource.getSize(); ++i )
-        {
-            MediaSource mediaSource = this.mediaSource.getMediaSource(i);
-            if ( i == position )
-            {
-                mediaSource = new MergingMediaSource( mediaSource, subtitleSource );
-            }
-            sources[ i ] = mediaSource;
-        }
-
-//        player.setPlayWhenReady( false );
-//        mediaSource.clear( () -> {
-//            mediaSource.addMediaSources(Arrays.asList( sources ), () ->
-//            {
-////                player.prepare( mediaSource, false, false );
-////                mediaSource.pre
-//                player.setPlayWhenReady( true );
-//
-//            });
-//        });
-
-        ConcatenatingMediaSource newSource = new ConcatenatingMediaSource(sources);
-//        player.prepare( newSource, false, false );
-
-        return newSource;
-    }
-
-    private ConcatenatingMediaSource BuildNewSourceOnSubtitle2( File file, int position  )
-    {
-        Gson gson = new Gson();
-        ConcatenatingMediaSource clone = gson.fromJson(gson.toJson(mediaSource), ConcatenatingMediaSource.class);
-        MediaSource targetSource = clone.getMediaSource(position);
-        SingleSampleMediaSource subtitleSource = getSubtitle( file );
-        MergingMediaSource newSource = new MergingMediaSource( targetSource, subtitleSource );
-        clone.removeMediaSource( position );
-        clone.addMediaSource( position, newSource );
-        playerManager.prepare( clone, false, false );
-        return clone;
-    }
-
-    private void switchSources(ConcatenatingMediaSource source)
-    {
-        Log.d( "Video_Player", "The old source " + mediaSource );
-        Log.d( "Video_Player", "The old source " + mediaSource.getSize() );
-        Log.d( "Video_Player", "The old source " + source );
-        Log.d( "Video_Player", "The new source " + source.getSize() );
-
-        playerManager.prepare( mediaSource, false, false );
-        int currentWindowIndex = playerManager.getCurrentTrack();
-        long currentPosition = playerManager.getCurrentPosition();
-
-        playerManager.prepare( source, true, true );
-        playerManager.playTrackAt( currentWindowIndex, currentPosition );
-        mediaSource = source;
-
-//        source.prepareSourceInternal( player, false, null );
-//        player.prepare( source, false, false );
-//        mediaSource = source;
-    }
-
     private void initView()
     {
         playerView = findViewById(R.id.video_player);
         playerManager.setView( playerView );
+
+        playerManager.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT);
+
         if  ( getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT )
         {
             playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT );
@@ -320,6 +271,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL );
             playerManager.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
         }
+
         playerManager.addListener( new KeepScreenOn(playerView) );
         playerView.setBackgroundColor(Color.BLACK);
 
@@ -337,98 +289,39 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private void initSource()
     {
         String dataType = getIntent().getStringExtra("data_type");
+        String[] medias = getIntent().getStringArrayExtra("medias");
+        int begin = getIntent().getIntExtra("begin", -1);
         switch ( dataType )
         {
             case "video" :
-                initVideoSources();
+//                boolean displaySubtitle = isDisplaySubtitle();
+                player.initVideoSources(medias, begin, playerView);
                 break;
 
             case "url" :
-                initOnlineSources();
+                player.initOnlineSources( medias, begin );
                 break;
+
+            case "controller" :
+                player.initSavedSource();
         }
     }
 
-    private void initOnlineSources() {
-        String[] vids = getIntent().getStringArrayExtra("medias");
-        MediaSource sources[] = new MediaSource[ vids.length ];
-        for ( int i = 0; i < vids.length; ++i )
-        {
-            sources[ i ] = getMediaSource( vids[ i ] );
-        }
-        mediaSource = new ConcatenatingMediaSource( sources );
-        playerManager.prepare( mediaSource );
-        begin = getIntent().getIntExtra("begin", -1 );
-    }
-
-    public ProgressiveMediaSource getMediaSource( String url )
+    private boolean isFromController()
     {
-        Uri media = Uri.parse( url );
-        ProgressiveMediaSource source = new ProgressiveMediaSource.Factory( playerManager.getOfflineFactory() ).createMediaSource(media);
-        return source;
+        String dataType = getIntent().getStringExtra("data_type");
+        return dataType.equals("controller");
     }
 
-    private void initVideoSources()
-    {
-        String[] vids = getIntent().getStringArrayExtra("medias");
-        MediaSource sources[] = new MediaSource[ vids.length ];
-        for ( int i = 0; i < vids.length; ++i )
-        {
-            Video video = Video.fromGson(vids[i]);
-            sources[ i ] = getSource(video);
-        }
-        mediaSource = new ConcatenatingMediaSource( sources );
-        playerManager.prepare( mediaSource );
-        begin = getIntent().getIntExtra("begin", -1 );
-    }
-
-//    private void getSource( Video video )
+//    private boolean isDisplaySubtitle()
 //    {
-//        ProgressiveMediaSource videoSource = getVideoSource(video.getId());
-////        mediaSource = new MergingMediaSource( videoSource, subtitleSource );
-//        mediaSource = videoSource;
-////        getSubtitleSource( video );
-//        player.prepare( mediaSource );
+//        return true;
 //    }
 
-    private MediaSource getSource(Video video )
-    {
-        MediaSource mediaSource = getVideoSource(video.getId());
-        if ( isDisplaySubtitle() )
-        {
-            SingleSampleMediaSource subtitleSource = getSubtitle( video );
-            if ( subtitleSource != null )
-                mediaSource = new MergingMediaSource( mediaSource, subtitleSource );
-        }
-        return mediaSource;
-    }
-
-    private boolean isDisplaySubtitle()
-    {
-        return true;
-    }
-
-    private SingleSampleMediaSource getSubtitle(File file)
-    {
-        SingleSampleMediaSource.Factory subFact = new SingleSampleMediaSource.Factory( playerManager.getFactory() );
-        Uri subUri = Uri.fromFile(file);
-        Format subFormat = Format.createTextSampleFormat( null, MimeTypes.APPLICATION_SUBRIP, C.SELECTION_FLAG_DEFAULT, "en");
-        SingleSampleMediaSource subtitle = subFact.createMediaSource(subUri, subFormat, C.TIME_UNSET);
-        return subtitle;
-    }
-
-    private SingleSampleMediaSource getSubtitle(Video video)
-    {
-        File file = OpenSubtitleService.getIntance().getSavedSubtitle( video, this );
-        if ( file == null )
-            return null;
-        return getSubtitle( file );
-    }
-
-    private void downloadSubtitle(Video video)
-    {
-        OpenSubtitleService.getIntance().downloadSubtitle( video, this);
-    }
+//    private void downloadSubtitle(Video video)
+//    {
+//        OpenSubtitleService.getIntance().downloadSubtitle( video, this);
+//    }
 
     private void showSubtitle2(Video video, int position )
     {
@@ -438,24 +331,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
 //                this::switchSources, messageCallback() );
     }
 
-    private void showSubtitle(Video video, int position )
-    {
-        Log.d( "Subtitle_Activities", "Initializing Video audio conversion in VideoPlayerActivity" );
-
-        Helper.Worker.executeTask( () -> {
-//            File subtitle = OpenSubtitleService.getIntance().retrieveSubtitle(video, this, messageCallback());
-            File subtitle = OpenSubtitleService.getIntance().retrieveSubtitle(video, this, null);
-            if ( subtitle == null )
-                Log.d( "Subtitle_Activities", "Unable to find subtitle" );
-            ConcatenatingMediaSource newSource = BuildNewSourceOnSubtitle(subtitle, position);
-            return () -> {
-                switchSources( newSource );
-            };
-        });
-    }
-
-
-
     private void noSubtitle()
     {
 
@@ -463,26 +338,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     private void displaySubtitle()
     {
-        OpenSubtitleService.getIntance().displaySubtitle();
-    }
-
-    private ProgressiveMediaSource getVideoSource(String id )
-    {
-        Uri media = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, String.valueOf( id ) );
-        Log.d( "Video_Player", "Video " + id );
-        Log.d( "Video_Player", "Video " + media.getPath() );
-        DefaultDataSourceFactory factory = new DefaultDataSourceFactory(this, Util.getUserAgent(this, getResources().getString(R.string.app_name)));
-        ProgressiveMediaSource source = new ProgressiveMediaSource.Factory(factory).createMediaSource(media);
-        return source;
-    }
-
-    private ProgressiveMediaSource getVideoSource(long id )
-    {
-        Uri media = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, String.valueOf( id ) );
-        Log.d( "Video_Player", "Video " + id );
-        Log.d( "Video_Player", "Video " + media.getPath() );
-        ProgressiveMediaSource source = new ProgressiveMediaSource.Factory(playerManager.getFactory()).createMediaSource(media);
-        return source;
+        openSubtitleService.displaySubtitle();
     }
 
     private class KeepScreenOn implements Player.EventListener
@@ -707,7 +563,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             value.setText( range + "%" );
 
             if ( !seekToPopup.isShowing() )
-                volumePopup.showAtLocation( playerView, Gravity.CENTER, 0, 0 );
+                volumePopup.showAtLocation( playerView, Gravity.LEFT, 0, 0 );
 
             dismissVolumePopup();
         }
@@ -728,7 +584,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
 
             if ( !seekToPopup.isShowing() )
-                brightnessPopup.showAtLocation( playerView, Gravity.CENTER, 0, 0 );
+                brightnessPopup.showAtLocation( playerView, Gravity.RIGHT, 0, 0 );
 
             dismissBrightnessPopup();
         }
@@ -753,7 +609,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             seekInfo.setText( result );
 
             if ( !seekToPopup.isShowing() )
-                seekToPopup.showAtLocation( playerView, Gravity.CENTER, 0, 0 );
+                seekToPopup.showAtLocation( playerView, Gravity.TOP, 0, 0 );
 //        TextView seekInfo = findViewById(R.id.popup_seek_to);
 
             playerManager.seekTo( seekSize );

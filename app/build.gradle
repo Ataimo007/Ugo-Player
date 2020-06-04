@@ -12,7 +12,7 @@ android {
     compileSdkVersion 29
     defaultConfig {
         applicationId "com.gcodes.iplayer"
-        minSdkVersion 21
+        minSdkVersion 17
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -20,12 +20,16 @@ android {
         signingConfig signingConfigs.release
         renderscriptTargetApi 28
         renderscriptSupportModeEnabled true
+        vectorDrawables.useSupportLibrary = true
+        multiDexEnabled true
 //        renderscriptSupportMode true
     }
 
+
+
     sourceSets {
         main {
-            jniLibs.srcDirs = ['libs' ]
+            jniLibs.srcDirs = ['libs']
         }
     }
 
@@ -36,7 +40,9 @@ android {
             signingConfig signingConfigs.release
         }
         debug {
+            debuggable true
             signingConfig signingConfigs.release
+            debuggable true
         }
     }
     buildToolsVersion '29.0.3'
@@ -49,29 +55,32 @@ android {
 }
 
 dependencies {
+
+    implementation 'com.android.support:multidex:1.0.3'
+
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'androidx.appcompat:appcompat:1.2.0-alpha02'
+    implementation 'androidx.appcompat:appcompat:1.2.0-beta01'
     implementation 'com.google.android.material:material:1.0.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.0-beta4'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.legacy:legacy-support-v13:1.0.0'
-    implementation 'androidx.recyclerview:recyclerview:1.2.0-alpha01'
+    implementation 'androidx.recyclerview:recyclerview:1.2.0-alpha03'
     implementation 'androidx.viewpager:viewpager:1.0.0'
     testImplementation 'junit:junit:4.13'
-    androidTestImplementation 'androidx.test:runner:1.3.0-alpha04'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0-alpha04'
+    androidTestImplementation 'androidx.test:runner:1.3.0-beta01'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0-beta01'
 
     //    androidTestImplementation 'com.google.code.findbugs:jsr305:3.0.2'
 
     // room persistence database dependencies
-    def room_version = '2.2.4'
+    def room_version = '2.2.5'
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-rxjava2:$room_version"
     implementation "androidx.room:room-guava:$room_version"
     testImplementation "androidx.room:room-testing:$room_version"
-    def paging_version = "2.1.1"
+    def paging_version = "2.1.2"
     implementation "androidx.paging:paging-runtime:$paging_version"
     implementation "androidx.paging:paging-rxjava2:$paging_version"
     def lifecycle_version = '2.2.0'
@@ -126,7 +135,7 @@ dependencies {
     implementation 'jp.co.cyberagent.android:gpuimage:2.0.3'
 
     // youtube service
-    implementation 'com.google.android.gms:play-services-auth:17.0.0'
+    implementation 'com.google.android.gms:play-services-auth:18.0.0'
     implementation 'pub.devrel:easypermissions:0.3.0'
     implementation('com.google.api-client:google-api-client-android:1.30.8') {
         exclude group: 'org.apache.httpcomponents'
@@ -138,4 +147,22 @@ dependencies {
     implementation 'com.github.HaarigerHarald:android-youtubeExtractor:master-SNAPSHOT'
 
     implementation 'com.google.guava:guava:28.2-jre'
+
+    def nav_version = "2.3.0-alpha06"
+
+    // Navigation
+    implementation "androidx.navigation:navigation-fragment:$nav_version"
+    implementation "androidx.navigation:navigation-ui:$nav_version"
+
+    // Dynamic Feature Module Support
+    implementation "androidx.navigation:navigation-dynamic-features-fragment:$nav_version"
+
+    // Testing Navigation
+    androidTestImplementation "androidx.navigation:navigation-testing:$nav_version"
+
+    implementation "com.squareup.okhttp3:okhttp:4.4.0"
+    testImplementation "com.squareup.okhttp3:mockwebserver:4.4.0"
+    implementation 'com.squareup.retrofit2:retrofit:2.8.1'
+    implementation 'com.squareup.retrofit2:converter-gson:2.8.1'
+
 }

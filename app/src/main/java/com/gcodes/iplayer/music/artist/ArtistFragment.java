@@ -14,6 +14,7 @@ import com.gcodes.iplayer.ui.UIConstance;
 
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -121,12 +122,12 @@ public class ArtistFragment extends Fragment {
                 @Override
                 public void onClick(View v)
                 {
-                    Intent intent = new Intent( ArtistFragment.this.getContext(), ArtistActivity.class );
-                    intent.putExtra( "artist_key", artistKey );
-                    intent.putExtra( "artist_id", artistId );
-                    intent.putExtra( "artist", artist );
+                    Bundle args = new Bundle();
+                    args.putString( "artist_key", artistKey );
+                    args.putLong( "artist_id", artistId );
+                    args.putString( "artist", artist );
 //                    intent.putExtra( "album_art", albumArt );
-                    ArtistFragment.this.startActivity( intent );
+                    NavHostFragment.findNavController(ArtistFragment.this).navigate(R.id.action_musicFragment_to_mainArtistFragment, args);
                 }
             });
         }

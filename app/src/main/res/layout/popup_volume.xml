@@ -5,46 +5,46 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
-    android:background="@color/video_popup"
-    android:padding="30dp">
-
-    <TextView
-        android:id="@+id/popup_seek_to"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:text="Volume"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        android:textSize="24sp"
-        app:layout_constraintEnd_toStartOf="@+id/volume_progress"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/volume_progress" />
+    android:layout_marginLeft="20dp"
+    android:background="@drawable/popup_background"
+    android:padding="5dp">
 
     <ProgressBar
         android:id="@+id/volume_progress"
         style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="20dp"
-        android:layout_height="100dp"
-        android:layout_marginStart="8dp"
+        android:layout_width="10dp"
+        android:layout_height="200dp"
         android:progress="70"
         android:progressDrawable="@drawable/vertical_progress_bar"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/imageView2"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/popup_seek_to"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/volume_value" />
 
     <TextView
         android:id="@+id/volume_value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
         android:text="70%"
-        android:textColor="@android:color/white"
-        android:textSize="36sp"
-        app:layout_constraintBottom_toBottomOf="@+id/volume_progress"
-        app:layout_constraintEnd_toEndOf="@+id/popup_seek_to"
-        app:layout_constraintStart_toStartOf="@+id/popup_seek_to"
-        app:layout_constraintTop_toBottomOf="@+id/popup_seek_to"
-        app:layout_constraintVertical_bias="0.31" />
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="10sp"
+        app:layout_constraintBottom_toTopOf="@+id/volume_progress"
+        app:layout_constraintEnd_toEndOf="@+id/volume_progress"
+        app:layout_constraintStart_toStartOf="@+id/volume_progress"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/volume_progress"
+        app:layout_constraintStart_toStartOf="@+id/volume_progress"
+        app:layout_constraintTop_toBottomOf="@+id/volume_progress"
+        app:srcCompat="@drawable/popup_volume" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

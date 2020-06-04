@@ -1,29 +1,28 @@
 package com.gcodes.iplayer.music.player;
 
 import android.content.Context;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.PointF;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.Handler;
+import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.music.track.TrackFragment;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.joda.time.Duration;
 
 //import android.support.annotation.NonNull;
 //import androidx.core.app.Fragment;
@@ -37,11 +36,7 @@ public class PlaylistFragment extends Fragment
     private Music current;
     private RecyclerView listView;
     private CustomAdapter adapter;
-
-    public PlaylistFragment()
-    {
-
-    }
+    private int currentPos;
 
     // try joining audio column to media column
     @Override
@@ -58,7 +53,8 @@ public class PlaylistFragment extends Fragment
         listView = view.findViewById( R.id.player_list );
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
-        listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
+//        listView.addItemDecoration(new UIConstance.AppItemDecorator( 1, 0, 0 ));
+        listView.addItemDecoration(UIConstance.AppItemDecorator.AppItemDecoratorToolBarOffset(getContext()));
         updateList( current );
         return view;
     }
@@ -73,9 +69,13 @@ public class PlaylistFragment extends Fragment
     }
 
     private void updateList(Music music) {
-        int position = MusicPlayer.getInstance().getPosition(music);
-        listView.scrollToPosition( position );
-        adapter.notifyItemChanged( position );
+        int oldPos = currentPos;
+        currentPos = MusicPlayer.getInstance().getPosition(music);
+        if ( oldPos != currentPos )
+            adapter.notifyItemChanged( oldPos );
+        adapter.notifyItemChanged( currentPos );
+        listView.scrollToPosition( currentPos );
+//        listView.scrollBy( 0, (int) UIConstance.getToolBarOffsetPixel(getContext()));
     }
 
     public class CustomAdapter extends RecyclerView.Adapter<TrackItemHolder>
@@ -94,10 +94,15 @@ public class PlaylistFragment extends Fragment
             holder.setTitle( music.getName() );
             holder.setSubtitle( music.getArtist() );
             holder.setImage( PlaylistFragment.this, music );
+            initSelection(holder, position);
 
             holder.itemView.setOnClickListener(v -> {
-                MusicPlayer.play( music );
+                MusicPlayer.play( position );
             });
+        }
+
+        private void initSelection(TrackItemHolder holder, int position) {
+            holder.select( position == currentPos, getContext() );
         }
 
         @Override
@@ -105,5 +110,4 @@ public class PlaylistFragment extends Fragment
             return MusicPlayer.getInstance().getMusicsCount();
         }
     }
-
 }

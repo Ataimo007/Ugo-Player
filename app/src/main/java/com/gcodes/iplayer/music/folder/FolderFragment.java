@@ -3,20 +3,15 @@ package com.gcodes.iplayer.music.folder;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
@@ -29,7 +24,6 @@ import java.io.File;
 import java.util.TreeMap;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -73,6 +67,7 @@ public class FolderFragment extends Fragment
     private String[] entryFiles;
     private CursorLoader artLoader;
     private MainActivity backActivity;
+    private TextView folderPath;
 
     public FolderFragment() {
     }
@@ -90,16 +85,7 @@ public class FolderFragment extends Fragment
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if ( context instanceof MainActivity )
-        {
             backActivity = (MainActivity) context;
-            backActivity.register( this::back );
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        backActivity.unregister();
     }
 
     public void load(boolean notify )
@@ -157,35 +143,81 @@ public class FolderFragment extends Fragment
 
     public void enter( String name )
     {
+//        if ( parent != null )
+//        {
+//            parent = new File( parent, name );
+//            setPath( parent.getAbsolutePath() );
+//        }
+//        else
+//            setPath( "" );
+        Log.w("Folder_Path", String.format("entering %s %s", parent != null ? parent.getAbsolutePath() : null, name ) );
+
         parent = new File( parent, name );
         setPath( parent.getAbsolutePath() );
         ++level;
         load( true );
+        updatePath( parent );
+
+        Log.w("Folder_Path", String.format("entered %s %s %s", parent != null ? parent.getAbsolutePath() : null, name, parent.getParent() ) );
+    }
+
+    private void updatePath(File parent) {
+        String path = parent.getAbsolutePath();
+        Log.w("Folder_Path", path );
+        folderPath.setText( path );
+    }
+
+    private void home() {
+        Log.w("Folder_Path", "/" );
+        folderPath.setText( "/" );
     }
 
     public boolean back()
     {
-        String parent = this.parent.getParent();
-        if ( parent == null )
+        if ( this.parent == null )
             return false;
 
-        this.parent = new File( parent );
-        setPath( this.parent.getAbsolutePath() );
+        String parent = this.parent.getParent();
+
+        if ( parent != null )
+        {
+            this.parent = new File( parent );
+            setPath( this.parent.getAbsolutePath() );
+            updatePath( this.parent );
+        }
+        else
+        {
+            this.parent = null;
+            setPath("");
+            home();
+        }
+
         --level;
         load( true );
+        Log.d("Folder_Fragment", "The level is " + level );
         return true;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.item_list, container, false);
+        View view = inflater.inflate(R.layout.folder_list, container, false);
         adapter = new CustomAdapter();
-        RecyclerView listView = (RecyclerView) view;
+        RecyclerView listView = view.findViewById(R.id.item_list);
+        folderPath = view.findViewById(R.id.folder_path);
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
 
         listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
+
+        listView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus)
+                backActivity.register( this::back );
+            else
+                backActivity.unregister();
+
+            Log.w("Folder_Focus", hasFocus ? "Fragment has focus" : "Fragment doesn't has focus" );
+        });
 
         return view;
     }
