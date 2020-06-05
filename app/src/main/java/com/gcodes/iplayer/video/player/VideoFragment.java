@@ -1,29 +1,23 @@
 package com.gcodes.iplayer.video.player;
 
-import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
 import com.gcodes.iplayer.R;
 
-import com.gcodes.iplayer.backup.CustomVideoGesture;
+import com.gcodes.iplayer.helpers.CustomVideoGesture;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.video.Video;
-import com.gcodes.iplayer.video.series.SeriesPlayerFragment;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ui.PlayerView;
-import com.jarvanmo.exoplayerview.gesture.OnVideoGestureChangeListener;
 
 public class VideoFragment extends Fragment {
 

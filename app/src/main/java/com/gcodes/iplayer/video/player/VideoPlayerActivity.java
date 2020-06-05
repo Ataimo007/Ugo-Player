@@ -3,6 +3,7 @@ package com.gcodes.iplayer.video.player;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.util.Consumer;
+import androidx.core.util.Supplier;
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
@@ -15,6 +16,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
@@ -23,7 +25,7 @@ import android.widget.Toast;
 
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.backup.CustomVideoGesture;
+import com.gcodes.iplayer.helpers.CustomVideoGesture;
 import com.gcodes.iplayer.services.OpenSubtitleService;
 import com.gcodes.iplayer.video.Video;
 import com.google.android.exoplayer2.C;
@@ -35,6 +37,7 @@ import com.google.android.exoplayer2.ui.PlayerView;
 import com.jarvanmo.exoplayerview.gesture.OnVideoGestureChangeListener;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class VideoPlayerActivity extends AppCompatActivity {
@@ -49,6 +52,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private PopupWindow volumePopup;
     private VideoPlayer player;
     private OpenSubtitleService openSubtitleService;
+    private ArrayList<Supplier<Boolean>> touchables;
 //    private DefaultDataSourceFactory factory;
 
     @Override
@@ -177,9 +181,16 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     private void initControls() {
         ImageView subtitleButton = findViewById(R.id.exo_custom_subtitle);
+        Button hideButton = findViewById(R.id.subtitle_hide);
+        Button changeButton = findViewById(R.id.subtitle_change);
         subtitleButton.setOnClickListener( v -> {
-            Log.d( "Subtitle_Activities", "The current window is " + playerManager.getCurrentWindow() );
             showSubtitle();
+        });
+        hideButton.setOnClickListener(v -> {
+            hideSubtitle();
+        });
+        changeButton.setOnClickListener(v -> {
+            changeSubtitle();
         });
     }
 
@@ -187,33 +198,40 @@ public class VideoPlayerActivity extends AppCompatActivity {
     {
         int position = playerManager.getCurrentWindow();
         Video video = getVideoAt(position);
-        showSubtitle( video, position );
+        openSubtitleService.subtitle(video);
     }
 
-//    private void showSubtitle(Video video, int position )
-//    {
-//        Log.d( "Subtitle_Activities", "Initializing Video audio conversion in VideoPlayerActivity" );
-//
-//        Helper.Worker.executeTask( () -> {
-//            Looper.prepare();
-////            File subtitle = OpenSubtitleService.getIntance().retrieveSubtitle(video, this, messageCallback());
-//            player.retrieveSubtitle(video, playerView );
-////            ConcatenatingMediaSource newSource = player.buildNewSourceOnSubtitle(subtitleSource, position);
-//
-////            SingleSampleMediaSource subtitleSource = player.retrieveSubtitle(video, playerView );
-////            ConcatenatingMediaSource newSource = player.buildNewSourceOnSubtitle(subtitleSource, position);
-//            return () -> {
-////                player.switchSources( newSource );
-//            };
-//        });
-//    }
-
-    private void showSubtitle(Video video, int position )
+    private void hideSubtitle()
     {
-        Log.d( "Subtitle_Activities", "Initializing Video audio conversion in VideoPlayerActivity" );
+        int position = playerManager.getCurrentWindow();
+        Video video = getVideoAt(position);
+        openSubtitleService.hideSubtitle(video);
+    }
 
-        openSubtitleService.beginSubtitling(video);
+    private void changeSubtitle()
+    {
+        int position = playerManager.getCurrentWindow();
+        Video video = getVideoAt(position);
+        openSubtitleService.changeSubtitle(video);
+    }
 
+    public void showSubtitleOptions()
+    {
+        findViewById(R.id.subtitle_options).setVisibility(View.VISIBLE);
+        addTouchable(() -> {
+            hideSubtitleOptions();
+            return true;
+        });
+    }
+
+    public boolean isSubtitleOptionsShown()
+    {
+        return findViewById(R.id.subtitle_options).getVisibility() == View.VISIBLE;
+    }
+
+    public void hideSubtitleOptions()
+    {
+        findViewById(R.id.subtitle_options).setVisibility(View.GONE);
     }
 
     public ConcatenatingMediaSource generateSource(File subtitleFile, Video video) {
@@ -222,21 +240,28 @@ public class VideoPlayerActivity extends AppCompatActivity {
         return player.buildNewSourceOnSubtitle(subtitleSource, videoIndex);
     }
 
-    public void switchSource(ConcatenatingMediaSource source)
+    public void applySubtitle(ConcatenatingMediaSource source)
     {
+        switchSource( source );
+
+    }
+
+    private void switchSource(ConcatenatingMediaSource source)
+    {
+
         player.switchSources( source );
     }
 
-    private void autoSubtitle()
-    {
-        playerManager.addListener(new Player.EventListener() {
-            @Override
-            public void onPositionDiscontinuity(int reason) {
-                showSubtitle();
-                Log.d( "Video_Player", "The current window is " + playerManager.getCurrentWindow() );
-            }
-        });
-    }
+//    private void autoSubtitle()
+//    {
+//        playerManager.addListener(new Player.EventListener() {
+//            @Override
+//            public void onPositionDiscontinuity(int reason) {
+//                showSubtitle();
+//                Log.d( "Video_Player", "The current window is " + playerManager.getCurrentWindow() );
+//            }
+//        });
+//    }
 
 //    private void initAutoSubtitle() {
 //        if ( isDisplaySubtitle() )
@@ -369,13 +394,37 @@ public class VideoPlayerActivity extends AppCompatActivity {
     }
 //
     private void toggle() {
+        dispatchTouch();
         if (mVisible) {
             hide();
         } else {
             show();
         }
     }
-//
+
+    private void dispatchTouch() {
+        for ( Supplier<Boolean> action : touchables )
+        {
+            Boolean removed = action.get();
+            if (removed)
+                touchables.remove(action);
+        }
+    }
+
+    public void addTouchable(Supplier<Boolean> action)
+    {
+        if (touchables == null)
+            touchables = new ArrayList<>();
+        touchables.add(action);
+    }
+
+    public void removeTouchable(Supplier<Boolean> action)
+    {
+        if (touchables != null)
+            touchables.remove(action);
+    }
+
+    //
     private void hide() {
         // Hide UI first
 //        ActionBar actionBar = getActionBar();

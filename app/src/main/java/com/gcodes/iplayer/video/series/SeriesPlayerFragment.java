@@ -16,16 +16,14 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Observer;
 import androidx.navigation.NavBackStackEntry;
 import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.backup.CustomVideoGesture;
+import com.gcodes.iplayer.helpers.CustomVideoGesture;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;

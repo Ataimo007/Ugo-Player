@@ -20,7 +20,6 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
@@ -60,6 +59,7 @@ import java.util.zip.Inflater;
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.util.Consumer;
+import androidx.core.util.Pair;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -88,6 +88,8 @@ public class OpenSubtitleService
     private Handler notifier;
     private Handler suggestor;
     private Handler applier;
+
+    private ArrayList<Video> shown;
 //    private Handler selector;
 
     private class Title
@@ -153,6 +155,24 @@ public class OpenSubtitleService
         }
     }
 
+    private void shown( Video video )
+    {
+        if ( shown == null )
+            shown = new ArrayList<>();
+        shown.add(video);
+    }
+
+    private void hidden( Video video )
+    {
+        if ( shown != null )
+            shown.remove(video);
+    }
+
+    private boolean isShown(Video video)
+    {
+        return shown != null && shown.contains(video);
+    }
+
     private class TitleHolder extends RecyclerView.ViewHolder
     {
         private final TextView title;
@@ -208,15 +228,20 @@ public class OpenSubtitleService
         applier = new Handler(Looper.getMainLooper()){
             @Override
             public void handleMessage(@NonNull Message msg) {
-                ConcatenatingMediaSource source = (ConcatenatingMediaSource) msg.obj;
+                Pair< Video, ConcatenatingMediaSource > source = (Pair< Video, ConcatenatingMediaSource >) msg.obj;
                 VideoPlayerActivity videoPlayer = getVideoPlayer();
                 if ( videoPlayer != null )
                 {
-                    videoPlayer.switchSource( source );
+                    videoPlayer.applySubtitle( source.second );
+                    shown( source.first );
                     notifyView("Done");
                 }
             }
         };
+    }
+
+    public ArrayList<Video> getShown() {
+        return shown;
     }
 
     public void destroy()
@@ -448,6 +473,7 @@ public class OpenSubtitleService
         if ( videoPlayer != null )
         {
             ConcatenatingMediaSource source = videoPlayer.generateSource(subtitleFile, video);
+            Pair< Video, ConcatenatingMediaSource > videoSource = new Pair<>( video, source );
             Message message = applier.obtainMessage(0, source);
             message.sendToTarget();
         }
@@ -565,6 +591,36 @@ public class OpenSubtitleService
     private void runOnBackground()
     {
         android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+    }
+
+    public void subtitle(Video video)
+    {
+        if ( !isShown(video) )
+            beginSubtitling( video );
+        else
+        {
+            subtitleOptions();
+        }
+    }
+
+    public void hideSubtitle( Video video )
+    {
+        hidden(video);
+    }
+
+    public void changeSubtitle(Video video)
+    {
+
+    }
+
+    private void subtitleOptions() {
+        VideoPlayerActivity videoPlayer = getVideoPlayer();
+        if ( videoPlayer == null )
+            return;
+        if ( videoPlayer.isSubtitleOptionsShown() )
+            videoPlayer.hideSubtitleOptions();
+        else
+            videoPlayer.showSubtitleOptions();
     }
 
     public void beginSubtitling(Video video)
