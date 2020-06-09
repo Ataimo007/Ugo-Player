@@ -131,19 +131,19 @@ public class YouTubeService
 
     public void viewResult( List<String> output )
     {
-        Log.d( YOUTUBE_TAG, "Executed Request" );
+        Log.w( YOUTUBE_TAG, "Executed Request" );
         if (output == null || output.size() == 0) {
-            Log.d( YOUTUBE_TAG, "No results returned." );
+            Log.w( YOUTUBE_TAG, "No results returned." );
         } else {
             output.add(0, "Data retrieved using the YouTube Data API:");
-            Log.d( YOUTUBE_TAG, "Result " + TextUtils.join("\n", output) );
+            Log.w( YOUTUBE_TAG, "Result " + TextUtils.join("\n", output) );
         }
     }
 
     @SuppressLint("StaticFieldLeak")
     public static void consumeYoutubeVideo(String id, Consumer<YtFile> consume, Context context) {
         String youtubeLink = BASE_URL + PATH + id;
-        YouTubeExtractor youTubeExtractor = new YouTubeExtractor(context )
+        YouTubeExtractor youTubeExtractor = new YouTubeExtractor(context)
         {
 
             @Override
@@ -152,7 +152,7 @@ public class YouTubeService
                 int minHeight = -1;
                 if (ytFiles == null) {
                     // Something went wrong we got no urls. Always check this.
-                    Log.d( YOUTUBE_TAG, "Something went wrong will getting youtube videos" );
+                    Log.w( YOUTUBE_TAG, "Something went wrong will getting youtube videos" );
                     return;
                 }
                 // Iterate over itags
@@ -186,7 +186,7 @@ public class YouTubeService
                 ytfile.getFormat().getAudioBitrate() + " kbit/s" :
                 "Video " + ytfile.getFormat().getVideoCodec() + ytfile.getFormat().getAudioCodec() +
                 ytfile.getFormat().getAudioBitrate() + ytfile.getFormat().getHeight() + "p";
-        Log.d( YOUTUBE_TAG, String.format( "%d %s %s %s", tag, ytfile.getUrl(), filename, info ) );
+        Log.w( YOUTUBE_TAG, String.format( "%d %s %s %s", tag, ytfile.getUrl(), filename, info ) );
 //        downloadFromUrl(ytfile.getUrl(), videoTitle, filename);
     }
 
@@ -199,7 +199,7 @@ public class YouTubeService
 //            public void onExtractionComplete(SparseArray<YtFile> ytFiles, VideoMeta vMeta) {
 //                if (ytFiles == null) {
 //                    // Something went wrong we got no urls. Always check this.
-//                    Log.d( YOUTUBE_TAG, "Something went wrong will getting youtube videos" );
+//                    Log.w( YOUTUBE_TAG, "Something went wrong will getting youtube videos" );
 //                    return;
 //                }
 //                // Iterate over itags
@@ -226,7 +226,7 @@ public class YouTubeService
 //        String info = (ytfile.getFormat().getHeight() == -1) ? "Audio " +
 //                ytfile.getFormat().getAudioBitrate() + " kbit/s" :
 //                ytfile.getFormat().getHeight() + "p";
-//        Log.d( YOUTUBE_TAG, String.format( "%s %s %s", ytfile.getUrl(), filename, info ) );
+//        Log.w( YOUTUBE_TAG, String.format( "%s %s %s", ytfile.getUrl(), filename, info ) );
 ////        downloadFromUrl(ytfile.getUrl(), videoTitle, filename);
 //    }
 

@@ -3,6 +3,7 @@ package com.gcodes.iplayer.video.player;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.util.Consumer;
+import androidx.core.util.Pair;
 import androidx.core.util.Supplier;
 
 import android.annotation.SuppressLint;
@@ -31,6 +32,7 @@ import com.gcodes.iplayer.video.Video;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.SingleSampleMediaSource;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.PlayerView;
@@ -115,12 +117,18 @@ public class VideoPlayerActivity extends AppCompatActivity {
 //        player.setPlayWhenReady(true);
     }
 
+    private void begin()
+    {
+        if ( !isFromController() )
+            play();
+    }
+
 //    private final Handler testHandler = new Handler();
     @Override
     protected void onResume() {
         super.onResume();
-        if ( !isFromController() )
-            play();
+        player.play();
+//        begin();
     }
 
     private void play()
@@ -136,6 +144,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        player.pause();
 //        player.stop();
 //        playerManager.pause();
 //        playerManager.stop();
@@ -163,6 +172,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
         initSubtitle();
 
         initControls();
+
+        begin();
     }
 
     private void initSubtitle() {
@@ -188,8 +199,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
         });
         hideButton.setOnClickListener(v -> {
             hideSubtitle();
+            hideSubtitle();
         });
         changeButton.setOnClickListener(v -> {
+            hideSubtitle();
             changeSubtitle();
         });
     }
@@ -234,41 +247,21 @@ public class VideoPlayerActivity extends AppCompatActivity {
         findViewById(R.id.subtitle_options).setVisibility(View.GONE);
     }
 
-    public ConcatenatingMediaSource generateSource(File subtitleFile, Video video) {
+    public Pair<ConcatenatingMediaSource, MediaSource> generateSource(File subtitleFile, Video video) {
         int videoIndex = player.getCurrentVideo() == video ? player.getCurrentIndex() : player.findIndex( video );
         SingleSampleMediaSource subtitleSource = player.getSubtitle(subtitleFile);
-        return player.buildNewSourceOnSubtitle(subtitleSource, videoIndex);
+        return player.buildNewMergedSource(subtitleSource, videoIndex);
     }
 
-    public void applySubtitle(ConcatenatingMediaSource source)
-    {
-        switchSource( source );
-
+    public Pair<ConcatenatingMediaSource, MediaSource> generateSource(MediaSource source, Video video) {
+        int videoIndex = player.getCurrentVideo() == video ? player.getCurrentIndex() : player.findIndex( video );
+        return player.buildNewSource(source, videoIndex);
     }
 
-    private void switchSource(ConcatenatingMediaSource source)
+    public void applySource(ConcatenatingMediaSource source)
     {
-
         player.switchSources( source );
     }
-
-//    private void autoSubtitle()
-//    {
-//        playerManager.addListener(new Player.EventListener() {
-//            @Override
-//            public void onPositionDiscontinuity(int reason) {
-//                showSubtitle();
-//                Log.d( "Video_Player", "The current window is " + playerManager.getCurrentWindow() );
-//            }
-//        });
-//    }
-
-//    private void initAutoSubtitle() {
-//        if ( isDisplaySubtitle() )
-//        {
-//           autoSubtitle();
-//        }
-//    }
 
     private Consumer< String > messageCallback()
     {
@@ -356,16 +349,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
 //                this::switchSources, messageCallback() );
     }
 
-    private void noSubtitle()
-    {
-
-    }
-
-    private void displaySubtitle()
-    {
-        openSubtitleService.displaySubtitle();
-    }
-
     private class KeepScreenOn implements Player.EventListener
     {
         private final PlayerView playerView;
@@ -403,11 +386,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
     }
 
     private void dispatchTouch() {
-        for ( Supplier<Boolean> action : touchables )
+        if ( touchables != null )
         {
-            Boolean removed = action.get();
-            if (removed)
-                touchables.remove(action);
+            for ( Supplier<Boolean> action : touchables )
+            {
+                Boolean removed = action.get();
+                if (removed)
+                    touchables.remove(action);
+            }
         }
     }
 

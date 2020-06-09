@@ -1,5 +1,6 @@
 package com.gcodes.iplayer.video.series;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
@@ -48,7 +50,7 @@ public class SeriesPlayerFragment extends Fragment
     private VideoPlayer player;
     private PlayerManager playerManager;
 
-    private boolean playing = false;
+//    private boolean playing = false;
     private PlayerView control;
     private FloatingActionButton controlButton;
 
@@ -86,13 +88,29 @@ public class SeriesPlayerFragment extends Fragment
         playerManager = player.getPlayerManager();
         playerManager.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
         playerManager.setView( control );
+        control.showController();
+
         prepareTouch( control );
 
         if ( !player.isPlaying() )
+        {
             initSource();
+            player.playNow();
+        }
 
         initControlButton(view);
         player.tryHideVideoPlayer();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if ( requestCode == VideoPlayer.REQUEST_PLAYER )
+        {
+            playerManager.setView( control );
+            control.showController();
+            player.continuePlay();
+        }
     }
 
     private void initControlButton(View view) {
@@ -142,27 +160,37 @@ public class SeriesPlayerFragment extends Fragment
         player.initVideoSources( series, control );
     }
 
+//    @Override
+//    public void onResume() {
+//        super.onResume();
+//        control.showController();
+//
+////        updateControllerButton();
+//
+//        Log.w( "Series_Player", "playing" );
+////        if ( playing && player.hasState() )
+//        if ( player.isPlaying() && player.hasState() )
+//        {
+//            Log.w( "Series_Player", "playing again" );
+//            playerManager.setView( control );
+//            player.continuePlay();
+//        }
+//        else
+//        {
+//            Log.w( "Series_Player", "playing once" );
+//            player.playNow();
+////            player.continuePlay();
+//            playing = true;
+//        }
+//    }
+
     @Override
     public void onResume() {
         super.onResume();
+        Log.w("Series_Player", "on resume play" );
+        playerManager.setView( control );
         control.showController();
-
-//        updateControllerButton();
-
-        Log.w( "Series_Player", "playing" );
-//        if ( playing && player.hasState() )
-        if ( player.isPlaying() && player.hasState() )
-        {
-            Log.w( "Series_Player", "playing again" );
-            playerManager.setView( control );
-            player.continuePlay();
-        }
-        else
-        {
-            player.playNow();
-//            player.continuePlay();
-            playing = true;
-        }
+        player.play();
     }
 
     @Override
@@ -170,6 +198,7 @@ public class SeriesPlayerFragment extends Fragment
         super.onPause();
         player.saveState();
 //        playerManager.stop();
+        player.pause();
         control.setPlayer(null);
     }
 
@@ -187,7 +216,7 @@ public class SeriesPlayerFragment extends Fragment
     }
 
     private void showVideoPlayer() {
-        VideoPlayer.play(getActivity());
+        VideoPlayer.play(this);
     }
 
     private void initList(View view)

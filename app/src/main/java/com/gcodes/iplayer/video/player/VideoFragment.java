@@ -26,6 +26,7 @@ public class VideoFragment extends Fragment {
     private PlayerManager playerManager;
     private VideoPlayer player;
     private boolean playing = false;
+    private boolean expanded = false;
     private PlayerView control;
 
     @Override
@@ -67,6 +68,7 @@ public class VideoFragment extends Fragment {
                 playerManager.getPlayer(), new CustomVideoGesture.GestureAction(){
                     @Override
                     public void onClick() {
+                        expanded = true;
                         player.saveState();
                         if  ( player.getCurrentType() == VideoPlayer.MediaType.VIDEOS )
                             showVideoPlayer();
@@ -89,6 +91,7 @@ public class VideoFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        expanded = false;
         Log.w("Video_Fragment", "Setting up player from resume" );
         if ( playing && player.hasState() )
         {
@@ -100,6 +103,7 @@ public class VideoFragment extends Fragment {
         {
             playing = true;
         }
+        player.play();
     }
 
     @Override
@@ -107,11 +111,13 @@ public class VideoFragment extends Fragment {
         super.onPause();
         Log.w("Video_Fragment", "Stopping player" );
 //        playerManager.stop();
+        if ( !expanded )
+            player.pause();
         control.setPlayer(null);
     }
 
     private void showVideoPlayer() {
-        VideoPlayer.play(getActivity());
+        VideoPlayer.play(this);
     }
 
     public void consumeVideo(Video video) {

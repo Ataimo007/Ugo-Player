@@ -2,7 +2,6 @@ package com.gcodes.iplayer.services;
 
 import android.content.Context;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -24,6 +23,7 @@ import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.gson.JsonArray;
@@ -46,19 +46,14 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.zip.DataFormatException;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.Inflater;
 
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.util.Consumer;
 import androidx.core.util.Pair;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -66,7 +61,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import de.timroes.axmlrpc.XMLRPCCallback;
 import de.timroes.axmlrpc.XMLRPCClient;
 import de.timroes.axmlrpc.XMLRPCException;
-import de.timroes.axmlrpc.XMLRPCServerException;
 
 public class OpenSubtitleService
 {
@@ -88,8 +82,12 @@ public class OpenSubtitleService
     private Handler notifier;
     private Handler suggestor;
     private Handler applier;
+    private Handler hider;
+    private Handler hideBeginner;
+    private Handler dimisser = new Handler(Looper.getMainLooper());
+    private final Runnable dismiss = () -> notification.dismiss();
 
-    private ArrayList<Video> shown;
+    private HashMap<Video,MediaSource> shown;
 //    private Handler selector;
 
     private class Title
@@ -155,11 +153,11 @@ public class OpenSubtitleService
         }
     }
 
-    private void shown( Video video )
+    private void shown(Video video, MediaSource source)
     {
         if ( shown == null )
-            shown = new ArrayList<>();
-        shown.add(video);
+            shown = new HashMap<>();
+        shown.put(video, source);
     }
 
     private void hidden( Video video )
@@ -170,7 +168,8 @@ public class OpenSubtitleService
 
     private boolean isShown(Video video)
     {
-        return shown != null && shown.contains(video);
+        Log.w("Subtitle_Activities", String.format("applying is shown %s null : %b contains : %b", shown, shown != null, shown != null && shown.containsKey(video)) );
+        return shown != null && shown.containsKey(video);
     }
 
     private class TitleHolder extends RecyclerView.ViewHolder
@@ -182,14 +181,6 @@ public class OpenSubtitleService
             title = itemView.findViewById(R.id.item_name);
         }
     }
-
-
-//    public static OpenSubtitleService getInstance(PlayerView player)
-//    {
-//        if ( subtitle == null )
-//            subtitle = new OpenSubtitleService(player);
-//        return subtitle;
-//    }
 
     public OpenSubtitleService(PlayerView player)
     {
@@ -221,26 +212,66 @@ public class OpenSubtitleService
 
         initNotifier();
         initSuggestor();
-        initApplier();
+        initShower();
+        initHider();
+        initHiderBeginner();
     }
 
-    private void initApplier() {
+    private void initShower() {
         applier = new Handler(Looper.getMainLooper()){
             @Override
             public void handleMessage(@NonNull Message msg) {
-                Pair< Video, ConcatenatingMediaSource > source = (Pair< Video, ConcatenatingMediaSource >) msg.obj;
+                Pair<File,Video> fileSource = (Pair<File,Video>) msg.obj;
                 VideoPlayerActivity videoPlayer = getVideoPlayer();
                 if ( videoPlayer != null )
                 {
-                    videoPlayer.applySubtitle( source.second );
-                    shown( source.first );
+                    Pair<ConcatenatingMediaSource, MediaSource> source = videoPlayer.generateSource(fileSource.first, fileSource.second);
+                    videoPlayer.applySource( source.first );
+                    shown(fileSource.second, source.second);
+                    Log.w("Subtitle_Activities", "applying is shown " + shown );
                     notifyView("Done");
                 }
             }
         };
     }
 
-    public ArrayList<Video> getShown() {
+    private void initHider() {
+        hider = new Handler(Looper.getMainLooper()){
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                Video video = (Video) msg.obj;
+                VideoPlayerActivity videoPlayer = getVideoPlayer();
+                if ( videoPlayer != null )
+                {
+                    Pair<ConcatenatingMediaSource, MediaSource> source = videoPlayer.generateSource(shown.get(video), video);
+                    videoPlayer.applySource( source.first );
+                    hidden(video);
+                    notifyView("Done");
+                }
+            }
+        };
+    }
+
+    private void initHiderBeginner() {
+        hideBeginner = new Handler(Looper.getMainLooper()){
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                Video video = (Video) msg.obj;
+                VideoPlayerActivity videoPlayer = getVideoPlayer();
+                if ( videoPlayer != null )
+                {
+                    Pair<ConcatenatingMediaSource, MediaSource> source = videoPlayer.generateSource(shown.get(video), video);
+                    videoPlayer.applySource( source.first );
+                    hidden(video);
+                    notifyView("Ready for a new Subtitle");
+
+                    beginSubtitling(video);
+                }
+            }
+        };
+    }
+
+    public HashMap<Video, MediaSource> getShown() {
         return shown;
     }
 
@@ -260,11 +291,49 @@ public class OpenSubtitleService
 
                 TextView messageView = notification.getContentView().findViewById(R.id.subtitle_message);
                 messageView.setText( message );
-                notification.showAtLocation( player, Gravity.TOP | Gravity.END, 0, 0 );
+//                notification.showAtLocation( player, Gravity.TOP | Gravity.END, 0, 0 );
+                show(notification);
 
                 super.handleMessage(msg);
             }
         };
+    }
+
+    private void show( PopupWindow popup )
+    {
+        if ( popup == notification )
+            dimisser.removeCallbacks(dismiss);
+        else
+            hidePrevious();
+        showAt( popup );
+    }
+
+    private void hidePrevious() {
+        if  (selection.isShowing())
+            selection.dismiss();
+        if (suggestion.isShowing())
+            suggestion.dismiss();
+    }
+
+    private void showAt( PopupWindow popup )
+    {
+        if ( popup == notification )
+        {
+            popup.showAtLocation( player, Gravity.TOP | Gravity.END, 0, 0 );
+            initDismisser();
+        }
+        if ( popup == suggestion )
+        {
+            popup.showAtLocation( player, Gravity.CENTER, 0, 0 );
+        }
+        if ( popup == selection )
+        {
+            popup.showAtLocation( player, Gravity.CENTER, 0, 0 );
+        }
+    }
+
+    private void initDismisser() {
+        dimisser.postDelayed( dismiss, 3000 );
     }
 
     private void suggest(JsonObject suggestions, Video video)
@@ -315,6 +384,7 @@ public class OpenSubtitleService
                                     guessObj.getAsJsonPrimitive("season").getAsInt(), guessObj.getAsJsonPrimitive("episode").getAsInt() ) );
 
                             yes.setOnClickListener(v -> {
+                                suggestion.dismiss();
                                 Title suggestion = new Title(stringGuess, guessObj);
                                 downloadSubtitle( suggestion, video );
                             });
@@ -326,6 +396,7 @@ public class OpenSubtitleService
                             }
 
                             yes.setOnClickListener(v -> {
+                                suggestion.dismiss();
                                 Title suggestion = new Title(stringGuess);
                                 downloadSubtitle( suggestion, video );
                             });
@@ -345,6 +416,7 @@ public class OpenSubtitleService
                         }
 
                         yes.setOnClickListener(v -> {
+                            suggestion.dismiss();
                             Title suggestion = new Title(bestGuessObj);
                             downloadSubtitle( suggestion, video );
                         });
@@ -355,7 +427,7 @@ public class OpenSubtitleService
                     manuallySuggest( guesses );
                 });
 
-                suggestion.showAtLocation( player, Gravity.CENTER, 0, 0 );
+                show(suggestion);
 
                 super.handleMessage(msg);
             }
@@ -382,6 +454,7 @@ public class OpenSubtitleService
                 Title title = tittles.get(position);
                 holder.title.setText(title.toString());
                 holder.itemView.setOnClickListener(v -> {
+                    selection.dismiss();
                     downloadSubtitle(title, video);
                 });
             }
@@ -395,11 +468,13 @@ public class OpenSubtitleService
         adapter.notifyDataSetChanged();
         Button ok = selection.getContentView().findViewById(R.id.suggestion_ok);
         ok.setOnClickListener(v -> {
+            selection.dismiss();
             TextInputEditText manualGuest = selection.getContentView().findViewById(R.id.manual_suggestion);
             String guess = manualGuest.getText().toString();
             downloadSubtitle( guess, video );
         });
-        selection.showAtLocation( player, Gravity.CENTER, 0, 0 );
+//        selection.showAtLocation( player, Gravity.CENTER, 0, 0 );
+        show(selection);
     }
 
     private ArrayList<Title> getTittles(JsonObject guesses )
@@ -435,8 +510,8 @@ public class OpenSubtitleService
                 notifyView("Unable to Save the Subtitle of " + name );
                 return;
             }
-            File subtitleFile = save(subtitle, player.getContext(), subtitleHash);
-            applySubtitle(subtitleFile, video);
+            File subtitleFile = save(subtitle, subtitleHash);
+            showSubtitle(subtitleFile, video);
         };
 
         if  ( Looper.myLooper() == Looper.getMainLooper() )
@@ -467,14 +542,13 @@ public class OpenSubtitleService
         thread.start();
     }
 
-    private void applySubtitle(File subtitleFile, Video video) {
+    private void showSubtitle(File subtitleFile, Video video) {
         notifyView("Applying the Subtitle");
         VideoPlayerActivity videoPlayer = getVideoPlayer();
         if ( videoPlayer != null )
         {
-            ConcatenatingMediaSource source = videoPlayer.generateSource(subtitleFile, video);
-            Pair< Video, ConcatenatingMediaSource > videoSource = new Pair<>( video, source );
-            Message message = applier.obtainMessage(0, source);
+            Pair<File,Video> fileSource = new Pair<>(subtitleFile, video);
+            Message message = applier.obtainMessage(0, fileSource);
             message.sendToTarget();
         }
     }
@@ -486,10 +560,10 @@ public class OpenSubtitleService
         return null;
     }
 
-    public File save(String subtitle, Context context, String name ) {
+    public File save(String subtitle, String name) {
         byte[] decode = Base64.decode(subtitle, Base64.DEFAULT);
         Log.w( "Subtitle_Activities", "Base64 decode " + subtitle );
-        File strFile = getFile(context, name);
+        File strFile = getFile(player.getContext(), name);
         try ( FileOutputStream subFile = new FileOutputStream(strFile);
               GZIPInputStream unzipped = new GZIPInputStream(new ByteArrayInputStream(decode)))
         {
@@ -504,6 +578,12 @@ public class OpenSubtitleService
             e.printStackTrace();
         }
         return strFile;
+    }
+
+    public boolean delete(String name) {
+        Log.w( "Subtitle_Activities", "Base64 decode " + subtitle );
+        File strFile = getFile(player.getContext(), name);
+        return strFile.delete();
     }
 
     public String downloadSubtitle(String idSubtitleFile) {
@@ -595,22 +675,44 @@ public class OpenSubtitleService
 
     public void subtitle(Video video)
     {
-        if ( !isShown(video) )
+        boolean shown = isShown(video);
+        Log.w("Subtitle_Activities", "This is shown " + shown );
+        if ( !shown)
             beginSubtitling( video );
         else
-        {
             subtitleOptions();
-        }
     }
 
     public void hideSubtitle( Video video )
     {
-        hidden(video);
+        VideoPlayerActivity videoPlayer = getVideoPlayer();
+        if ( videoPlayer != null )
+        {
+            Message message = hider.obtainMessage(0, video);
+            message.sendToTarget();
+        }
     }
 
     public void changeSubtitle(Video video)
     {
+        boolean removed = removeSubtitle(video);
+        if ( removed )
+        {
+            Message message = hideBeginner.obtainMessage(0, video);
+            message.sendToTarget();
+        }
+    }
 
+    private boolean removeSubtitle(Video video) {
+        String subtitleHash = osHash(String.valueOf(video.getId()), player.getContext());
+        if ( subtitleHash == null )
+            return false;
+        boolean deleted = delete(subtitleHash);
+        if ( deleted )
+            notifyView("Deleted Previous Subtitle");
+        else
+            notifyView("Unable to Delete Previous Subtitle");
+        return deleted;
     }
 
     private void subtitleOptions() {
@@ -655,7 +757,7 @@ public class OpenSubtitleService
         File savedSubtitle = getSavedSubtitle(video);
         if ( savedSubtitle != null )
         {
-            applySubtitle( savedSubtitle, video );
+            showSubtitle( savedSubtitle, video );
             return true;
         }
         return false;
@@ -771,32 +873,32 @@ public class OpenSubtitleService
         return movieParams;
     }
 
-    public File save2(Object datum, Context context, String name) throws IOException, DataFormatException {
-        Inflater decompresser = new Inflater();
-        String data = String.valueOf( datum );
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            decompresser.setInput( data.getBytes(StandardCharsets.UTF_8) );
-        }
-        else
-        {
-            decompresser.setInput( data.getBytes(Charset.forName("UTF-8")) );
-        }
-        byte[] strRaw = new byte[ 0 ];
-        decompresser.inflate( strRaw );
-        Log.w( "Subtitle_Activities", "inflated " + strRaw );
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            Log.w( "Subtitle_Activities", "inflated " + new String( strRaw, StandardCharsets.UTF_8) );
-        }
-        else
-        {
-            Log.w( "Subtitle_Activities", "inflated " + new String( strRaw, Charset.forName("UTF-8")) );
-        }
-        File strFile = getFile(context, name);
-        FileOutputStream str = new FileOutputStream( strFile );
-        str.write( strRaw );
-        Log.w( "Subtitle_Activities", "Written Subtitle to file" );
-        return strFile;
-    }
+//    public File save2(Object datum, Context context, String name) throws IOException, DataFormatException {
+//        Inflater decompresser = new Inflater();
+//        String data = String.valueOf( datum );
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+//            decompresser.setInput( data.getBytes(StandardCharsets.UTF_8) );
+//        }
+//        else
+//        {
+//            decompresser.setInput( data.getBytes(Charset.forName("UTF-8")) );
+//        }
+//        byte[] strRaw = new byte[ 0 ];
+//        decompresser.inflate( strRaw );
+//        Log.w( "Subtitle_Activities", "inflated " + strRaw );
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+//            Log.w( "Subtitle_Activities", "inflated " + new String( strRaw, StandardCharsets.UTF_8) );
+//        }
+//        else
+//        {
+//            Log.w( "Subtitle_Activities", "inflated " + new String( strRaw, Charset.forName("UTF-8")) );
+//        }
+//        File strFile = getFile(context, name);
+//        FileOutputStream str = new FileOutputStream( strFile );
+//        str.write( strRaw );
+//        Log.w( "Subtitle_Activities", "Written Subtitle to file" );
+//        return strFile;
+//    }
 
     public File getFile(Context context, String name)
     {
@@ -806,29 +908,6 @@ public class OpenSubtitleService
         Log.w( "Subtitle_Activities", "create subtitle file " + file );
         return file;
     }
-
-//    public void guessMovie( String name ) throws XMLRPCException {
-////        Object guessMovies = client.call("SuggestMovie", token, new String[]{name});
-//        Object guessMovies = client.call("SuggestMovie", token, name);
-//        if ( guessMovies != null )
-//        {
-//            Log.w( "Subtitle_Activities", "movies " + guessMovies.toString() );
-//            Map<String, Object> movies = (Map<String, Object>) guessMovies;
-//            Log.w( "Subtitle_Activities", "movies " + movies );
-//        }
-////        Log.w( "Subtitle_Activities", "movies " + movies );
-////        Map< String, Object > gueses = (Map<String, Object>) movies.get( "data" );
-////        Log.w( "Subtitle_Activities", "movies data " + gueses );
-////        Object[] guese = gueses.values().toArray();
-////        Map<String, Object> bestMovie = (Map<String, Object>) guese[0];
-////        Map< String, Object > movie = (Map<String, Object>) bestMovie.get( "BestGuess" );
-////        Log.w( "Subtitle_Activities", "best guess for first movies " + movie );
-//////        Object idMovieIMDB = movie.get("IDMovieIMDB");
-////        HashMap<String, String> movieParams = getMovieParams(movie);
-////        Log.w( "Subtitle_Activities", "params of the guess movie " + movieParams );
-//////        return String.valueOf( idMovieIMDB );
-////        return movieParams;
-//    }
 
     public JsonObject guessMovie( String name ) {
         JsonObject jsonObject = null;
@@ -912,47 +991,6 @@ public class OpenSubtitleService
 //        renderSubtitle( video, position, context, build, update, messager, false );
 //    }
 
-//    public File retrieveSubtitle(Video video, Context context, PlayerView player)
-//    {
-//        File subtitle = getSavedSubtitle( video, context );
-//        if ( subtitle == null )
-//            subtitle = getSubtitle(video, context, player);
-//        return subtitle;
-//    }
-
-//    public void retrieveSubtitle(Video video, Context context, PlayerView player)
-//    {
-//        beginSubtitling(video, context, player);
-//    }
-
-//    public void renderSubtitle(Video video, int position, Context context, BiFunction< File, Integer, ConcatenatingMediaSource > build,
-//                                    Consumer<ConcatenatingMediaSource> update, Consumer< String > messager, boolean connectivity )
-//    {
-//        Worker.executeTask( () ->
-//        {
-//            File subtitle = getSavedSubtitle( video, context );
-//            if ( subtitle == null )
-//                subtitle = getSubtitle(video, context, messager);
-//
-//            if ( subtitle == null )
-//            {
-//                Log.w( "Subtitle_Activities", "Unable to find subtitle" );
-//                return () -> {};
-//            }
-//
-////            File finalSubtitle = subtitle;
-//            ConcatenatingMediaSource source = build.apply(subtitle,position);
-//
-////            if ( connectivity )
-////                doneWithConnectivity();
-//
-//            return () -> {
-////                messager.accept( "rendering movie" );
-//                update.accept(source);
-//            };
-//        });
-//    }
-
     public boolean login() {
         if ( !login )
         {
@@ -967,44 +1005,6 @@ public class OpenSubtitleService
             }
         }
         return login;
-    }
-
-    public void displaySubtitle() {
-        XMLRPCCallback action = generateCallback(o ->
-        {
-            Log.w("Subtitle_Activities", "login...");
-            Log.w("Subtitle_Activities", "result " + o);
-        });
-        login( action );
-    }
-
-    private XMLRPCCallback generateCallback( Consumer< Object > success )
-    {
-        return generateCallback( success, null, null );
-    }
-
-    private XMLRPCCallback generateCallback( Consumer< Object > success, Consumer< XMLRPCException > rError,
-                                                    Consumer< XMLRPCServerException > sError )
-    {
-        return new XMLRPCCallback() {
-            @Override
-            public void onResponse(long id, Object result) {
-                if ( success != null )
-                    success.accept( result );
-            }
-
-            @Override
-            public void onError(long id, XMLRPCException error) {
-                if ( rError != null )
-                    rError.accept( error );
-            }
-
-            @Override
-            public void onServerError(long id, XMLRPCServerException error) {
-                if ( sError != null )
-                    sError.accept( error );
-            }
-        };
     }
 
 
@@ -1077,18 +1077,5 @@ public class OpenSubtitleService
 
             return hash;
         }
-
     }
-
-    public interface BiFunction<T1, T2, R> {
-        @NonNull
-        R apply(@NonNull T1 t1, @NonNull T2 t2);
-    }
-
-    public interface Action {
-        void perform();
-    }
-
-
-
 }

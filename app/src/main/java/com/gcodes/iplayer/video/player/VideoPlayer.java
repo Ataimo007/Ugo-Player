@@ -8,6 +8,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Pair;
 import androidx.fragment.app.Fragment;
 
 import com.gcodes.iplayer.R;
@@ -26,7 +27,6 @@ import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
-import com.google.gson.Gson;
 
 import java.io.File;
 import java.util.Arrays;
@@ -54,7 +54,7 @@ public class VideoPlayer {
     private long currentPosition;
     private int currentIndex;
 
-    public enum MediaType{ VIDEOS, SERIES }
+    public enum MediaType{ VIDEOS, SERIES, URL }
 
     public static VideoPlayer getInstance()
     {
@@ -64,35 +64,58 @@ public class VideoPlayer {
     }
 
     @NonNull
-    public ConcatenatingMediaSource buildNewSourceOnSubtitle(SingleSampleMediaSource subtitleSource, int position )
+    public Pair<ConcatenatingMediaSource, MediaSource> buildNewMergedSource(SingleSampleMediaSource subtitleSource, int position )
     {
+        MediaSource oldSource = null;
         MediaSource[] sources = new MediaSource[ mediaSource.getSize() ];
         for ( int i = 0; i < mediaSource.getSize(); ++i )
         {
             MediaSource mediaSource = this.mediaSource.getMediaSource(i);
             if ( i == position )
             {
+                oldSource = mediaSource;
                 mediaSource = new MergingMediaSource( mediaSource, subtitleSource );
             }
             sources[ i ] = mediaSource;
         }
 
         ConcatenatingMediaSource newSource = new ConcatenatingMediaSource(sources);
-
-        return newSource;
+        Pair<ConcatenatingMediaSource, MediaSource> sourcePair = new Pair<>(newSource, oldSource);
+        return sourcePair;
     }
 
-    private ConcatenatingMediaSource BuildNewSourceOnSubtitle2( SingleSampleMediaSource subtitleSource, int position  )
+    @NonNull
+    public Pair<ConcatenatingMediaSource, MediaSource> buildNewSource(MediaSource source, int position)
     {
-        Gson gson = new Gson();
-        ConcatenatingMediaSource clone = gson.fromJson(gson.toJson(mediaSource), ConcatenatingMediaSource.class);
-        MediaSource targetSource = clone.getMediaSource(position);
-        MergingMediaSource newSource = new MergingMediaSource( targetSource, subtitleSource );
-        clone.removeMediaSource( position );
-        clone.addMediaSource( position, newSource );
-        playerManager.prepare( clone, false, false, PlayerManager.MediaType.VIDEO );
-        return clone;
+        MediaSource oldSource = null;
+        MediaSource[] sources = new MediaSource[ mediaSource.getSize() ];
+        for ( int i = 0; i < mediaSource.getSize(); ++i )
+        {
+            MediaSource mediaSource = this.mediaSource.getMediaSource(i);
+            if ( i == position )
+            {
+                oldSource = mediaSource;
+                mediaSource = source;
+            }
+            sources[ i ] = mediaSource;
+        }
+
+        ConcatenatingMediaSource newSource = new ConcatenatingMediaSource(sources);
+        Pair<ConcatenatingMediaSource, MediaSource> sourcePair = new Pair<>(newSource, oldSource);
+        return sourcePair;
     }
+
+//    private ConcatenatingMediaSource BuildNewSourceOnSubtitle2( SingleSampleMediaSource subtitleSource, int position  )
+//    {
+//        Gson gson = new Gson();
+//        ConcatenatingMediaSource clone = gson.fromJson(gson.toJson(mediaSource), ConcatenatingMediaSource.class);
+//        MediaSource targetSource = clone.getMediaSource(position);
+//        MergingMediaSource newSource = new MergingMediaSource( targetSource, subtitleSource );
+//        clone.removeMediaSource( position );
+//        clone.addMediaSource( position, newSource );
+//        playerManager.prepare( clone, false, false, PlayerManager.MediaType.VIDEO );
+//        return clone;
+//    }
 
     public void switchSources(ConcatenatingMediaSource source)
     {
@@ -108,17 +131,6 @@ public class VideoPlayer {
         playerManager.prepare( source, true, true, PlayerManager.MediaType.VIDEO );
         playerManager.playTrackAt( currentWindowIndex, currentPosition );
         mediaSource = source;
-    }
-
-    public void initOnlineSources(String[] vids, int start) {
-        MediaSource sources[] = new MediaSource[ vids.length ];
-        for ( int i = 0; i < vids.length; ++i )
-        {
-            sources[ i ] = getMediaSource( vids[ i ] );
-        }
-        mediaSource = new ConcatenatingMediaSource( sources );
-        playerManager.prepare( mediaSource, PlayerManager.MediaType.VIDEO );
-        beginAt = start;
     }
 
     public void renderVideoPlayer()
@@ -213,6 +225,19 @@ public class VideoPlayer {
         beginAt = 0;
     }
 
+    public void initOnlineSources(String[] vids, int start) {
+        MediaSource sources[] = new MediaSource[ vids.length ];
+        for ( int i = 0; i < vids.length; ++i )
+        {
+            sources[ i ] = getMediaSource( vids[ i ] );
+        }
+        currentType = MediaType.URL;
+        mediaSource = new ConcatenatingMediaSource( sources );
+        playerManager.prepare( mediaSource, PlayerManager.MediaType.VIDEO );
+        beginAt = start;
+    }
+
+
     public void initSavedSource()
     {
         restoreState();
@@ -230,12 +255,21 @@ public class VideoPlayer {
         fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
     }
 
-    public static void play(Activity activity)
+    public static void play(Fragment fragment)
     {
-        Intent intent = new Intent( activity, VideoPlayerActivity.class );
+        Intent intent = new Intent( fragment.getContext(), VideoPlayerActivity.class );
         intent.putExtra( "data_type", "controller" );
-        activity.startActivity(intent);
+//        activity.startActivity(intent);
+        fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
     }
+
+//    public static void play(Activity activity)
+//    {
+//        Intent intent = new Intent( activity, VideoPlayerActivity.class );
+//        intent.putExtra( "data_type", "controller" );
+////        activity.startActivity(intent);
+//        activity.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
+//    }
 
     public void showSeriesFragment() {
         SeriesPlayerFragment.navigate( currentSeries );

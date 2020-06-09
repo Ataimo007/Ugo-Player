@@ -69,7 +69,7 @@ public class MusicPlayerFragment extends Fragment
     private Music currentMusic;
 
     private final int LYRICSYNCER = 1000;
-    private final int LYRICIDLENESS = 5000;
+    private final int LYRICIDLENESS = 20000;
     private Handler handler = new Handler();
     private int currentPos = 0;
     private long lyricSpanSec = 0;
@@ -322,7 +322,7 @@ public class MusicPlayerFragment extends Fragment
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
 //        listView.setLayoutManager( new CustomLinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
-        listView.addItemDecoration(UIConstance.AppItemDecorator.AppItemDecoratorToolBarOffset(getContext(), UIConstance.AppItemDecorator.DEFAULT_TOP, 130 + UIConstance.AppItemDecorator.DEFAULT_TOP ));
+        listView.addItemDecoration(UIConstance.AppItemDecorator.AppItemDecoratorToolBarOffset(getContext(), UIConstance.AppItemDecorator.DEFAULT_TOP, 280 + UIConstance.AppItemDecorator.DEFAULT_TOP ));
 
         listView.setOnTouchListener(new View.OnTouchListener() {
             @Override

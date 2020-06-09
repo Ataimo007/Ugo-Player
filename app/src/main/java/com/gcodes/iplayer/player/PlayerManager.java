@@ -124,8 +124,11 @@ public class PlayerManager
 
     private void consumeVideoState(boolean playWhenReady, int playbackState) {
         boolean isPlaying = playWhenReady && playbackState == Player.STATE_READY;
-        NavBackStackEntry backStackEntry = Navigation.findNavController( getActivity(), R.id.video_host ).getBackStackEntry(R.id.videoFragment);
-        backStackEntry.getSavedStateHandle().set( "is_playing", isPlaying );
+        NavController navController = Navigation.findNavController(getActivity(), R.id.video_host);
+        try {
+            NavBackStackEntry backStackEntry = navController.getBackStackEntry(R.id.videoFragment);
+            backStackEntry.getSavedStateHandle().set( "is_playing", isPlaying );
+        } catch (IllegalArgumentException ignored){}
     }
 
     private boolean isMusicPlayer()
@@ -171,8 +174,12 @@ public class PlayerManager
 
     private void consumeVideo()
     {
+        VideoPlayer videoPlayer = VideoPlayer.getInstance();
+        if (videoPlayer.getCurrentType().equals(VideoPlayer.MediaType.URL))
+            return;
+
         int index = player.getCurrentPeriodIndex();
-        Video video = VideoPlayer.getInstance().getVideo(index);
+        Video video = videoPlayer.getVideo(index);
         if ( fragmentVideo != null && fragmentVideo.isAdded() )
         {
             fragmentVideo.consumeVideo( video );
@@ -344,6 +351,7 @@ public class PlayerManager
 
     public void play()
     {
+//        if  ( !player.getPlayWhenReady() )
         player.setPlayWhenReady( true );
         if  ( isServiceRunning() )
             stopService();

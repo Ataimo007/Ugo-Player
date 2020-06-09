@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 
 import com.gcodes.iplayer.helpers.Helper;
+import com.google.common.base.Objects;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -29,6 +30,23 @@ public class Video implements Comparable< Video >, Serializable
         this.date = date;
         this.data = data;
         this.duration = duration;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Video video = (Video) o;
+        return id == video.id &&
+                duration == video.duration &&
+                date == video.date &&
+                Objects.equal(name, video.name) &&
+                Objects.equal(data, video.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(name, id, duration, date, data);
     }
 
     public DateTime getDate()
@@ -115,5 +133,7 @@ public class Video implements Comparable< Video >, Serializable
     {
         return gson.fromJson( json.toString(), Video.class );
     }
+
+
 
 }

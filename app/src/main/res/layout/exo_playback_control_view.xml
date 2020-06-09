@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_gravity="bottom">
+    android:layout_gravity="bottom|center"
+    android:maxWidth="500dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/subtitle_options"
@@ -12,7 +13,7 @@
         android:layout_height="wrap_content"
         android:fadeScrollbars="true"
         android:isScrollContainer="true"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/control_view"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -21,12 +22,13 @@
             android:id="@+id/subtitle_hide"
             android:layout_width="wrap_content"
             android:layout_height="38dp"
+            android:background="@color/colorAccent16"
             android:insetTop="0dp"
             android:insetBottom="1dp"
             android:text="Hide Subtitle"
             android:textColor="@color/colorPrimary"
-            app:backgroundTint="@color/colorAccent"
-            app:cornerRadius="20dp"
+            app:backgroundTint="@color/colorAccent16"
+            app:cornerRadius="10dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
@@ -34,13 +36,14 @@
             android:id="@+id/subtitle_change"
             android:layout_width="wrap_content"
             android:layout_height="38dp"
-            android:layout_marginEnd="10dp"
+            android:layout_marginEnd="2dp"
+            android:background="@color/colorAccent16"
             android:insetTop="0dp"
             android:insetBottom="1dp"
             android:text="Change Subtitle"
             android:textColor="@color/colorPrimary"
-            app:backgroundTint="@color/colorAccent"
-            app:cornerRadius="20dp"
+            app:backgroundTint="@color/colorAccent16"
+            app:cornerRadius="10dp"
             app:layout_constraintBottom_toBottomOf="@+id/subtitle_hide"
             app:layout_constraintEnd_toStartOf="@+id/subtitle_hide"
             app:layout_constraintTop_toTopOf="@+id/subtitle_hide" />
@@ -48,11 +51,10 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/control_view"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
         android:background="@drawable/player_control_background"
-        android:maxWidth="500dp"
         android:minHeight="100dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -72,23 +74,23 @@
                 android:id="@+id/exo_play"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                app:srcCompat="@drawable/u_play"
+                android:contentDescription="Play Media"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="@color/colorPrimary"
-                android:contentDescription="Play Media" />
+                app:srcCompat="@drawable/u_play"
+                app:tint="@color/colorPrimary" />
 
             <ImageView
                 android:id="@+id/exo_pause"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                app:srcCompat="@drawable/u_pause"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/u_pause"
                 app:tint="@color/colorPrimary" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -111,44 +113,44 @@
             android:id="@+id/exo_lock"
             android:layout_width="20dp"
             android:layout_height="30dp"
-            app:srcCompat="@drawable/exo_icon_lock"
             app:layout_constraintBottom_toBottomOf="@+id/exo_prev"
             app:layout_constraintEnd_toStartOf="@+id/exo_prev"
             app:layout_constraintStart_toStartOf="@+id/exo_position"
             app:layout_constraintTop_toTopOf="@+id/exo_prev"
+            app:srcCompat="@drawable/exo_icon_lock"
             app:tint="@color/colorPrimary" />
 
         <ImageView
             android:id="@+id/exo_custom_subtitle"
             android:layout_width="20dp"
             android:layout_height="30dp"
-            app:srcCompat="@drawable/exo_icon_subtitle"
             app:layout_constraintBottom_toBottomOf="@+id/exo_next"
             app:layout_constraintEnd_toEndOf="@+id/exo_duration"
             app:layout_constraintStart_toEndOf="@+id/exo_next"
             app:layout_constraintTop_toTopOf="@+id/exo_next"
+            app:srcCompat="@drawable/exo_icon_subtitle"
             app:tint="@color/colorPrimary" />
 
         <ImageView
             android:id="@+id/exo_prev"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            app:srcCompat="@drawable/u_previous"
             app:layout_constraintBottom_toBottomOf="@+id/exo_play_container"
             app:layout_constraintEnd_toStartOf="@+id/exo_play_container"
             app:layout_constraintStart_toEndOf="@+id/exo_lock"
             app:layout_constraintTop_toTopOf="@+id/exo_play_container"
+            app:srcCompat="@drawable/u_previous"
             app:tint="@color/colorPrimary" />
 
         <ImageView
             android:id="@+id/exo_next"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            app:srcCompat="@drawable/u_next"
             app:layout_constraintBottom_toBottomOf="@+id/exo_play_container"
             app:layout_constraintEnd_toStartOf="@+id/exo_custom_subtitle"
             app:layout_constraintStart_toEndOf="@+id/exo_play_container"
             app:layout_constraintTop_toTopOf="@+id/exo_play_container"
+            app:srcCompat="@drawable/u_next"
             app:tint="@color/colorPrimary" />
 
         <TextView
