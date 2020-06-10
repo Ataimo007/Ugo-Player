@@ -75,8 +75,8 @@ public class MusicVideoFragment extends Fragment
     private RecyclerView listView;
     private CustomAdapter adapter;
     private List<Video> videos = new ArrayList<>();
-    private Consumer<Void> showVideo;
-    private Consumer<Void> showMusic;
+//    private Consumer<Void> showVideo;
+//    private Consumer<Void> showMusic;
     private PlayerDatabase.MusicInfo musicInfo;
 
     private Handler updateProgress;
@@ -99,15 +99,15 @@ public class MusicVideoFragment extends Fragment
             MusicPlayer.unRegisterOnTrackChange( trackListener );
     }
 
-    public void setVideoPrepare(Consumer<Void> showVideo )
-    {
-        this.showVideo = showVideo;
-    }
+//    public void setVideoPrepare(Consumer<Void> showVideo )
+//    {
+//        this.showVideo = showVideo;
+//    }
 
-    public void setMusicPrepare(Consumer<Void> showMusic )
-    {
-        this.showMusic = showMusic;
-    }
+//    public void setMusicPrepare(Consumer<Void> showMusic )
+//    {
+//        this.showMusic = showMusic;
+//    }
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -159,11 +159,11 @@ public class MusicVideoFragment extends Fragment
 //        }
 //    }
 
-    private void initFrame()
-    {
-        FrameLayout lyricFrame = getActivity().findViewById(R.id.player_lyrics);
-        lyricFrame.setVisibility(VISIBLE);
-    }
+//    private void initFrame()
+//    {
+//        FrameLayout lyricFrame = getActivity().findViewById(R.id.player_lyrics);
+//        lyricFrame.setVisibility(VISIBLE);
+//    }
 
     private void initRecycleView( View view )
     {
@@ -199,13 +199,13 @@ public class MusicVideoFragment extends Fragment
         player.updateTabView();
     }
 
-    private void initButton( View view )
-    {
-        ImageButton minimize = view.findViewById(R.id.lyrics_minimize);
-        minimize.setOnClickListener(v -> {
-            hide( getFragmentManager() );
-        });
-    }
+//    private void initButton( View view )
+//    {
+//        ImageButton minimize = view.findViewById(R.id.lyrics_minimize);
+//        minimize.setOnClickListener(v -> {
+//            hide( getFragmentManager() );
+//        });
+//    }
 
     public void hide( FragmentManager fragmentManager ) {
         Fragment playlist = fragmentManager.findFragmentByTag("Player_Lyrics");
@@ -235,18 +235,18 @@ public class MusicVideoFragment extends Fragment
 //        transaction.commit();
 //    }
 
-    public void prepareVideoPlayer()
-    {
-        hide( getFragmentManager() );
-    }
-
-    public void setMusicInfo(PlayerDatabase.MusicInfo musicInfo) {
-        this.musicInfo = musicInfo;
-    }
-
-    public PlayerDatabase.MusicInfo getMusicInfo() {
-        return musicInfo;
-    }
+//    public void prepareVideoPlayer()
+//    {
+//        hide( getFragmentManager() );
+//    }
+//
+//    public void setMusicInfo(PlayerDatabase.MusicInfo musicInfo) {
+//        this.musicInfo = musicInfo;
+//    }
+//
+//    public PlayerDatabase.MusicInfo getMusicInfo() {
+//        return musicInfo;
+//    }
 
     public class CustomAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     {

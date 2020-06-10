@@ -32,6 +32,8 @@ public class MusicPlayer
     private static MusicPlayer musicPlayer;
     private ArrayList<Music> musics;
     private ConcatenatingMediaSource source;
+//    private
+
 //    private SimpleExoPlayer player;
 //    private DefaultDataSourceFactory factory;
 //    private Context context;
@@ -49,6 +51,12 @@ public class MusicPlayer
     {
         getInstance().playAll( music );
 //        FragmentMusic.render();
+    }
+
+    private void saveCurrentState()
+    {
+        long currentPosition = playerManager.getCurrentPosition();
+        int currentIndex = playerManager.getCurrentIndex();
     }
 
     public static void play(Music music) {
