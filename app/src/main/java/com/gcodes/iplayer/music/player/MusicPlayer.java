@@ -32,6 +32,8 @@ public class MusicPlayer
     private static MusicPlayer musicPlayer;
     private ArrayList<Music> musics;
     private ConcatenatingMediaSource source;
+    private long currentPosition;
+    private int currentIndex;
 //    private
 
 //    private SimpleExoPlayer player;
@@ -53,10 +55,17 @@ public class MusicPlayer
 //        FragmentMusic.render();
     }
 
-    private void saveCurrentState()
+    public void saveCurrentState()
     {
-        long currentPosition = playerManager.getCurrentPosition();
-        int currentIndex = playerManager.getCurrentIndex();
+        currentPosition = playerManager.getCurrentPosition();
+        currentIndex = playerManager.getCurrentIndex();
+    }
+
+    public void restoreCurrentState()
+    {
+        playerManager.prepare( source, PlayerManager.MediaType.MUSIC );
+        playerManager.seekTo( currentIndex, currentPosition );
+        play();
     }
 
     public static void play(Music music) {

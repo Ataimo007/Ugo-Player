@@ -271,7 +271,7 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
             holder.setSubtitle( parseDuration( video.getDuration() ) );
             String path = video.getData();
             GlideApp.with( FolderFragment.this ).load( new CustomProcessFetcher( path ) )
-                    .placeholder( R.drawable.ic_track_black_24dp ).apply( centerCropTransform() ).into( holder.getImage() );
+                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             Video[] vids = videos.toArray( new Video[]{} );
             holder.itemView.setOnClickListener(v -> {
@@ -339,16 +339,9 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
             return image;
         }
 
-        public void setFileImage()
-        {
-            int resId = getResources().getIdentifier("ic_music_black_24dp", "drawable",
-                    getContext().getPackageName());
-            this.image.setImageResource( resId );
-        }
-
         public void setFolderImage()
         {
-            int resId = getResources().getIdentifier("u_folder_art", "drawable",
+            int resId = getResources().getIdentifier("u_folder", "drawable",
                     getContext().getPackageName());
             this.image.setImageResource( resId );
         }

@@ -275,13 +275,14 @@ public class VideoPlayer {
         SeriesPlayerFragment.navigate( currentSeries );
     }
 
-    public static void play(Activity activity, String url )
+    public static void play(Fragment fragment, String url )
     {
-        Intent intent = new Intent( activity, VideoPlayerActivity.class );
+        Intent intent = new Intent( fragment.getContext(), VideoPlayerActivity.class );
         intent.putExtra( "medias", new String[]{ url } );
         intent.putExtra( "data_type", "url" );
-//        activity.startActivityForResult(intent, MainActivity.REQUEST_VIDEO);
-        activity.startActivity(intent);
+
+        fragment.startActivityForResult(intent, VideoPlayer.REQUEST_PLAYER);
+//        activity.startActivity(intent);
     }
 
     public static void play(Fragment fragment, int pos, Video ...videos) {

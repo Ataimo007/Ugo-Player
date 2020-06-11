@@ -212,7 +212,7 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
             holder.setDate( video.getDateString() );
 
             GlideApp.with( SeriesFragment.this ).load( new CustomProcessFetcher( video ) )
-                    .placeholder( R.drawable.u_song_art_padded ).apply( centerCropTransform() ).into( holder.getImage() );
+                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             holder.itemView.setOnClickListener(v -> {
                 VideoPlayer.play( SeriesFragment.this, video );
@@ -225,7 +225,7 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
             holder.setSubtitle( aSeries.getDuration() );
             holder.setDate( String.format( "%d %s", aSeries.getCount(), aSeries.getCount() > 1 ? "Videos" : "Video" ) );
             GlideApp.with( SeriesFragment.this ).load( new CustomProcessFetcher( aSeries.getVideos() ) )
-                    .placeholder( R.drawable.u_song_art_padded ).apply( centerCropTransform() ).into( holder.getImage() );
+                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             holder.itemView.setOnClickListener(v ->
             {

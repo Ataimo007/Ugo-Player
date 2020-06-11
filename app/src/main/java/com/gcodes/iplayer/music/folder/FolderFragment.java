@@ -342,7 +342,7 @@ public class FolderFragment extends Fragment
 
         public void setFolderImage()
         {
-            int resId = getResources().getIdentifier("u_folder_art", "drawable",
+            int resId = getResources().getIdentifier("u_folder", "drawable",
                     getContext().getPackageName());
             this.image.setImageResource( resId );
         }

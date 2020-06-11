@@ -47,6 +47,7 @@ public class MusicPlayerActivity extends AppCompatActivity{
 
     private ImageView background;
     private final Handler handler = new Handler();
+    private View loadingView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,21 +59,21 @@ public class MusicPlayerActivity extends AppCompatActivity{
         initView();
     }
 
-    private void prepareMusicPlayer()
-    {
-        AspectRatioFrameLayout videoScreen = findViewById(R.id.exo_player_content_frame);
-        videoScreen.setVisibility( View.GONE );
-        ConstraintLayout coverArt = findViewById(R.id.player_art_view);
-        coverArt.setVisibility(View.VISIBLE);
-    }
-
-    private void prepareVideoPlayer()
-    {
-        AspectRatioFrameLayout videoScreen = findViewById(R.id.exo_player_content_frame);
-        videoScreen.setVisibility( View.VISIBLE );
-        ConstraintLayout coverArt = findViewById(R.id.player_art_view);
-        coverArt.setVisibility(View.GONE);
-    }
+//    private void prepareMusicPlayer()
+//    {
+//        AspectRatioFrameLayout videoScreen = findViewById(R.id.exo_player_content_frame);
+//        videoScreen.setVisibility( View.GONE );
+//        ConstraintLayout coverArt = findViewById(R.id.player_art_view);
+//        coverArt.setVisibility(View.VISIBLE);
+//    }
+//
+//    private void prepareVideoPlayer()
+//    {
+//        AspectRatioFrameLayout videoScreen = findViewById(R.id.exo_player_content_frame);
+//        videoScreen.setVisibility( View.VISIBLE );
+//        ConstraintLayout coverArt = findViewById(R.id.player_art_view);
+//        coverArt.setVisibility(View.GONE);
+//    }
 
     private TabLayout getTabs()
     {
@@ -117,6 +118,21 @@ public class MusicPlayerActivity extends AppCompatActivity{
         });
 
         initPlayer();
+        initLoading();
+    }
+
+    private void initLoading() {
+        loadingView = findViewById(R.id.player_loading);
+    }
+
+    public void loading()
+    {
+        loadingView.setVisibility(View.VISIBLE);
+    }
+
+    public void notLoading()
+    {
+        loadingView.setVisibility(View.GONE);
     }
 
     private void initPlayer() {

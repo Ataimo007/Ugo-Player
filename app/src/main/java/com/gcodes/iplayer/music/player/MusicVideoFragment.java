@@ -1,6 +1,7 @@
 package com.gcodes.iplayer.music.player;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -47,6 +48,7 @@ import java.util.List;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.collection.SparseArrayCompat;
 import androidx.core.util.Consumer;
 import androidx.fragment.app.Fragment;
@@ -125,6 +127,18 @@ public class MusicVideoFragment extends Fragment
     {
         super.onCreate(savedInstanceState);
         updateProgress = new Handler( getContext().getMainLooper() );
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        Log.w("Video_Player", String.format("Video Controller state handling result" ) );
+        super.onActivityResult(requestCode, resultCode, data);
+        if ( requestCode == VideoPlayer.REQUEST_PLAYER )
+        {
+            MusicPlayer player = MusicPlayer.getInstance();
+            player.restoreCurrentState();
+            this.player.notLoading();
+        }
     }
 
     @Override
@@ -207,14 +221,14 @@ public class MusicVideoFragment extends Fragment
 //        });
 //    }
 
-    public void hide( FragmentManager fragmentManager ) {
-        Fragment playlist = fragmentManager.findFragmentByTag("Player_Lyrics");
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.remove( playlist );
-        FrameLayout lyricFrame = getActivity().findViewById(R.id.player_lyrics);
-        lyricFrame.setVisibility(GONE);
-        transaction.commit();
-    }
+//    public void hide( FragmentManager fragmentManager ) {
+//        Fragment playlist = fragmentManager.findFragmentByTag("Player_Lyrics");
+//        FragmentTransaction transaction = fragmentManager.beginTransaction();
+//        transaction.remove( playlist );
+//        FrameLayout lyricFrame = getActivity().findViewById(R.id.player_lyrics);
+//        lyricFrame.setVisibility(GONE);
+//        transaction.commit();
+//    }
 
 //    public static void show(FragmentManager fragmentManager, Music currentMusic) {
 //        FragmentTransaction transaction = fragmentManager.beginTransaction();
@@ -267,6 +281,11 @@ public class MusicVideoFragment extends Fragment
                 view = LayoutInflater.from(parent.getContext()).inflate(R.layout.music_video_empty, parent, false);
                 return new EmptyHolder(view);
             }
+        }
+
+        private void showLoading()
+        {
+
         }
 
         @Override
@@ -326,7 +345,9 @@ public class MusicVideoFragment extends Fragment
 //                    MusicPlayer musicPlayer = MusicPlayer.getInstance();
 //                    musicPlayer.playVideo( ytFile.getUrl(), music );
 //                    showVideo.accept(null);
-                    VideoPlayer.play( getActivity(), ytFile.getUrl() );
+                    player.loading();
+                    MusicPlayer.getInstance().saveCurrentState();
+                    VideoPlayer.play( MusicVideoFragment.this, ytFile.getUrl() );
                 }, getContext() );
             });
 

@@ -71,9 +71,21 @@ public class VideoPlayerActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        player.saveState();
-        Log.w("Video_Player", String.format("Video Controller state setting back result" ) );
-        setResult( VideoPlayer.RESULT_PLAYING );
+        if ( isUrlSource() )
+        {
+            player.stop();
+            playerView.setPlayer(null);
+        }
+        else
+        {
+            player.saveState();
+            Log.w("Video_Player", String.format("Video Controller state setting back result" ) );
+            setResult( VideoPlayer.RESULT_PLAYING );
+        }
+    }
+
+    private boolean isUrlSource() {
+        return getIntent().hasExtra("data_type") && getIntent().getStringExtra("data_type").equals("url");
     }
 
     private void initPopup()

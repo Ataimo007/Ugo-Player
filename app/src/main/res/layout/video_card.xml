@@ -27,8 +27,8 @@
             android:layout_gravity="center"
             android:adjustViewBounds="true"
             android:cropToPadding="true"
-            android:scaleType="fitCenter"
-            app:srcCompat="@drawable/u_artist_avatar" />
+            android:scaleType="centerCrop"
+            app:srcCompat="@drawable/u_video2_padded" />
 
         <TextView
             android:id="@+id/item_subtitle"

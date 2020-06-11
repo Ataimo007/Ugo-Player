@@ -280,7 +280,7 @@ public class SeriesPlayerFragment extends Fragment
             holder.setDate( video.getDateString() );
 
             GlideApp.with( SeriesPlayerFragment.this ).load( new CustomProcessFetcher( video ) )
-                    .placeholder( R.drawable.u_song_art_padded ).apply( centerCropTransform() ).into( holder.getImage() );
+                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             holder.itemView.setOnClickListener(v -> {
                 playerManager.playAt( position );
