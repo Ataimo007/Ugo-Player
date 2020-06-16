@@ -20,6 +20,7 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
@@ -191,8 +192,8 @@ public class MusicPlayerFragment extends Fragment
             }
         });
 
-        if ( false ) // condition for no voice
-            voiceButton.setEnabled( false );
+//        if ( false ) // condition for no voice
+        voiceButton.setEnabled( false );
 
         voiceButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
