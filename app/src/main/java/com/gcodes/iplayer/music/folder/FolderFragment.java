@@ -120,7 +120,7 @@ public class FolderFragment extends Fragment
                 if ( ( fPaths.length - 1 ) == level )
                 {
                     entry.put( "-" + fName, cursor.getString( cursor.getColumnIndex( MediaStore.Audio.Media.ARTIST ) ) );
-                    entryMusic.put( "-" + fName, Music.getIntance( cursor, artLoader ) );
+                    entryMusic.put( "-" + fName, Music.getInstance( cursor, artLoader ) );
                 }
                 else
                 {

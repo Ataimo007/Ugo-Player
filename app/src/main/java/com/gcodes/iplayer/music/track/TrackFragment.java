@@ -1,7 +1,6 @@
 package com.gcodes.iplayer.music.track;
 
 import android.database.Cursor;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -43,6 +42,7 @@ public class TrackFragment extends Fragment
     private String[] projection = {
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.DATA,
             MediaStore.Audio.Media.ALBUM_KEY,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.TITLE,
@@ -102,7 +102,7 @@ public class TrackFragment extends Fragment
             cursor.moveToFirst();
             do
             {
-                musics.add( Music.getIntance(cursor, artLoader) );
+                musics.add( Music.getInstance(cursor, artLoader) );
             } while ( cursor.moveToNext() );
         }
     }

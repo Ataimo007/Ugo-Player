@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.services.ACRService;
+import com.gcodes.iplayer.services.FFmpegService;
 import com.gcodes.iplayer.services.LyricsOVH;
 import com.gcodes.iplayer.services.MusixMatchLyricsService;
 import com.gcodes.iplayer.services.YouTubeService;
@@ -69,7 +70,7 @@ public abstract class PlayerDatabase extends RoomDatabase
         return info;
     }
 
-    public List<Video> getMusicVideo(Music music )
+    public List<Video> getMusicVideo(Music music)
     {
         YouTubeService youtube = YouTubeService.getIntance();
         String query = String.format( "%s %s", music.getName(), music.getArtist() ) ;
@@ -84,6 +85,12 @@ public abstract class PlayerDatabase extends RoomDatabase
         Log.d( "YouTube_API", "The Videos " + videos );
         return videos;
     }
+
+//    public void getKaraoke(Music music)
+//    {
+//        FFmpegService service = FFmpegService.getInstance();
+//        String karaoke = service.karaoke(music);
+//    }
 
     public List<Video> getMusicVideo( MusicInfo music )
     {

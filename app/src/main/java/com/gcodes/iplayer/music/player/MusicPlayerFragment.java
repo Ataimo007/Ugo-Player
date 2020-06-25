@@ -2,7 +2,6 @@ package com.gcodes.iplayer.music.player;
 
 import android.content.Context;
 import android.graphics.PointF;
-import android.graphics.Rect;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,16 +12,18 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.util.Pair;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
@@ -34,11 +35,17 @@ import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.player.PlayerManager;
+import com.gcodes.iplayer.services.FFmpegService;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 
 import org.joda.time.Duration;
+
+import java.io.File;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
@@ -65,7 +72,7 @@ public class MusicPlayerFragment extends Fragment
     private RecyclerView listView;
     private CustomAdapter adapter;
     private ToggleButton lyricsButton;
-    private ToggleButton voiceButton;
+    private ToggleButton karaokeButton;
     private ImageButton videoButton;
     private Music currentMusic;
 
@@ -74,6 +81,8 @@ public class MusicPlayerFragment extends Fragment
     private Handler handler = new Handler();
     private int currentPos = 0;
     private long lyricSpanSec = 0;
+    private FFmpegService karaokeService;
+    private KaraokePlayerHandler karaokePlayerHandler;
 
     private boolean synced;
     private final Runnable syncer = new Runnable() {
@@ -117,6 +126,7 @@ public class MusicPlayerFragment extends Fragment
     public void onDestroy() {
         super.onDestroy();
         deSync();
+        releaseKaraoke();
     }
 
     private void sync()
@@ -165,17 +175,29 @@ public class MusicPlayerFragment extends Fragment
         image = content.findViewById( R.id.player_art );
         art = content.findViewById(R.id.player_album_art);
         lyricsButton = content.findViewById( R.id.player_show_lyrics );
-        voiceButton = content.findViewById( R.id.player_remove_voice );
+        karaokeButton = content.findViewById( R.id.player_karaoke_button );
         videoButton = content.findViewById( R.id.player_show_video );
         initView();
 
         initRecycleView( content );
         initButton();
+        initKaraoke(content);
 
 //        musicName = content.findViewById( R.id.song_name );
 //        artistName = content.findViewById( R.id.artist_name );
 
         return content;
+    }
+
+    private void initKaraoke(View content) {
+        karaokeService = FFmpegService.getInstance();
+        karaokePlayerHandler = new KaraokePlayerHandler(content);
+        karaokeService.prepare(karaokePlayerHandler);
+    }
+
+    private void releaseKaraoke()
+    {
+        karaokeService.release();
     }
 
     private void initButton() {
@@ -193,13 +215,9 @@ public class MusicPlayerFragment extends Fragment
         });
 
 //        if ( false ) // condition for no voice
-        voiceButton.setEnabled( false );
 
-        voiceButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-
-            }
+        karaokeButton.setOnClickListener(v -> {
+            karaokeService.toggleKaraoke(currentMusic);
         });
     }
 
@@ -301,7 +319,7 @@ public class MusicPlayerFragment extends Fragment
 
     public void updateNoVoice()
     {
-        voiceButton.setEnabled(true);
+        karaokeButton.setEnabled(true);
     }
 
     public void setImage(Music music)
@@ -354,9 +372,90 @@ public class MusicPlayerFragment extends Fragment
         lyrics = null;
         if ( lyricsButton != null )
             lyricsButton.setEnabled( false );
-        if ( voiceButton != null )
-            voiceButton.setEnabled( false );
+        if ( karaokeButton != null )
+            karaokeButton.setEnabled( false );
         deSync();
+    }
+
+    private class KaraokePlayerHandler implements FFmpegService.KaraokeHandler
+    {
+        private final TextView progress;
+        private final ProgressBar progressBar;
+        private final ToggleButton karaokeButton;
+        private final MusicPlayer player = MusicPlayer.getInstance();
+        private final ConcatenatingMediaSource mediaSource;
+        private boolean applied = false;
+
+        public KaraokePlayerHandler( View view )
+        {
+            karaokeButton = view.findViewById(R.id.player_karaoke_button);
+            progressBar = view.findViewById(R.id.karaoke_progress_bar);
+            progress = view.findViewById(R.id.karaoke_progress);
+            mediaSource = player.getMediaSource();
+        }
+
+        @Override
+        public void update(int percentage) {
+            prepareProgress();
+            setProgress(percentage);
+        }
+
+        private void setProgress(int percentage) {
+            if ( percentage < 0 )
+                progressBar.setIndeterminate(true);
+            else
+            {
+                progressBar.setIndeterminate(false);
+                progressBar.setProgress(percentage);
+            }
+        }
+
+        private void prepareProgress() {
+            if ( !(progressBar.getVisibility() == View.VISIBLE) )
+            {
+                karaokeButton.setVisibility(View.GONE);
+                progressBar.setVisibility(View.VISIBLE);
+                progress.setVisibility(View.VISIBLE);
+                progressBar.setMax(100);
+            }
+        }
+
+        private void finishProgress() {
+            if ( !(karaokeButton.getVisibility() == View.VISIBLE) )
+            {
+                karaokeButton.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.GONE);
+                progress.setVisibility(View.GONE);
+            }
+        }
+
+        @Override
+        public void apply(File file, Music music) {
+            finishProgress();
+            ProgressiveMediaSource musicSource = player.getMusicSource(file);
+            int index = player.getIndex(music);
+            Pair<ConcatenatingMediaSource, MediaSource> sourcePair = player.buildNewSource(musicSource, index);
+            ConcatenatingMediaSource newSource = sourcePair.first;
+            player.switchSources(newSource);
+            setApplied(true);
+        }
+
+        private void setApplied(boolean apply)
+        {
+            applied = apply;
+            karaokeButton.setChecked(applied);
+        }
+
+        @Override
+        public boolean isApplied() {
+            return applied;
+        }
+
+        @Override
+        public void restore() {
+            player.switchSources(mediaSource);
+            setApplied(false);
+        }
     }
 
     public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>

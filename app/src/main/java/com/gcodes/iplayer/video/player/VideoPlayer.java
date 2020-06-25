@@ -124,11 +124,11 @@ public class VideoPlayer {
         Log.d( "Video_Player", "The old source " + source );
         Log.d( "Video_Player", "The new source " + source.getSize() );
 
-        playerManager.prepare( mediaSource, false, false, PlayerManager.MediaType.VIDEO );
+//        playerManager.prepare( mediaSource, false, false, PlayerManager.MediaType.VIDEO );
         int currentWindowIndex = playerManager.getCurrentWindow();
         long currentPosition = playerManager.getCurrentPosition();
 
-        playerManager.prepare( source, true, true, PlayerManager.MediaType.VIDEO );
+        playerManager.prepare( source, true, true, PlayerManager.MediaType.VIDEO ); // think of changing this playerManager.prepare( mediaSource, false, false, PlayerManager.MediaType.VIDEO );
         playerManager.playTrackAt( currentWindowIndex, currentPosition );
         mediaSource = source;
     }

@@ -1,6 +1,5 @@
 package com.gcodes.iplayer.music.artist;
 
-import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -15,11 +14,9 @@ import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.music.album.MainAlbumFragment;
 import com.gcodes.iplayer.music.album.AlbumItemHolder;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
-import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.material.tabs.TabLayout;
 
@@ -27,7 +24,6 @@ import java.util.ArrayList;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -52,6 +48,7 @@ public class MainArtistFragment extends Fragment
     private String[] trackProjection = {
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.DATA,
             MediaStore.Audio.Media.ALBUM_KEY,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.TITLE,
@@ -140,7 +137,7 @@ public class MainArtistFragment extends Fragment
         cursor.moveToFirst();
         do
         {
-            musics.add( Music.getIntance(cursor, artLoader) );
+            musics.add( Music.getInstance(cursor, artLoader) );
         } while ( cursor.moveToNext() );
         return musics;
     }

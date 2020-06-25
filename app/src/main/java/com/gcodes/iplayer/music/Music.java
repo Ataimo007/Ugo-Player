@@ -4,30 +4,28 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.VectorDrawable;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Looper;
 import android.provider.MediaStore;
+import com.google.common.base.Objects;
 
 import com.gcodes.iplayer.R;
-import com.google.gson.Gson;
 
 import java.io.Serializable;
-import org.joda.time.Duration;
-import java.util.Objects;
 
 import androidx.annotation.Nullable;
 import androidx.loader.content.CursorLoader;
-import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
+
+import org.joda.time.Period;
 
 import static com.gcodes.iplayer.helpers.Helper.gson;
 
 public class Music implements Comparable<Music>, Serializable
 {
     private final String name;
+    private final String data;
     private final long mediaId;
     private final long albumId;
     private final String artist;
@@ -35,35 +33,38 @@ public class Music implements Comparable<Music>, Serializable
     private final String artPath;
 //    private Duration duration;
 
-    public Music(String name, long mediaId, long albumId, String artist, String album, String artPath) {
+    public Music(String name, long mediaId, String data, long albumId, String artist, String album, String artPath) {
         this.name = name;
         this.mediaId = mediaId;
+        this.data = data;
         this.albumId = albumId;
         this.artist = artist;
         this.album = album;
         this.artPath = artPath;
     }
 
-    public static Music getIntance(Bundle bundle )
+    public static Music getInstance(Bundle bundle )
     {
-        return new Music( bundle.getString("name"), bundle.getLong("mediaId"), bundle.getLong( "albumId" ),
+        return new Music( bundle.getString("name"), bundle.getLong("mediaId"), bundle.getString("data"), bundle.getLong( "albumId" ),
                 bundle.getString("artist"), bundle.getString("album"), bundle.getString("artPath"));
     }
 
-    public static Music getIntance(Cursor cursor, CursorLoader artLoader )
+    public static Music getInstance(Cursor cursor, CursorLoader artLoader )
     {
         return new Music( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.TITLE)),
                 cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media._ID)),
+                cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.DATA)),
                 cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)),
                 cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST)),
                 cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM)),
                 getArtPath( cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)), artLoader ) );
     }
 
-    public static Music getGenreIntance(Cursor cursor, CursorLoader artLoader )
+    public static Music getGenreInstance(Cursor cursor, CursorLoader artLoader )
     {
         return new Music( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Genres.Members.TITLE)),
                 cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Genres.Members._ID)),
+                cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Genres.Members.DATA)),
                 cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM_ID)),
                 cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ARTIST)),
                 cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM)),
@@ -122,6 +123,14 @@ public class Music implements Comparable<Music>, Serializable
             }
         }
         return BitmapFactory.decodeResource( context.getResources(), R.drawable.ic_track_black_24dp );
+    }
+
+    public Period getDuration()
+    {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        retriever.setDataSource(getData());
+        String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        return Period.millis( Integer.parseInt(duration) );
     }
 
     public static String getArtPath(long id, CursorLoader artLoader)
@@ -187,6 +196,7 @@ public class Music implements Comparable<Music>, Serializable
         Bundle music = new Bundle();
         music.putString( "name", name );
         music.putLong( "mediaId", mediaId );
+        music.putString( "data", data );
         music.putLong( "albumId", albumId );
         music.putString( "artist", artist );
         music.putString( "album", album );
@@ -203,6 +213,11 @@ public class Music implements Comparable<Music>, Serializable
     public Uri toUri()
     {
         return Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf( getMediaId() ) );
+    }
+
+    public String getData()
+    {
+        return data;
     }
 
     public static Music fromGson(String json )
@@ -262,12 +277,17 @@ public class Music implements Comparable<Music>, Serializable
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Artist artist = (Artist) o;
-            return Objects.equals(artistKey, artist.artistKey);
+            return Objects.equal(artistKey, artist.artistKey);
+//            return Objects.equals(artistKey, artist.artistKey);
+//            return Objects.equals(artistKey, artist.artistKey);
         }
 
+//        public int hashCode() {
+//            return Objects.hash(artistKey);
+//        }
         @Override
         public int hashCode() {
-            return Objects.hash(artistKey);
+            return Objects.hashCode(artistKey);
         }
 
         @Override

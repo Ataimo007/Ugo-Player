@@ -15,6 +15,7 @@ import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.services.FFmpegService;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.PlayerControlView;
@@ -165,8 +166,8 @@ public class MusicPlayerActivity extends AppCompatActivity{
     private final int NETWORKWATCHER = 1000;
     private boolean watching = false;
     private final Runnable runnable = new Runnable() {
-        int count = 0;
-        boolean flag = true;
+//        int count = 0;
+//        boolean flag = true;
         @Override
         public void run() {
 
@@ -239,6 +240,7 @@ public class MusicPlayerActivity extends AppCompatActivity{
                 lyrics = manager.getLyrics(music);
                 musicVideo = manager.getMusicVideo(music);
             }
+//            manager.getKaraoke(music);
 
             final PlayerDatabase.MusicLyrics finalLyrics = lyrics;
             final List<Video> finalMusicVideo = musicVideo;
@@ -264,8 +266,8 @@ public class MusicPlayerActivity extends AppCompatActivity{
         pagerAdapter.updateMusicVideos( music );
         pagerAdapter.onLoading();
 
-        retrieveInfo( music );
         currentMusic = music;
+        retrieveInfo( music );
     }
 
 

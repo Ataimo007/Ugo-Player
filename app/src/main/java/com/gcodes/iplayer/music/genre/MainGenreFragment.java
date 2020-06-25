@@ -1,6 +1,5 @@
 package com.gcodes.iplayer.music.genre;
 
-import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -14,13 +13,10 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.music.album.MainAlbumFragment;
 import com.gcodes.iplayer.music.album.AlbumItemHolder;
 import com.gcodes.iplayer.music.artist.ArtistItemHolder;
-import com.gcodes.iplayer.music.artist.ArtistOnlyFragment;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
-import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.material.tabs.TabLayout;
 
@@ -54,6 +50,7 @@ public class MainGenreFragment extends Fragment
     private final String[] trackProjection = {
             MediaStore.Audio.Genres.Members._ID,
             MediaStore.Audio.Genres.Members.ALBUM,
+            MediaStore.Audio.Genres.Members.DATA,
             MediaStore.Audio.Genres.Members.ALBUM_KEY,
             MediaStore.Audio.Genres.Members.ARTIST,
             MediaStore.Audio.Genres.Members.TITLE,
@@ -63,6 +60,7 @@ public class MainGenreFragment extends Fragment
     private final String[] albumProjection = {
             MediaStore.Audio.Genres.Members.ALBUM_KEY,
             MediaStore.Audio.Genres.Members._ID,
+            MediaStore.Audio.Genres.Members.DATA,
             MediaStore.Audio.Genres.Members.ALBUM,
             MediaStore.Audio.Genres.Members.ARTIST,
             MediaStore.Audio.Genres.Members.TITLE,
@@ -72,6 +70,7 @@ public class MainGenreFragment extends Fragment
     private final String[] artistProjection = {
             MediaStore.Audio.Genres.Members.ARTIST_KEY,
             MediaStore.Audio.Genres.Members.ARTIST_ID,
+            MediaStore.Audio.Genres.Members.DATA,
             MediaStore.Audio.Genres.Members.ARTIST,
             MediaStore.Audio.Genres.Members.ALBUM,
             MediaStore.Audio.Genres.Members.ALBUM_ID
@@ -158,7 +157,7 @@ public class MainGenreFragment extends Fragment
             do
             {
 //                Log.d("Genre_Activity", "Genre " + cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM)));
-                musics.add( Music.getIntance(cursor, artLoader) );
+                musics.add( Music.getInstance(cursor, artLoader) );
             } while ( cursor.moveToNext() );
         }
         return musics;

@@ -15,7 +15,6 @@ import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
-import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 
 import java.util.ArrayList;
@@ -49,6 +48,7 @@ public class MainAlbumFragment extends Fragment
     private final String[] projection = {
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.DATA,
             MediaStore.Audio.Media.ALBUM_KEY,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ARTIST_KEY,
@@ -59,6 +59,7 @@ public class MainAlbumFragment extends Fragment
     private final String[] genreProjection = {
             MediaStore.Audio.Genres.Members._ID,
             MediaStore.Audio.Genres.Members.ALBUM,
+            MediaStore.Audio.Genres.Members.DATA,
             MediaStore.Audio.Genres.Members.ALBUM_KEY,
             MediaStore.Audio.Genres.Members.ARTIST_KEY,
             MediaStore.Audio.Genres.Members.ARTIST,
@@ -185,7 +186,7 @@ public class MainAlbumFragment extends Fragment
         cursor.moveToFirst();
         do
         {
-            musics.add( Music.getIntance(cursor, artLoader) );
+            musics.add( Music.getInstance(cursor, artLoader) );
         } while ( cursor.moveToNext() );
     }
 
@@ -193,7 +194,7 @@ public class MainAlbumFragment extends Fragment
         cursor.moveToFirst();
         do
         {
-            musics.add( Music.getGenreIntance(cursor, artLoader) );
+            musics.add( Music.getGenreInstance(cursor, artLoader) );
         } while ( cursor.moveToNext() );
     }
 

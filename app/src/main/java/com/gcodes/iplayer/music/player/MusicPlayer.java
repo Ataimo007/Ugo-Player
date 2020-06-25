@@ -15,15 +15,19 @@ import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.core.util.Consumer;
+import androidx.core.util.Pair;
 import androidx.fragment.app.FragmentActivity;
 
 public class MusicPlayer
@@ -213,6 +217,10 @@ public class MusicPlayer
         return musics.get( index );
     }
 
+    public int getIndex(Music music) {
+        return musics.indexOf(music);
+    }
+
     public boolean isMusicPlaying() {
         return musics != null;
     }
@@ -256,6 +264,36 @@ public class MusicPlayer
         initError();
     }
 
+    @NonNull
+    public Pair<ConcatenatingMediaSource, MediaSource> buildNewSource(MediaSource childSource, int position)
+    {
+        MediaSource oldSource = null;
+        MediaSource[] sources = new MediaSource[ source.getSize() ];
+        for ( int i = 0; i < source.getSize(); ++i )
+        {
+            MediaSource mediaSource = source.getMediaSource(i);
+            if ( i == position )
+            {
+                oldSource = mediaSource;
+                mediaSource = childSource;
+            }
+            sources[ i ] = mediaSource;
+        }
+
+        ConcatenatingMediaSource newSource = new ConcatenatingMediaSource(sources);
+        Pair<ConcatenatingMediaSource, MediaSource> sourcePair = new Pair<>(newSource, oldSource);
+        return sourcePair;
+    }
+
+    public void switchSources(ConcatenatingMediaSource source)
+    {
+//        int currentWindowIndex = playerManager.getCurrentWindow();
+//        long currentPosition = playerManager.getCurrentPosition();
+        playerManager.prepare( source, false, false, PlayerManager.MediaType.VIDEO );
+//        playerManager.playTrackAt( currentWindowIndex, currentPosition );
+        this.source = source;
+    }
+
 //    public void playVideo( String url, Music musicVideo )
 //    {
 //        ProgressiveMediaSource mediaSource = getMediaSource(url);
@@ -291,6 +329,18 @@ public class MusicPlayer
         Uri media = music.toUri();
         ProgressiveMediaSource source = new ProgressiveMediaSource.Factory(playerManager.getFactory()).createMediaSource(media);
 //        ExtractorMediaSource source = new ExtractorMediaSource.Factory( playerManager.getFactory() ).createMediaSource(media);
+        return source;
+    }
+
+    public ProgressiveMediaSource getMusicSource(File file)
+    {
+        Uri media = Uri.fromFile(file);
+        ProgressiveMediaSource source = new ProgressiveMediaSource.Factory(playerManager.getFactory()).createMediaSource(media);
+        return source;
+    }
+
+    public ConcatenatingMediaSource getMediaSource()
+    {
         return source;
     }
 
