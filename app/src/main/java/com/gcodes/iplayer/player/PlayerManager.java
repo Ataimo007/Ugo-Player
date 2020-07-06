@@ -13,11 +13,10 @@ import com.gcodes.iplayer.music.player.FragmentMusic;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.player.MusicPlayerService;
 import com.gcodes.iplayer.services.ACRService;
-import com.gcodes.iplayer.services.FFmpegService;
+import com.gcodes.iplayer.services.KaraokeService;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.player.VideoFragment;
 import com.gcodes.iplayer.video.player.VideoPlayer;
-import com.gcodes.iplayer.video.series.SeriesPlayerFragment;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
@@ -86,7 +85,7 @@ public class PlayerManager
 
         PlayerDatabase.initialize( context );
         ACRService.initialize(context);
-        FFmpegService.initialize(context);
+        KaraokeService.initialize(context);
 //        ACRService.getInstance( context );
     }
 

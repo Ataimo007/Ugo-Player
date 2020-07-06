@@ -12,11 +12,9 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -35,8 +33,9 @@ import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.player.PlayerManager;
-import com.gcodes.iplayer.services.FFmpegService;
+import com.gcodes.iplayer.services.KaraokeService;
 import com.gcodes.iplayer.ui.UIConstance;
+import com.github.lzyzsd.circleprogress.DonutProgress;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -81,7 +80,7 @@ public class MusicPlayerFragment extends Fragment
     private Handler handler = new Handler();
     private int currentPos = 0;
     private long lyricSpanSec = 0;
-    private FFmpegService karaokeService;
+    private KaraokeService karaokeService;
     private KaraokePlayerHandler karaokePlayerHandler;
 
     private boolean synced;
@@ -190,7 +189,7 @@ public class MusicPlayerFragment extends Fragment
     }
 
     private void initKaraoke(View content) {
-        karaokeService = FFmpegService.getInstance();
+        karaokeService = KaraokeService.getInstance();
         karaokePlayerHandler = new KaraokePlayerHandler(content);
         karaokeService.prepare(karaokePlayerHandler);
     }
@@ -372,62 +371,92 @@ public class MusicPlayerFragment extends Fragment
         lyrics = null;
         if ( lyricsButton != null )
             lyricsButton.setEnabled( false );
-        if ( karaokeButton != null )
-            karaokeButton.setEnabled( false );
+//        if ( karaokeButton != null )
+//            karaokeButton.setEnabled( false );
         deSync();
     }
 
-    private class KaraokePlayerHandler implements FFmpegService.KaraokeHandler
+    private class KaraokePlayerHandler implements KaraokeService.KaraokeHandler
     {
         private final TextView progress;
-        private final ProgressBar progressBar;
+        private final DonutProgress progressBar;
         private final ToggleButton karaokeButton;
         private final MusicPlayer player = MusicPlayer.getInstance();
         private final ConcatenatingMediaSource mediaSource;
+
         private boolean applied = false;
+        private Music appliedMusic;
 
         public KaraokePlayerHandler( View view )
         {
             karaokeButton = view.findViewById(R.id.player_karaoke_button);
             progressBar = view.findViewById(R.id.karaoke_progress_bar);
             progress = view.findViewById(R.id.karaoke_progress);
+
+//            progress = view.findViewById(R.id.karaoke_progress);
             mediaSource = player.getMediaSource();
         }
 
         @Override
         public void update(int percentage) {
+            Log.w("FFmpag_Service", "Updating UI percentage " + percentage );
             prepareProgress();
             setProgress(percentage);
         }
 
         private void setProgress(int percentage) {
-            if ( percentage < 0 )
-                progressBar.setIndeterminate(true);
-            else
-            {
-                progressBar.setIndeterminate(false);
-                progressBar.setProgress(percentage);
-            }
+            percentage = Math.max(percentage, 0);
+            progressBar.setProgress(percentage);
+            progress.setText(String.valueOf( percentage ) );
         }
 
+//        private void setProgress(int percentage) {
+//            percentage = Math.max(percentage, 0);
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+//                progressBar.setProgress(percentage, true);
+//            else
+//                progressBar.setProgress(percentage);
+//            progress.setText(String.valueOf( percentage ) );
+//        }
+//
+
         private void prepareProgress() {
-            if ( !(progressBar.getVisibility() == View.VISIBLE) )
+            if ( !(progress.getVisibility() == View.VISIBLE) )
             {
                 karaokeButton.setVisibility(View.GONE);
-                progressBar.setVisibility(View.VISIBLE);
                 progress.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.VISIBLE);
                 progressBar.setMax(100);
             }
         }
+
+//        private void prepareProgress() {
+//            if ( !(progressBar.getVisibility() == View.VISIBLE) )
+//            {
+//                karaokeButton.setVisibility(View.GONE);
+//                progressBar.setVisibility(View.VISIBLE);
+//                progress.setVisibility(View.VISIBLE);
+//                progressBar.setMax(100);
+//            }
+//        }
 
         private void finishProgress() {
             if ( !(karaokeButton.getVisibility() == View.VISIBLE) )
             {
                 karaokeButton.setVisibility(View.VISIBLE);
-                progressBar.setVisibility(View.GONE);
                 progress.setVisibility(View.GONE);
+                progressBar.setVisibility(View.GONE);
             }
         }
+
+//        private void finishProgress() {
+//            if ( !(karaokeButton.getVisibility() == View.VISIBLE) )
+//            {
+//                karaokeButton.setVisibility(View.VISIBLE);
+//                progressBar.setVisibility(View.GONE);
+//                progress.setVisibility(View.GONE);
+//            }
+//        }
 
         @Override
         public void apply(File file, Music music) {
@@ -438,6 +467,21 @@ public class MusicPlayerFragment extends Fragment
             ConcatenatingMediaSource newSource = sourcePair.first;
             player.switchSources(newSource);
             setApplied(true);
+            setAppliedMusic( music );
+        }
+
+        private void setAppliedMusic(Music music) {
+            appliedMusic = music;
+        }
+
+        private void updateHandler(Music music)
+        {
+            if ( appliedMusic != music )
+            {
+                restore();
+                appliedMusic = null;
+                setApplied(false);
+            }
         }
 
         private void setApplied(boolean apply)

@@ -287,10 +287,11 @@ public class MusicPlayer
 
     public void switchSources(ConcatenatingMediaSource source)
     {
-//        int currentWindowIndex = playerManager.getCurrentWindow();
-//        long currentPosition = playerManager.getCurrentPosition();
-        playerManager.prepare( source, false, false, PlayerManager.MediaType.VIDEO );
-//        playerManager.playTrackAt( currentWindowIndex, currentPosition );
+        int currentWindowIndex = playerManager.getCurrentWindow();
+        long currentPosition = playerManager.getCurrentPosition();
+//        playerManager.prepare( source, false, false, PlayerManager.MediaType.MUSIC );
+        playerManager.prepare( source, true, true, PlayerManager.MediaType.MUSIC );
+        playerManager.playTrackAt( currentWindowIndex, currentPosition );
         this.source = source;
     }
 

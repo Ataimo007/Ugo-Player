@@ -1,14 +1,18 @@
 package com.gcodes.iplayer.services;
 
+import android.app.Service;
 import android.content.Context;
+import android.content.Intent;
+import android.os.IBinder;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
 
 import com.gcodes.iplayer.music.Music;
 import com.github.hiteshsondhi88.libffmpeg.ExecuteBinaryResponseHandler;
 import com.github.hiteshsondhi88.libffmpeg.FFmpeg;
 import com.github.hiteshsondhi88.libffmpeg.FFmpegExecuteResponseHandler;
 import com.github.hiteshsondhi88.libffmpeg.LoadBinaryResponseHandler;
-import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException;
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException;
 
 import org.joda.time.Period;
@@ -17,13 +21,12 @@ import org.joda.time.format.PeriodFormatterBuilder;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class FFmpegService
+public class KaraokeService extends Service
 {
-    private static FFmpegService service;
+    private static KaraokeService service;
 
     private final Context context;
     private final FFmpeg ffmpeg;
@@ -32,11 +35,17 @@ public class FFmpegService
 
     private State state = State.LOADING;
 
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
     private enum State{LOADING,READY,UNUSABLE}
 
     private KaraokeHandler karaokeHandler;
 
-    public FFmpegService(Context context)
+    public KaraokeService(Context context)
     {
         ffmpeg = FFmpeg.getInstance(context);
         this.context = context;
@@ -73,17 +82,17 @@ public class FFmpegService
 
     public static void initialize(Context context)
     {
-        service = new FFmpegService( context );
+        service = new KaraokeService( context );
     }
 
-    public static FFmpegService getInstance(Context context)
+    public static KaraokeService getInstance(Context context)
     {
         if ( service == null )
-            service = new FFmpegService(context);
+            service = new KaraokeService(context);
         return  service;
     }
 
-    public static FFmpegService getInstance()
+    public static KaraokeService getInstance()
     {
         return  service;
     }
