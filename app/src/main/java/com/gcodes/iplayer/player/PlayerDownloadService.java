@@ -2,22 +2,14 @@ package com.gcodes.iplayer.player;
 
 import android.app.Notification;
 import android.net.Uri;
-import android.os.Binder;
-import android.os.IBinder;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.Nullable;
-import androidx.collection.SparseArrayCompat;
 import androidx.core.util.Consumer;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.music.Music;
-import com.google.android.exoplayer2.BuildConfig;
-import com.google.android.exoplayer2.DefaultRenderersFactory;
-import com.google.android.exoplayer2.RenderersFactory;
-import com.google.android.exoplayer2.database.DatabaseProvider;
-import com.google.android.exoplayer2.database.ExoDatabaseProvider;
 import com.google.android.exoplayer2.offline.ActionFileUpgradeUtil;
 import com.google.android.exoplayer2.offline.DefaultDownloadIndex;
 import com.google.android.exoplayer2.offline.DefaultDownloaderFactory;
@@ -29,16 +21,6 @@ import com.google.android.exoplayer2.offline.DownloaderConstructorHelper;
 import com.google.android.exoplayer2.scheduler.PlatformScheduler;
 import com.google.android.exoplayer2.scheduler.Scheduler;
 import com.google.android.exoplayer2.ui.DownloadNotificationHelper;
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
-import com.google.android.exoplayer2.upstream.FileDataSourceFactory;
-import com.google.android.exoplayer2.upstream.HttpDataSource;
-import com.google.android.exoplayer2.upstream.cache.Cache;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory;
-import com.google.android.exoplayer2.upstream.cache.NoOpCacheEvictor;
-import com.google.android.exoplayer2.upstream.cache.SimpleCache;
 import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.NotificationUtil;
 import com.google.android.exoplayer2.util.Util;
@@ -84,7 +66,7 @@ public class PlayerDownloadService extends DownloadService {
     public PlayerDownloadService()
     {
 //        super( DEFAULT_NOTIFICATION_ID, DEFAULT_FOREGROUND_NOTIFICATION_UPDATE_INTERVAL, CHANNEL_ID, R.string.channel_name );
-        super( DEFAULT_NOTIFICATION_ID, DEFAULT_FOREGROUND_NOTIFICATION_UPDATE_INTERVAL, CHANNEL_ID, R.string.channel_name );
+        super( DEFAULT_NOTIFICATION_ID, DEFAULT_FOREGROUND_NOTIFICATION_UPDATE_INTERVAL, CHANNEL_ID, R.string.download_channel);
         nextNotification = DEFAULT_NOTIFICATION_ID + 1;
     }
 

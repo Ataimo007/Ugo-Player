@@ -1,6 +1,7 @@
 package com.gcodes.iplayer.music.artist;
 
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -60,13 +61,7 @@ public class MainArtistFragment extends Fragment
 
     private String trackSort = MediaStore.Audio.Media.TITLE + " COLLATE LOCALIZED ASC";
 
-    private String[] albumProjection = {
-            MediaStore.Audio.Artists.Albums.ALBUM_KEY,
-            MediaStore.Audio.Artists._ID,
-            MediaStore.Audio.Artists.Albums.ALBUM,
-            MediaStore.Audio.Artists.Albums.ARTIST,
-            MediaStore.Audio.Artists.Albums.ALBUM_ART
-    };
+    private String[] albumProjection;
 
     private String albumSort = MediaStore.Audio.Artists.Albums.ALBUM_KEY + " asc";
 
@@ -80,6 +75,29 @@ public class MainArtistFragment extends Fragment
 
     private ArrayList<Music> tracks;
     private Cursor albums;
+
+    public MainArtistFragment()
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            albumProjection = new String[] {
+                    MediaStore.Audio.Artists.Albums.ALBUM_KEY,
+                    MediaStore.Audio.Artists.Albums.ARTIST_ID,
+                    MediaStore.Audio.Artists.Albums.ALBUM,
+                    MediaStore.Audio.Artists.Albums.ARTIST,
+                    MediaStore.Audio.Artists.Albums.ALBUM_ART
+            };
+        }
+        else
+        {
+            albumProjection = new String[] {
+                    MediaStore.Audio.Artists.Albums.ALBUM_KEY,
+                    MediaStore.Audio.Artists._ID,
+                    MediaStore.Audio.Artists.Albums.ALBUM,
+                    MediaStore.Audio.Artists.Albums.ARTIST,
+                    MediaStore.Audio.Artists.Albums.ALBUM_ART
+            };
+        }
+    }
 
     @Nullable
     @Override
@@ -320,7 +338,11 @@ public class MainArtistFragment extends Fragment
             {
                 String albumName = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ALBUM));
                 String albumKey = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ALBUM_KEY));
-                String artistId = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists._ID));
+                String artistId;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                    artistId = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ARTIST_ID));
+                else
+                     artistId = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists._ID));
                 String albumArt = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Artists.Albums.ALBUM_ART));
 
                 holder.setTitle(albumName);

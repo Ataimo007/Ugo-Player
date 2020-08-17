@@ -22,6 +22,7 @@ import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.VideoFragment;
 import com.gcodes.iplayer.video.player.VideoPlayer;
+import com.gcodes.iplayer.video.series.SeriesFragment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +39,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 
-public class FolderFragment extends Fragment implements VideoFragment.SectionsPagerAdapter.PageTitle
+public class FolderFragment extends Fragment implements VideoFragment.SectionsPagerAdapter.PageTitle, MainActivity.BackAction
 {
     private MainActivity backActivity;
     private String pageTitle = "Folders";
@@ -96,17 +97,6 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
         {
             backActivity = (MainActivity) context;
         }
-    }
-
-    public boolean back()
-    {
-        if ( inside)
-        {
-            exit();
-            return true;
-        }
-        else
-            return false;
     }
 
     public void initialize()
@@ -186,14 +176,14 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
 
         listView.addItemDecoration( folderDecorator );
 
-        view.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus)
-                backActivity.register( this::back );
-            else
-                backActivity.unregister();
-
-            Log.w("Folder_Focus", hasFocus ? "Fragment has focus" : "Fragment doesn't has focus" );
-        });
+//        view.setOnFocusChangeListener((v, hasFocus) -> {
+//            if (hasFocus)
+//                backActivity.register( this::back );
+//            else
+//                backActivity.unregister();
+//
+//            Log.w("Folder_Focus", hasFocus ? "Fragment has focus" : "Fragment doesn't has focus" );
+//        });
 
         return view;
     }
@@ -201,6 +191,17 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
     @Override
     public String getTitle() {
         return pageTitle;
+    }
+
+    @Override
+    public boolean goBack() {
+        if ( inside)
+        {
+            exit();
+            return true;
+        }
+        else
+            return false;
     }
 
 
@@ -270,8 +271,12 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
             holder.setTitle( video.getName() );
             holder.setSubtitle( parseDuration( video.getDuration() ) );
             String path = video.getData();
-            GlideApp.with( FolderFragment.this ).load( new CustomProcessFetcher( path ) )
+
+            GlideApp.with( FolderFragment.this ).load( path )
                     .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
+
+//            GlideApp.with( FolderFragment.this ).load( new CustomProcessFetcher( path ) )
+//                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             Video[] vids = videos.toArray( new Video[]{} );
             holder.itemView.setOnClickListener(v -> {

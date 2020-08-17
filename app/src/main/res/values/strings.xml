@@ -22,6 +22,20 @@
     <string name="title_activity_artist_only">ArtistOnlyActivity</string>
     <string name="title_activity_genre">GenreActivity</string>
 
-    <!--Download Service-->
-    <string name="channel_name">UGO Player Download Service</string>
+    <!--Channel Names-->
+    <string name="download_channel">Download Channel</string>
+    <string name="music_player_channel">Music Player Channel</string>
+    <string name="headsup_karaoke_channel">Heads Up Karaoke Channel</string>
+    <string name="karaoke_channel">Karaoke Channel</string>
+    <string name="karaoke_group">Karaoke Channels</string>
+
+    <!--Channel Descriptions-->
+    <string name="headsup_karaoke_description">Channel for Karaoke Service for Heads Up</string>
+    <string name="karaoke_description">Channel for Karaoke Service</string>
+
+    <!--Channel Integer-->
+    <string name="player_id">1001</string>
+    <string name="headsup_karaoke_id">1002</string>
+    <string name="karaoke_id">1003</string>
+    <string name="karaoke_group_id">1004</string>
 </resources>

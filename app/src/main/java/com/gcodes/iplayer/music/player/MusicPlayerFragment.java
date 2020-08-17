@@ -5,6 +5,7 @@ import android.graphics.PointF;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -19,6 +20,7 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.util.Pair;
@@ -33,7 +35,8 @@ import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.player.PlayerManager;
-import com.gcodes.iplayer.services.KaraokeService;
+import com.gcodes.iplayer.services.karaoke.KaraokeService;
+import static com.gcodes.iplayer.services.karaoke.KaraokeService.*;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.github.lzyzsd.circleprogress.DonutProgress;
 import com.google.android.exoplayer2.Player;
@@ -45,6 +48,8 @@ import com.google.android.exoplayer2.ui.PlayerControlView;
 import org.joda.time.Duration;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
@@ -72,6 +77,8 @@ public class MusicPlayerFragment extends Fragment
     private CustomAdapter adapter;
     private ToggleButton lyricsButton;
     private ToggleButton karaokeButton;
+    private TextView progress;
+    private DonutProgress progressBar;
     private ImageButton videoButton;
     private Music currentMusic;
 
@@ -80,8 +87,11 @@ public class MusicPlayerFragment extends Fragment
     private Handler handler = new Handler();
     private int currentPos = 0;
     private long lyricSpanSec = 0;
-    private KaraokeService karaokeService;
+    private KaraokeMaker maker;
     private KaraokePlayerHandler karaokePlayerHandler;
+
+    private ConcatenatingMediaSource backupSource;
+    private MusicPlayer player;
 
     private boolean synced;
     private final Runnable syncer = new Runnable() {
@@ -125,7 +135,13 @@ public class MusicPlayerFragment extends Fragment
     public void onDestroy() {
         super.onDestroy();
         deSync();
-        releaseKaraoke();
+//        releaseKaraoke();
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        maker.dettach();
     }
 
     private void sync()
@@ -166,6 +182,12 @@ public class MusicPlayerFragment extends Fragment
     }
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        player = MusicPlayer.getInstance();
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View content = inflater.inflate(R.layout.activity_music_player2, container, false);
@@ -175,6 +197,8 @@ public class MusicPlayerFragment extends Fragment
         art = content.findViewById(R.id.player_album_art);
         lyricsButton = content.findViewById( R.id.player_show_lyrics );
         karaokeButton = content.findViewById( R.id.player_karaoke_button );
+        progressBar = content.findViewById(R.id.karaoke_progress_bar);
+        progress = content.findViewById(R.id.karaoke_progress);
         videoButton = content.findViewById( R.id.player_show_video );
         initView();
 
@@ -189,14 +213,10 @@ public class MusicPlayerFragment extends Fragment
     }
 
     private void initKaraoke(View content) {
-        karaokeService = KaraokeService.getInstance();
-        karaokePlayerHandler = new KaraokePlayerHandler(content);
-        karaokeService.prepare(karaokePlayerHandler);
-    }
+        maker = KaraokeMaker.getInstance();
+        karaokePlayerHandler = new KaraokePlayerHandler();
+//        maker.prepare(getContext(), karaokePlayerHandler);
 
-    private void releaseKaraoke()
-    {
-        karaokeService.release();
     }
 
     private void initButton() {
@@ -215,9 +235,19 @@ public class MusicPlayerFragment extends Fragment
 
 //        if ( false ) // condition for no voice
 
-        karaokeButton.setOnClickListener(v -> {
-            karaokeService.toggleKaraoke(currentMusic);
+        karaokeButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if ( isChecked )
+            {
+                File karaoke = maker.getKaraoke(currentMusic, getContext());
+                if ( karaoke != null && karaoke.exists() )
+                    playKaraoke(karaoke, currentMusic);
+                else
+                    maker.createKaraoke(currentMusic, karaokePlayerHandler, this);
+            }
+            else
+                restore();
         });
+        progressBar.setMax(100);
     }
 
     private void initView()
@@ -378,128 +408,72 @@ public class MusicPlayerFragment extends Fragment
 
     private class KaraokePlayerHandler implements KaraokeService.KaraokeHandler
     {
-        private final TextView progress;
-        private final DonutProgress progressBar;
-        private final ToggleButton karaokeButton;
-        private final MusicPlayer player = MusicPlayer.getInstance();
-        private final ConcatenatingMediaSource mediaSource;
-
-        private boolean applied = false;
-        private Music appliedMusic;
-
-        public KaraokePlayerHandler( View view )
-        {
-            karaokeButton = view.findViewById(R.id.player_karaoke_button);
-            progressBar = view.findViewById(R.id.karaoke_progress_bar);
-            progress = view.findViewById(R.id.karaoke_progress);
-
-//            progress = view.findViewById(R.id.karaoke_progress);
-            mediaSource = player.getMediaSource();
-        }
+        private Handler uiHandler = new Handler(Looper.getMainLooper());
 
         @Override
         public void update(int percentage) {
             Log.w("FFmpag_Service", "Updating UI percentage " + percentage );
-            prepareProgress();
-            setProgress(percentage);
+            uiHandler.post(() -> {
+                prepareProgress();
+                updateProgress(percentage);
+            });
         }
-
-        private void setProgress(int percentage) {
-            percentage = Math.max(percentage, 0);
-            progressBar.setProgress(percentage);
-            progress.setText(String.valueOf( percentage ) );
-        }
-
-//        private void setProgress(int percentage) {
-//            percentage = Math.max(percentage, 0);
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-//                progressBar.setProgress(percentage, true);
-//            else
-//                progressBar.setProgress(percentage);
-//            progress.setText(String.valueOf( percentage ) );
-//        }
-//
-
-        private void prepareProgress() {
-            if ( !(progress.getVisibility() == View.VISIBLE) )
-            {
-                karaokeButton.setVisibility(View.GONE);
-                progress.setVisibility(View.VISIBLE);
-                progressBar.setVisibility(View.VISIBLE);
-                progressBar.setMax(100);
-            }
-        }
-
-//        private void prepareProgress() {
-//            if ( !(progressBar.getVisibility() == View.VISIBLE) )
-//            {
-//                karaokeButton.setVisibility(View.GONE);
-//                progressBar.setVisibility(View.VISIBLE);
-//                progress.setVisibility(View.VISIBLE);
-//                progressBar.setMax(100);
-//            }
-//        }
-
-        private void finishProgress() {
-            if ( !(karaokeButton.getVisibility() == View.VISIBLE) )
-            {
-                karaokeButton.setVisibility(View.VISIBLE);
-                progress.setVisibility(View.GONE);
-                progressBar.setVisibility(View.GONE);
-            }
-        }
-
-//        private void finishProgress() {
-//            if ( !(karaokeButton.getVisibility() == View.VISIBLE) )
-//            {
-//                karaokeButton.setVisibility(View.VISIBLE);
-//                progressBar.setVisibility(View.GONE);
-//                progress.setVisibility(View.GONE);
-//            }
-//        }
 
         @Override
-        public void apply(File file, Music music) {
-            finishProgress();
-            ProgressiveMediaSource musicSource = player.getMusicSource(file);
-            int index = player.getIndex(music);
-            Pair<ConcatenatingMediaSource, MediaSource> sourcePair = player.buildNewSource(musicSource, index);
-            ConcatenatingMediaSource newSource = sourcePair.first;
-            player.switchSources(newSource);
-            setApplied(true);
-            setAppliedMusic( music );
+        public void success(File file, Music music) {
+            uiHandler.post(() -> {
+                finishProgress();
+                if ( player.inPlayList(music) )
+                    playKaraoke(file, music);
+            });
         }
 
-        private void setAppliedMusic(Music music) {
-            appliedMusic = music;
-        }
+        @Override
+        public void failure(Music music) {
 
-        private void updateHandler(Music music)
+        }
+    }
+
+    private void updateProgress(int percentage) {
+        percentage = Math.max(percentage, 0);
+        progressBar.setProgress(percentage);
+        progress.setText(String.valueOf( percentage ) );
+    }
+
+    private void prepareProgress() {
+        karaokeButton.setVisibility(View.GONE);
+        progress.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.VISIBLE);
+    }
+
+    private void finishProgress() {
+        karaokeButton.setVisibility(View.VISIBLE);
+        progress.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
+    }
+
+    public void playKaraoke(File file, Music music)
+    {
+        ProgressiveMediaSource musicSource = player.getMusicSource(file);
+        int index = player.getIndex(music);
+        if ( index < 0 )
         {
-            if ( appliedMusic != music )
-            {
-                restore();
-                appliedMusic = null;
-                setApplied(false);
-            }
+            player.addToPlaylist(music);
+            index = player.getIndex(music);
         }
+        Pair<ConcatenatingMediaSource, MediaSource> sourcePair = player.buildNewSource(musicSource, index);
+        ConcatenatingMediaSource newSource = sourcePair.first;
+        backupSource();
+        player.switchSources(newSource);
+    }
 
-        private void setApplied(boolean apply)
-        {
-            applied = apply;
-            karaokeButton.setChecked(applied);
-        }
+    private void backupSource()
+    {
+        backupSource = player.getMediaSource();
+    }
 
-        @Override
-        public boolean isApplied() {
-            return applied;
-        }
-
-        @Override
-        public void restore() {
-            player.switchSources(mediaSource);
-            setApplied(false);
-        }
+    public void restore() {
+        player.switchSources(backupSource);
     }
 
     public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>

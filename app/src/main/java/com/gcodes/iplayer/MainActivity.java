@@ -3,32 +3,36 @@ package com.gcodes.iplayer;
 import android.Manifest;
 import android.app.SearchManager;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.gcodes.iplayer.music.MusicFragment;
 import com.gcodes.iplayer.player.PlayerManager;
-import com.gcodes.iplayer.video.player.VideoPlayer;
+import com.gcodes.iplayer.video.VideoFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.util.HashMap;
 import java.util.function.Supplier;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.util.Pair;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModel;
 import androidx.navigation.NavBackStackEntry;
 import androidx.navigation.NavController;
+import androidx.navigation.NavDestination;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager.widget.ViewPager;
@@ -42,10 +46,12 @@ public class MainActivity extends AppCompatActivity
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = this::doSelection;
     private Menu menu;
-    private BackManager backAction;
+//    private BackAction backAction;
     private NavigationPager pager;
     private AppPagerAdapter adapter;
     private int currentPage;
+
+    private BackAction[] backActions;
 
 //    public static final int REQUEST_VIDEO = 1000;
 
@@ -98,16 +104,51 @@ public class MainActivity extends AppCompatActivity
 //        }
 //    }
 
+//    @Override
+//    public void onBackPressed() {
+//        Log.d("Main_Activity", "On Back Pressed " + backAction );
+//        if ( backAction != null )
+//        {
+//            boolean back = backAction.goBack();
+//            if ( !back )
+//                back();
+//        }
+//        else
+//            back();
+//    }
+
+//    @Override
+//    public void onBackPressed() {
+//        BackActionManager manager = adapter.getManger(pager.getCurrentItem());
+//        Log.d("Main_Activity", "On Back Pressed " + manager);
+//        BackAction action = manager.getAction();
+//        Log.d("Main_Activity", "On Back Pressed " + action );
+//        if ( action != null )
+//        {
+//            boolean back = action.goBack();
+//            if ( !back )
+//                back();
+//        }
+//        else
+//            back();
+//    }
+
     @Override
     public void onBackPressed() {
-        if ( backAction != null )
+        BackAction action = backActions[pager.getCurrentItem()];
+        if ( action != null )
         {
-            boolean back = backAction.goBack();
+            boolean back = action.goBack();
             if ( !back )
                 back();
         }
         else
             back();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        return super.onKeyDown(keyCode, event);
     }
 
     private void back()
@@ -162,6 +203,7 @@ public class MainActivity extends AppCompatActivity
                 currentPage = position;
             }
         });
+        backActions = new BackAction[adapter.getCount()];
     }
 
 //    @Override
@@ -283,22 +325,64 @@ public class MainActivity extends AppCompatActivity
 //        }
 //    }
 
-    public void register(BackManager action) {
-        backAction = action;
+//    public void register(BackAction action) {
+//        backAction = action;
+//    }
+//
+//    public void unregister() {
+//        backAction = null;
+//    }
+
+
+//    @Override
+//    public void onAttachFragment(@NonNull Fragment fragment) {
+//        super.onAttachFragment(fragment);
+//        Log.d("Main_Activity", "Attach Fragment " + fragment );
+//        adapter.tryRegister(fragment);
+//    }
+
+    public void registerBack(BackAction action) {
+        backActions[pager.getCurrentItem()] = action;
     }
 
-    public void unregister() {
-        backAction = null;
+    public void unRegisterBack() {
+        backActions[pager.getCurrentItem()] = null;
     }
 
-    public interface BackManager {
+    public interface BackAction {
         boolean goBack();
     }
+
+//    public interface BackActionManager {
+//        BackAction getAction();
+//    }
+
+//    public static class BackViewModel extends ViewModel
+//    {
+//        private HashMap<Pair<Integer, Integer>, Supplier<Boolean>> backAction = new HashMap<>();
+//
+//        public void register( int destination, int tab, Supplier<Boolean> action )
+//        {
+//            backAction.put(new Pair<>(destination, tab), action);
+//        }
+//
+//        public void unregister( int destination, int tab, Supplier<Boolean> action )
+//        {
+//            backAction.remove(new Pair<>(destination, tab));
+//        }
+//
+//        public boolean back(NavDestination current)
+//        {
+//            if ( current)
+//            appAdapter.getCurrentDestination()
+//        }
+//    }
 
     public static class AppPagerAdapter extends FragmentPagerAdapter
     {
         private static final int defaultPage = 0;
         private final Fragment[] host = {new Fragment(R.layout.music_host), new Fragment(R.layout.video_host)};
+//        private BackActionManager[] managers = new BackActionManager[  ];
 
         public AppPagerAdapter(FragmentManager fm)
         {
@@ -311,6 +395,29 @@ public class MainActivity extends AppCompatActivity
             return host[ position ];
         }
 
+//        public BackActionManager getManger(int position)
+//        {
+//            return managers[ position ];
+//        }
+
+//        public NavDestination getCurrentDestination(int position)
+//        {
+//            NavController navController = null;
+//            switch (position)
+//            {
+//                case 0:
+//                    navController = Navigation.findNavController(activity, R.id.music_session);
+//                    return navController.getCurrentDestination();
+//
+//                case 1:
+//                    navController = Navigation.findNavController(activity, R.id.video_session);
+//                    return navController.getCurrentDestination();
+//
+//                default:
+//                    throw new IllegalStateException("Unexpected value: " + position);
+//            }
+//        }
+
         @Override
         public int getCount() {
             return 2;
@@ -319,6 +426,18 @@ public class MainActivity extends AppCompatActivity
         public int getDefaultTabPos() {
             return 0;
         }
+
+//        public void tryRegister(Fragment fragment) {
+//            if (fragment instanceof BackActionManager)
+//            {
+//                BackActionManager manager = (BackActionManager) fragment;
+//                Log.d("Main_Activity", "Back Action Manager " + manager );
+//                if (fragment instanceof MusicFragment)
+//                    managers[0] = manager;
+//                if (fragment instanceof VideoFragment)
+//                    managers[1] = manager;
+//            }
+//        }
     }
 
 //    public void musicSwitch()

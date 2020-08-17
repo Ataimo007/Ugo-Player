@@ -122,7 +122,11 @@ public class AllFragment extends Fragment implements VideoFragment.SectionsPager
             holder.setDate( getDate( cursor ) );
             String path = cursor.getString( cursor.getColumnIndex(MediaStore.Video.Media.DATA));
             String id = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media._ID));
-            GlideApp.with( AllFragment.this ).load( new CustomProcessFetcher( path ) )
+
+//            GlideApp.with( AllFragment.this ).load( new CustomProcessFetcher( path ) )
+//                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
+
+            GlideApp.with( AllFragment.this ).load( path )
                     .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             final Video video = Video.getIntance(cursor);

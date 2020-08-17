@@ -185,6 +185,24 @@ public class Music implements Comparable<Music>, Serializable
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Music)) return false;
+        Music music = (Music) o;
+        return mediaId == music.mediaId &&
+                albumId == music.albumId &&
+                Objects.equal(name, music.name) &&
+                Objects.equal(data, music.data) &&
+                Objects.equal(artist, music.artist) &&
+                Objects.equal(album, music.album);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(name, data, mediaId, albumId, artist, album);
+    }
+
+    @Override
     public String toString() {
         return "Music{" +
                 "name='" + name + '\'' +

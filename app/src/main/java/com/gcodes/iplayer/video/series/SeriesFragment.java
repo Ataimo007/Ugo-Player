@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -17,6 +18,7 @@ import android.widget.TextView;
 import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
+import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.ui.UIConstance;
@@ -211,7 +213,10 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
             holder.setSubtitle( parseDuration( video.getDuration() ) );
             holder.setDate( video.getDateString() );
 
-            GlideApp.with( SeriesFragment.this ).load( new CustomProcessFetcher( video ) )
+//            GlideApp.with( SeriesFragment.this ).load( new CustomProcessFetcher( video ) )
+//                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
+
+            GlideApp.with( SeriesFragment.this ).load( video.getData() )
                     .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             holder.itemView.setOnClickListener(v -> {
@@ -224,7 +229,10 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
             holder.setTitle( aSeries.getName() );
             holder.setSubtitle( aSeries.getDuration() );
             holder.setDate( String.format( "%d %s", aSeries.getCount(), aSeries.getCount() > 1 ? "Videos" : "Video" ) );
-            GlideApp.with( SeriesFragment.this ).load( new CustomProcessFetcher( aSeries.getVideos() ) )
+//            GlideApp.with( SeriesFragment.this ).load( new CustomProcessFetcher( aSeries.getVideos() ) )
+//                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
+
+            GlideApp.with( SeriesFragment.this ).load( aSeries.getVideos()[0].getData() )
                     .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             holder.itemView.setOnClickListener(v ->
@@ -316,7 +324,8 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
         {
             for ( Video video : videos )
             {
-                Bitmap thumbnail = ThumbnailUtils.createVideoThumbnail(video.getData(), MediaStore.Video.Thumbnails.MINI_KIND);
+//                Bitmap thumbnail = ThumbnailUtils.createVideoThumbnail(video.getData(), MediaStore.Video.Thumbnails.MINI_KIND);
+                Bitmap thumbnail = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(video.getData()), Helper.Constants.THUMB_WIDTH, Helper.Constants.THUMB_HEIGHT );
                 if ( thumbnail != null )
                     return thumbnail;
             }

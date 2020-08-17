@@ -164,7 +164,11 @@ dependencies {
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.7.2'
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-    implementation 'com.writingminds:FFmpegAndroid:0.3.2'
+
+    // ffmpeg
+//    implementation 'com.writingminds:FFmpegAndroid:0.3.2' outdated
+    implementation 'com.arthenica:mobile-ffmpeg-full:4.4.LTS'
+
 
     // circular progress bar
     implementation 'com.github.lzyzsd:circleprogress:1.2.1'

@@ -101,6 +101,15 @@ public class MusicPlayer
         musicPlayer.play();
     }
 
+    public void playAll( ArrayList<Music> musics, MediaSource source )
+    {
+        MusicPlayer musicPlayer = getInstance();
+        musicPlayer.initSource( musics, source );
+        Log.d( "Music_Player", "Id is " + musics);
+//        musicPlayer.beginService();
+        musicPlayer.play();
+    }
+
     public static void play( int position )
     {
         MusicPlayer musicPlayer = getInstance();
@@ -159,7 +168,7 @@ public class MusicPlayer
         musicPlayer.getPlayerManager().removeListener( listener );
     }
 
-    public static Player.EventListener onStateChange(CardView view )
+    public static Player.EventListener onStateChange(CardView view)
     {
         MusicPlayer musicPlayer = getInstance();
         Animation rotate = AnimationUtils.loadAnimation(musicPlayer.getMainPlayerManager().getContext(), R.anim.u_rotate);
@@ -221,6 +230,10 @@ public class MusicPlayer
         return musics.indexOf(music);
     }
 
+    public boolean inPlayList(Music music) {
+        return musics.contains(music);
+    }
+
     public boolean isMusicPlaying() {
         return musics != null;
     }
@@ -264,6 +277,15 @@ public class MusicPlayer
         initError();
     }
 
+    private void initSource(ArrayList<Music> musics, MediaSource source )
+    {
+        this.musics = musics;
+        playerManager.prepare( source, true, true, PlayerManager.MediaType.MUSIC );
+        playerManager.shuffle();
+        playerManager.repeatAll();
+        initError();
+    }
+
     @NonNull
     public Pair<ConcatenatingMediaSource, MediaSource> buildNewSource(MediaSource childSource, int position)
     {
@@ -283,6 +305,12 @@ public class MusicPlayer
         ConcatenatingMediaSource newSource = new ConcatenatingMediaSource(sources);
         Pair<ConcatenatingMediaSource, MediaSource> sourcePair = new Pair<>(newSource, oldSource);
         return sourcePair;
+    }
+
+    public void addToPlaylist(Music music) {
+        ProgressiveMediaSource newMusic = getMusicSource(music);
+        musics.add(music);
+        source.addMediaSource(newMusic);
     }
 
     public void switchSources(ConcatenatingMediaSource source)

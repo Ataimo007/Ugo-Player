@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tool="http://schemas.android.com/tools"
     tool:context=".music.MusicFragment"
-    android:id="@+id/application_session"
+    android:id="@+id/music_session"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_constraintBottom_toTopOf="@+id/navigation"

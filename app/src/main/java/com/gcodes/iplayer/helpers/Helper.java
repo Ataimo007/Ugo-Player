@@ -214,4 +214,10 @@ public class Helper
         }
     }
 
+    public static class Constants
+    {
+        public static int THUMB_WIDTH = 640;
+        public static int THUMB_HEIGHT = 480;
+    }
+
 }

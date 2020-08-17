@@ -1,5 +1,6 @@
 package com.gcodes.iplayer.music.player;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -25,11 +26,13 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import java.io.File;
 import java.util.List;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
-public class MusicPlayerActivity extends AppCompatActivity{
+public class MusicPlayerActivity extends AppCompatActivity
+{
 
     private Music currentMusic;
     private Player.EventListener trackListener;
@@ -44,6 +47,8 @@ public class MusicPlayerActivity extends AppCompatActivity{
     private final Handler handler = new Handler();
     private View loadingView;
 
+    public static final String PLAY_KARAOKE = "PLAY_KARAOKE";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,7 +59,32 @@ public class MusicPlayerActivity extends AppCompatActivity{
         initView();
     }
 
-//    private void prepareMusicPlayer()
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        processAction(intent);
+    }
+
+    private void processAction(Intent intent) {
+        switch (intent.getAction())
+        {
+            case PLAY_KARAOKE:
+                playKaraoke(intent);
+        }
+    }
+
+    private void playKaraoke(Intent intent) {
+
+        TabLayout tabs = getTabs();
+        tabs.getTabAt( pagerAdapter.getDefaultTabPos() ).select();
+
+        Music music = Music.fromGson(intent.getStringExtra("music"));
+        File file = new File(intent.getStringExtra("output"));
+
+        pagerAdapter.playKaraoke(file, music);
+    }
+
+    //    private void prepareMusicPlayer()
 //    {
 //        AspectRatioFrameLayout videoScreen = findViewById(R.id.exo_player_content_frame);
 //        videoScreen.setVisibility( View.GONE );
@@ -368,6 +398,11 @@ public class MusicPlayerActivity extends AppCompatActivity{
         private void updatePlayer(PlayerDatabase.MusicLyrics lyrics )
         {
             player.updateLyrics( lyrics );
+        }
+
+        private void playKaraoke(File file, Music music)
+        {
+            player.playKaraoke(file, music);
         }
 
         private void updateMusicVideos( List<Video> videos )

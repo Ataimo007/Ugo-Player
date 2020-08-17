@@ -21,9 +21,6 @@ public class MusicPlayerService extends Service {
     private String CHANNEL_ID;
     private int NOTIFICATION_ID;
 
-//    private SimpleExoPlayer player;
-//    private DefaultDataSourceFactory factory;
-
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -58,82 +55,10 @@ public class MusicPlayerService extends Service {
         super.onCreate();
         Log.d( "Music_Player", "Creating Service" );
         CHANNEL_ID = this.getString( R.string.app_name );
-        NOTIFICATION_ID = getResources().getInteger( R.integer.notification_id );
+        NOTIFICATION_ID = getResources().getInteger( R.integer.player_id );
         initNotification();
 //        MusicPlayer.getInstance().play();
     }
-
-//    @Override
-//    public void onCreate() {
-//        super.onCreate();
-//        Log.d( "Music_Player", "Creating Service" );
-//        CHANNEL_ID = this.getString( R.string.app_name );
-//        NOTIFICATION_ID = getResources().getInteger( R.integer.notification_id );
-//        initPlayer();
-//        initSource();
-//        player.setPlayWhenReady(true);
-//        initNotification();
-//    }
-
-//    private void initSource()
-//    {
-//        Uri media = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf( 12400 ) );
-//        ExtractorMediaSource source = new ExtractorMediaSource.Factory(factory).createMediaSource(media);
-//        player.prepare( source );
-//    }
-
-//    private void initPlayer()
-//    {
-//        factory = new DefaultDataSourceFactory(this, Util.getUserAgent(this, getResources().getString(R.string.app_name)));
-//        player = ExoPlayerFactory.newSimpleInstance( this, new DefaultTrackSelector() );
-//    }
-
-//    private void initNotification()
-//    {
-//        manager = PlayerNotificationManager.createWithNotificationChannel(this, CHANNEL_ID, R.string.app_name,
-//                NOTIFICATION_ID, new PlayerNotificationManager.MediaDescriptionAdapter() {
-//                    @Override
-//                    public String getCurrentContentTitle(Player player) {
-//                        return "The First Music";
-//                    }
-//
-//                    @Nullable
-//                    @Override
-//                    public PendingIntent createCurrentContentIntent(Player player) {
-//                        Intent intent = new Intent( MusicPlayerService.this, MusicPlayerActivity.class );
-//                        return PendingIntent.getActivities( MusicPlayerService.this, 0, new Intent[]{intent},
-//                                PendingIntent.FLAG_UPDATE_CURRENT);
-//                    }
-//
-//                    @Nullable
-//                    @Override
-//                    public String getCurrentContentText(Player player) {
-//                        return "The Music is Playing";
-//                    }
-//
-//                    @Nullable
-//                    @Override
-//                    public Bitmap getCurrentLargeIcon(Player player, PlayerNotificationManager.BitmapCallback callback) {
-//                        return BitmapFactory.decodeResource( getResources(), R.drawable.ic_track_black_24dp );
-////                        return null;
-//                    }
-//                });
-//
-//        manager.setNotificationListener(new PlayerNotificationManager.NotificationListener() {
-//            @Override
-//            public void onNotificationStarted(int notificationId, Notification notification) {
-//                startForeground( notificationId, notification);
-//                Log.d( "Music_Player", "Starting Service" );
-//            }
-//
-//            @Override
-//            public void onNotificationCancelled(int notificationId) {
-//                stopSelf();
-//            }
-//        });
-//
-//        manager.setPlayer(com.gcodes.iplayer.Player.getInstance().getPlayer());
-//    }
 
     @SuppressLint("WrongConstant")
     private void initNotification()

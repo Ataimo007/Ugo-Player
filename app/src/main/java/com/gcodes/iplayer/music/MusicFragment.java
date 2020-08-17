@@ -1,10 +1,13 @@
 package com.gcodes.iplayer.music;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.album.AlbumFragment;
 import com.gcodes.iplayer.music.artist.ArtistFragment;
@@ -13,6 +16,7 @@ import com.gcodes.iplayer.music.genre.GenreFragment;
 import com.gcodes.iplayer.music.track.TrackFragment;
 import com.google.android.material.tabs.TabLayout;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
@@ -25,11 +29,23 @@ public class MusicFragment extends Fragment
 
 //    private AppBarLayout appBar;
     private SectionsPagerAdapter mSectionsPagerAdapter;
+//    private MainActivity.BackAction backAction = null;
+    private MainActivity app;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mSectionsPagerAdapter = new SectionsPagerAdapter( getChildFragmentManager() );
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if ( context instanceof MainActivity )
+        {
+            app = (MainActivity) context;
+            Log.d("Back_Action", "The App is " + app);
+        }
     }
 
     @Override
@@ -50,6 +66,11 @@ public class MusicFragment extends Fragment
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
                 appbar.setTitle( mSectionsPagerAdapter.getPageTitle( position ) );
+                Fragment fragment = mSectionsPagerAdapter.getItem(position);
+                if ( fragment instanceof MainActivity.BackAction )
+                    app.registerBack((MainActivity.BackAction) fragment);
+                else
+                    app.unRegisterBack();
             }
         });
 
@@ -58,6 +79,11 @@ public class MusicFragment extends Fragment
 
         return content;
     }
+
+//    @Override
+//    public MainActivity.BackAction getAction() {
+//        return backAction;
+//    }
 
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
     {

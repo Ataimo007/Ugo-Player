@@ -1,10 +1,13 @@
 package com.gcodes.iplayer.video;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.video.folder.FolderFragment;
 import com.gcodes.iplayer.video.series.SeriesFragment;
@@ -36,10 +39,23 @@ public class VideoFragment extends Fragment
     private ViewPager mViewPager;
     private TabLayout tabLayout;
 
+    private MainActivity.BackAction backAction = null;
+    private MainActivity app;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mSectionsPagerAdapter = new SectionsPagerAdapter( getChildFragmentManager() );
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if ( context instanceof MainActivity )
+        {
+            app = (MainActivity) context;
+            Log.d("Back_Action", "The App is " + app);
+        }
     }
 
     @Override
@@ -60,6 +76,11 @@ public class VideoFragment extends Fragment
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
                 appbar.setTitle( mSectionsPagerAdapter.getPageTitle( position ) );
+                Fragment fragment = mSectionsPagerAdapter.getItem(position);
+                if ( fragment instanceof MainActivity.BackAction )
+                    app.registerBack((MainActivity.BackAction) fragment);
+                else
+                    app.unRegisterBack();
             }
         });
 
@@ -74,7 +95,6 @@ public class VideoFragment extends Fragment
         return content;
     }
 
-
     public static class SectionsPagerAdapter extends FragmentPagerAdapter
     {
         private final Fragment[] views;
@@ -84,7 +104,9 @@ public class VideoFragment extends Fragment
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
             views = new Fragment[ 3 ];
             views[ 0 ] = new AllFragment();
+//            views[ 0 ] = new Fragment();
             views[ 1 ] = new SeriesFragment();
+//            views[ 2 ] = new Fragment();
             views[ 2 ] = new FolderFragment();
 //            fragmentTitles = new String[]{ "Videos", "Series", "Folders"  };
         }

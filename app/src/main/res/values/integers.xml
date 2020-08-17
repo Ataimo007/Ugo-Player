@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <integer name="notification_id">737</integer>
+    <!--Notification Integer-->
+    <integer name="player_id">1001</integer>
+    <integer name="karaoke_id">1002</integer>
 </resources>

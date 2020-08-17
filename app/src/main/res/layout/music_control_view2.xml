@@ -226,6 +226,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:gravity="center"
+            android:text="0"
             android:textColor="@color/colorAccent"
             android:textSize="10sp"
             android:visibility="gone"

@@ -13,7 +13,7 @@ import com.gcodes.iplayer.music.player.FragmentMusic;
 import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.player.MusicPlayerService;
 import com.gcodes.iplayer.services.ACRService;
-import com.gcodes.iplayer.services.KaraokeService;
+import com.gcodes.iplayer.services.karaoke.KaraokeService;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.player.VideoFragment;
 import com.gcodes.iplayer.video.player.VideoPlayer;
@@ -85,7 +85,7 @@ public class PlayerManager
 
         PlayerDatabase.initialize( context );
         ACRService.initialize(context);
-        KaraokeService.initialize(context);
+//        KaraokeService.initialize(context);
 //        ACRService.getInstance( context );
     }
 

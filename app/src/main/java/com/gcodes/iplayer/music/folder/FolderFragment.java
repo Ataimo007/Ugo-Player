@@ -25,13 +25,19 @@ import java.util.TreeMap;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.SavedStateViewModelFactory;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
+import androidx.navigation.NavBackStackEntry;
+import androidx.navigation.NavController;
+import androidx.navigation.NavHostController;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
-public class FolderFragment extends Fragment
+public class FolderFragment extends Fragment implements MainActivity.BackAction
 {
     private String selection = String.format( "%s != 0 and %s like ?", MediaStore.Audio.Media.IS_MUSIC,
         MediaStore.Audio.Media.DATA );
@@ -44,6 +50,8 @@ public class FolderFragment extends Fragment
     private File parent = null;
     private TreeMap< String, String > entry = new TreeMap<>();
     private TreeMap< String, Music > entryMusic = new TreeMap<>();
+
+//    private int tab;
 //    private TreeMap< String, Integer > entry = new TreeMap<>((o1, o2) ->
 //    {
 //        if ( ( o1.startsWith( "+") & o2.startsWith("+") ) || ( o1.startsWith( "-") & o2.startsWith("-") ) )
@@ -69,8 +77,9 @@ public class FolderFragment extends Fragment
     private MainActivity backActivity;
     private TextView folderPath;
 
-    public FolderFragment() {
-    }
+//    public FolderFragment( int tab ) {
+//        this.tab = tab;
+//    }
 
     // try joining audio column to media column
     @Override
@@ -88,7 +97,7 @@ public class FolderFragment extends Fragment
             backActivity = (MainActivity) context;
     }
 
-    public void load(boolean notify )
+    public void load(boolean notify)
     {
         CursorLoader loader = new CursorLoader( this.getContext(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                 projection, selection, selectionArgs, sort );
@@ -159,7 +168,19 @@ public class FolderFragment extends Fragment
         updatePath( parent );
 
         Log.w("Folder_Path", String.format("entered %s %s %s", parent != null ? parent.getAbsolutePath() : null, name, parent.getParent() ) );
+//        ensureBack();
     }
+
+//    private void ensureBack() {
+//        NavController navController = NavHostFragment.findNavController(this);
+//        NavBackStackEntry backStackEntry = navController.getCurrentBackStackEntry();
+//        backStackEntry.getDestination().getId();
+//
+////        ViewModelProvider provider = new ViewModelProvider(backStackEntry.getViewModelStore(), new SavedStateViewModelFactory(requireActivity().getApplication(), requireParentFragment()));
+//
+//        ViewModelProvider provider = new ViewModelProvider(requireActivity());
+//        provider.get
+//    }
 
     private void updatePath(File parent) {
         String path = parent.getAbsolutePath();
@@ -172,8 +193,33 @@ public class FolderFragment extends Fragment
         folderPath.setText( "/" );
     }
 
-    public boolean back()
-    {
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.folder_list, container, false);
+        adapter = new CustomAdapter();
+        RecyclerView listView = view.findViewById(R.id.item_list);
+        folderPath = view.findViewById(R.id.folder_path);
+        listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
+        listView.setAdapter(adapter);
+
+        listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
+
+        Log.w("Folder_Focus", "registering back press" );
+//        listView.setOnFocusChangeListener((v, hasFocus) -> {
+//            if (hasFocus)
+//                backActivity.register( this::back );
+//            else
+//                backActivity.unregister();
+//
+//            Log.w("Folder_Focus", hasFocus ? "Fragment has focus" : "Fragment doesn't has focus" );
+//        });
+
+        return view;
+    }
+
+    @Override
+    public boolean goBack() {
         if ( this.parent == null )
             return false;
 
@@ -198,29 +244,13 @@ public class FolderFragment extends Fragment
         return true;
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.folder_list, container, false);
-        adapter = new CustomAdapter();
-        RecyclerView listView = view.findViewById(R.id.item_list);
-        folderPath = view.findViewById(R.id.folder_path);
-        listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
-        listView.setAdapter(adapter);
-
-        listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
-
-        listView.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus)
-                backActivity.register( this::back );
-            else
-                backActivity.unregister();
-
-            Log.w("Folder_Focus", hasFocus ? "Fragment has focus" : "Fragment doesn't has focus" );
-        });
-
-        return view;
-    }
+//    public int getTab() {
+//        return tab;
+//    }
+//
+//    public void setTab(int tab) {
+//        this.tab = tab;
+//    }
 
 
     public class CustomAdapter extends RecyclerView.Adapter< ItemHolder >
