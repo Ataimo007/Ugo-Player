@@ -14,6 +14,7 @@ import com.google.common.base.Objects;
 import com.gcodes.iplayer.R;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 import androidx.annotation.Nullable;
 import androidx.loader.content.CursorLoader;
@@ -240,8 +241,23 @@ public class Music implements Comparable<Music>, Serializable
 
     public static Music fromGson(String json )
     {
-//        Gson gson = new Gson();
         return gson.fromJson( json, Music.class );
+    }
+
+    public static String[] toGson(ArrayList<Music> musics)
+    {
+        String[] gMusics = new String[musics.size()];
+        for ( int i = 0; i < gMusics.length; ++i )
+            gMusics[i] = musics.get(i).toGson();
+        return gMusics;
+    }
+
+    public static ArrayList<Music> fromGson(String[] gMusics)
+    {
+        ArrayList<Music> musics = new ArrayList<>();
+        for (String gMusic : gMusics )
+            musics.add(Music.fromGson(gMusic));
+        return musics;
     }
 
     public static class Artist implements Comparable< Album >

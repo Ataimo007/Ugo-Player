@@ -48,8 +48,6 @@ import com.google.android.exoplayer2.ui.PlayerControlView;
 import org.joda.time.Duration;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 

@@ -1,31 +1,31 @@
 package com.gcodes.iplayer.player;
 
 import android.content.Context;
-import android.content.Intent;
+import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.FragmentMusic;
 import com.gcodes.iplayer.music.player.MusicPlayer;
-import com.gcodes.iplayer.music.player.MusicPlayerService;
 import com.gcodes.iplayer.services.ACRService;
-import com.gcodes.iplayer.services.karaoke.KaraokeService;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.player.VideoFragment;
 import com.gcodes.iplayer.video.player.VideoPlayer;
+import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.database.DatabaseProvider;
 import com.google.android.exoplayer2.database.ExoDatabaseProvider;
+import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
@@ -39,7 +39,8 @@ import com.google.android.exoplayer2.upstream.cache.NoOpCacheEvictor;
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
 import com.google.android.exoplayer2.util.Util;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.core.util.Pair;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -53,14 +54,16 @@ import java.util.ArrayList;
 
 public class PlayerManager
 {
+//    private static PlayerManager PlayerManager;
+
     private final String userAgent;
+    private final MusicManager musicManager;
     private SimpleExoPlayer player;
     private DefaultDataSourceFactory factory;
-    private FragmentActivity context;
+//    private FragmentActivity context;
 
-    private static PlayerManager PlayerManager;
     private MediaSource mediaSource;
-    private Intent service;
+//    private Intent service;
 
     private Cache downloadCache;
     private File downloadDirectory;
@@ -74,53 +77,23 @@ public class PlayerManager
     private MediaType playing;
     ArrayList< Player.EventListener > listeners = new ArrayList<>();
 
+    public MusicManager getMusicManager() {
+        return musicManager;
+    }
+
     public enum MediaType{ MUSIC, VIDEO }
 
-    private PlayerManager(FragmentActivity context)
+    public PlayerManager(Context context)
     {
         userAgent = Util.getUserAgent(context, context.getResources().getString(R.string.app_name));
         factory = new DefaultDataSourceFactory( context, userAgent);
         player = ExoPlayerFactory.newSimpleInstance( context, new DefaultTrackSelector() );
-        this.context = context;
+//        this.context = context;
 
         PlayerDatabase.initialize( context );
         ACRService.initialize(context);
-//        KaraokeService.initialize(context);
-//        ACRService.getInstance( context );
-    }
 
-    private void initPlayerControl()
-    {
-        addListener(new Player.EventListener() {
-            @Override
-            public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-                consumeMedia();
-            }
-
-            @Override
-            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-//                if ( playing == MediaType.MUSIC && isMusicPlayer() )
-                if ( playing == MediaType.MUSIC )
-                {
-                    if ( playWhenReady )
-                    {
-                        renderMusicPlayer();
-                        if ( isRendered() && playbackState == Player.STATE_READY )
-                            fragmentMusic.startAnimation();
-                    }
-                    else
-                    {
-                        if ( isRendered() )
-                            fragmentMusic.pauseAnimation();
-                    }
-                }
-
-                if ( playing == MediaType.VIDEO )
-                {
-                    consumeVideoState( playWhenReady, playbackState );
-                }
-            }
-        });
+        musicManager = new MusicManager();
     }
 
     private void consumeVideoState(boolean playWhenReady, int playbackState) {
@@ -168,9 +141,9 @@ public class PlayerManager
         }
     }
 
-    private boolean isMusicPlaying()
+    public boolean isMusicPlaying()
     {
-        return false;
+        return playing == MediaType.MUSIC;
     }
 
     private void consumeVideo()
@@ -292,19 +265,19 @@ public class PlayerManager
         return userAgent;
     }
 
-    public static PlayerManager getInstance()
-    {
-        return PlayerManager;
-    }
+//    public static PlayerManager getInstance()
+//    {
+//        return PlayerManager;
+//    }
 
-    public static void init( AppCompatActivity context )
-    {
-        if  ( PlayerManager == null )
-        {
-            PlayerManager = new PlayerManager( context );
-            PlayerManager.initPlayerControl();
-        }
-    }
+//    public static void init( AppCompatActivity context )
+//    {
+//        if  ( PlayerManager == null )
+//        {
+//            PlayerManager = new PlayerManager( context );
+//            PlayerManager.initPlayerControl();
+//        }
+//    }
 
     public Handler getHandler()
     {
@@ -315,22 +288,22 @@ public class PlayerManager
     {
         player.release();
         player = null;
-        SimpleExoPlayer player = getInstance().getPlayer();
-        if ( player != null )
-        {
-            for ( Player.EventListener listener : listeners ) {
-                player.removeListener(listener);
-            }
-        }
+//        SimpleExoPlayer player = getInstance().getPlayer();
+//        if ( player != null )
+//        {
+//            for ( Player.EventListener listener : listeners ) {
+//                player.removeListener(listener);
+//            }
+//        }
         listeners = null;
     }
 
-    public static PlayerManager getInstance(AppCompatActivity context )
-    {
-        if ( PlayerManager == null )
-            PlayerManager = new PlayerManager( context );
-        return PlayerManager;
-    }
+//    public static PlayerManager getInstance(AppCompatActivity context )
+//    {
+//        if ( PlayerManager == null )
+//            PlayerManager = new PlayerManager( context );
+//        return PlayerManager;
+//    }
 
     public void prepare(MediaSource source, boolean position, boolean state, MediaType playing) {
         this.playing = playing;
@@ -350,12 +323,20 @@ public class PlayerManager
         play();
     }
 
+//    public void play()
+//    {
+////        if  ( !player.getPlayWhenReady() )
+//        player.setPlayWhenReady( true );
+//        if  ( isServiceRunning() )
+//            stopService();
+//    }
+
     public void play()
     {
 //        if  ( !player.getPlayWhenReady() )
         player.setPlayWhenReady( true );
-        if  ( isServiceRunning() )
-            stopService();
+//        if  ( isServiceRunning() )
+//            stopService();
     }
 
     public void stop()
@@ -400,8 +381,14 @@ public class PlayerManager
     public void playOnForeground()
     {
         player.setPlayWhenReady( true );
-        beginService();
+//        beginService();
     }
+
+//    public void playOnForeground()
+//    {
+//        player.setPlayWhenReady( true );
+//        beginService();
+//    }
 
     public void pause()
     {
@@ -475,22 +462,22 @@ public class PlayerManager
         player.seekTo( track, position );
     }
 
-    private void beginService()
-    {
-        service = new Intent( context, MusicPlayerService.class );
-        Util.startForegroundService( context, service);
-    }
-
-    private void stopService()
-    {
-        context.stopService( service );
-        service = null;
-    }
-
-    private boolean isServiceRunning()
-    {
-        return service != null;
-    }
+//    private void beginService()
+//    {
+//        service = new Intent( context, MusicPlayerService.class );
+//        Util.startForegroundService( context, service);
+//    }
+//
+//    private void stopService()
+//    {
+//        context.stopService( service );
+//        service = null;
+//    }
+//
+//    private boolean isServiceRunning()
+//    {
+//        return service != null;
+//    }
 
     public int getCurrentWindow() {
         return player.getCurrentWindowIndex();
@@ -577,63 +564,259 @@ public class PlayerManager
         return mediaSource;
     }
 
-    private static class PlayerState
+//    public static interface PlayerListener extends Player.EventListener {
+//        public void initialize(PlayerManager manager);
+//    }
+
+    public class MusicManager
     {
-        private static PlayerState state = null;
+        private ArrayList<Music> musics;
+        private ConcatenatingMediaSource source;
+        private long currentPosition;
+        private int currentIndex;
 
-        private final MediaSource source;
-        private final int track;
-        private final long duration;
-        private final boolean ready;
-        private final boolean runningService;
-
-        public PlayerState(PlayerManager playerManager) {
-            this( playerManager.getMediaSource(), playerManager.getPlayer().getCurrentWindowIndex(),
-                    playerManager.getPlayer().getCurrentPosition(), playerManager.getPlayer().getPlayWhenReady(),
-                    playerManager.isServiceRunning() );
-        }
-
-        private static void saveState()
+        public void saveCurrentState()
         {
-            PlayerManager playerManager = PlayerManager.getInstance();
-            state = new PlayerState(playerManager);
+            currentPosition = getCurrentPosition();
+            currentIndex = getCurrentIndex();
         }
 
-
-        public static PlayerState getState() {
-            return state;
+        public void restoreCurrentState()
+        {
+            prepare( source, PlayerManager.MediaType.MUSIC );
+            seekTo( currentIndex, currentPosition );
+            play();
         }
 
-        public static boolean hasState() {
-            return state != null;
+        public ArrayList<Music> getMusics() {
+            return musics;
         }
 
-        public PlayerState(MediaSource source, int track, long duration, boolean ready, boolean runningService ) {
+        public int getMusicsCount() {
+            return musics.size();
+        }
+
+        public Music getMusic(int index ) {
+            return musics.get( index );
+        }
+
+        public int getIndex(Music music) {
+            return musics.indexOf(music);
+        }
+
+        public boolean inPlayList(Music music) {
+            return musics.contains(music);
+        }
+
+        public boolean isMusicPlaying() {
+            return musics != null;
+        }
+
+        public int getPosition(Music music) {
+            return musics.indexOf( music );
+        }
+
+        public SimpleExoPlayer getPlayerManager()
+        {
+            return getPlayer();
+        }
+
+        public PlayerManager getMainPlayerManager()
+        {
+            return PlayerManager.this;
+        }
+
+        private void initSource(ArrayList<Music> musics )
+        {
+            Music music;
+            ArrayList<ProgressiveMediaSource> musicSource = new ArrayList<>();
+            for ( int i = 0; i < musics.size(); ++i )
+            {
+                music = musics.get(i);
+                if ( music != null )
+                    musicSource.add( getMusicSource(music) );
+                else
+                    Log.d("Music_Player", i + " is null" );
+            }
+            source = new ConcatenatingMediaSource(musicSource.toArray( new ProgressiveMediaSource[]{}));
+            this.musics = musics;
+            prepare( source, true, true, PlayerManager.MediaType.MUSIC );
+            shuffle();
+            repeatAll();
+            initError();
+        }
+
+        private void initSource(ArrayList<Music> musics, MediaSource source )
+        {
+            this.musics = musics;
+            prepare( source, true, true, PlayerManager.MediaType.MUSIC );
+            shuffle();
+            repeatAll();
+            initError();
+        }
+
+        @NonNull
+        public Pair<ConcatenatingMediaSource, MediaSource> buildNewSource(MediaSource childSource, int position)
+        {
+            MediaSource oldSource = null;
+            MediaSource[] sources = new MediaSource[ source.getSize() ];
+            for ( int i = 0; i < source.getSize(); ++i )
+            {
+                MediaSource mediaSource = source.getMediaSource(i);
+                if ( i == position )
+                {
+                    oldSource = mediaSource;
+                    mediaSource = childSource;
+                }
+                sources[ i ] = mediaSource;
+            }
+
+            ConcatenatingMediaSource newSource = new ConcatenatingMediaSource(sources);
+            Pair<ConcatenatingMediaSource, MediaSource> sourcePair = new Pair<>(newSource, oldSource);
+            return sourcePair;
+        }
+
+        public void addToPlaylist(Music music) {
+            ProgressiveMediaSource newMusic = getMusicSource(music);
+            musics.add(music);
+            source.addMediaSource(newMusic);
+        }
+
+        public void switchSources(ConcatenatingMediaSource source)
+        {
+            int currentWindowIndex = getCurrentWindow();
+            long currentPosition = getCurrentPosition();
+//        playerManager.prepare( source, false, false, PlayerManager.MediaType.MUSIC );
+            prepare( source, true, true, PlayerManager.MediaType.MUSIC );
+            playTrackAt( currentWindowIndex, currentPosition );
             this.source = source;
-            this.track = track;
-            this.duration = duration;
-            this.ready = ready;
-            this.runningService = runningService;
         }
 
-        public boolean isRunningService() {
-            return runningService;
+        private void initError() {
+            SimpleExoPlayer player = getPlayer();
+            player.addListener(new com.google.android.exoplayer2.Player.EventListener() {
+                @Override
+                public void onPlayerError(ExoPlaybackException error) {
+                    int trackNo = player.getCurrentPeriodIndex();
+                    Music music = musics.get(trackNo);
+//                source.removeMediaSource( trackNo );
+                    String message = String.format("The track %s does not exist or %s", music.getName(), error.getMessage());
+                    Toast.makeText( getContext(), message, Toast.LENGTH_SHORT).show();
+                    prepare( source, PlayerManager.MediaType.MUSIC );
+                    player.setPlayWhenReady( true );
+                }
+            });
         }
 
-        public boolean isReady() {
-            return ready;
+        public void playAll( ArrayList<Music> musics )
+        {
+            initSource( musics );
+            Log.d( "Music_Player", "Id is " + musics);
+//        musicPlayer.beginService();
+            play();
         }
 
-        public MediaSource getSource() {
+        public void playAll( ArrayList<Music> musics, MediaSource source )
+        {
+            initSource( musics, source );
+            Log.d( "Music_Player", "Id is " + musics);
+//        musicPlayer.beginService();
+            play();
+        }
+
+        public void play()
+        {
+            playMusic();
+        }
+
+        public ProgressiveMediaSource getMusicSource( Music music )
+        {
+            Uri media = music.toUri();
+            ProgressiveMediaSource source = new ProgressiveMediaSource.Factory(getFactory()).createMediaSource(media);
+//        ExtractorMediaSource source = new ExtractorMediaSource.Factory( playerManager.getFactory() ).createMediaSource(media);
             return source;
         }
 
-        public int getTrack() {
-            return track;
+        public ProgressiveMediaSource getMusicSource(File file)
+        {
+            Uri media = Uri.fromFile(file);
+            ProgressiveMediaSource source = new ProgressiveMediaSource.Factory(getFactory()).createMediaSource(media);
+            return source;
         }
 
-        public long getDuration() {
-            return duration;
+        public ConcatenatingMediaSource getMediaSource()
+        {
+            return source;
         }
+
+        public ProgressiveMediaSource getMediaSource( String url )
+        {
+            Uri media = Uri.parse( url );
+            ProgressiveMediaSource source = new ProgressiveMediaSource.Factory(getFactory()).createMediaSource(media);
+//        ExtractorMediaSource source = new ExtractorMediaSource.Factory( playerManager.getFactory() ).createMediaSource(media);
+            return source;
+        }
+
     }
+
+
+//    private static class PlayerState
+//    {
+//        private static PlayerState state = null;
+//
+//        private final MediaSource source;
+//        private final int track;
+//        private final long duration;
+//        private final boolean ready;
+//        private final boolean runningService;
+//
+//        public PlayerState(PlayerManager playerManager) {
+//            this( playerManager.getMediaSource(), playerManager.getPlayer().getCurrentWindowIndex(),
+//                    playerManager.getPlayer().getCurrentPosition(), playerManager.getPlayer().getPlayWhenReady(),
+//                    playerManager.isServiceRunning() );
+//        }
+//
+////        private static void saveState()
+////        {
+////            PlayerManager playerManager = PlayerManager.getInstance();
+////            state = new PlayerState(playerManager);
+////        }
+//
+//
+//        public static PlayerState getState() {
+//            return state;
+//        }
+//
+//        public static boolean hasState() {
+//            return state != null;
+//        }
+//
+//        public PlayerState(MediaSource source, int track, long duration, boolean ready, boolean runningService ) {
+//            this.source = source;
+//            this.track = track;
+//            this.duration = duration;
+//            this.ready = ready;
+//            this.runningService = runningService;
+//        }
+//
+//        public boolean isRunningService() {
+//            return runningService;
+//        }
+//
+//        public boolean isReady() {
+//            return ready;
+//        }
+//
+//        public MediaSource getSource() {
+//            return source;
+//        }
+//
+//        public int getTrack() {
+//            return track;
+//        }
+//
+//        public long getDuration() {
+//            return duration;
+//        }
+//    }
 }

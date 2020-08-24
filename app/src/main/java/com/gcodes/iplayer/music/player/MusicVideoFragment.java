@@ -2,8 +2,6 @@ package com.gcodes.iplayer.music.player;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,7 +10,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -27,11 +24,8 @@ import com.gcodes.iplayer.player.PlayerDownloadService;
 import com.gcodes.iplayer.services.YouTubeService;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.player.VideoPlayer;
-import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.offline.Download;
-import com.google.android.material.tabs.TabItem;
-import com.google.android.material.tabs.TabLayout;
 import com.google.api.services.youtube.model.Video;
 
 import org.joda.time.DateTime;
@@ -40,20 +34,13 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
 
-import java.io.IOException;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.SparseArrayCompat;
-import androidx.core.util.Consumer;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 

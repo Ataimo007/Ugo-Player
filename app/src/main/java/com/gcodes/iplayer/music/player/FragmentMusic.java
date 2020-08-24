@@ -1,9 +1,7 @@
 package com.gcodes.iplayer.music.player;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,21 +10,21 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.helpers.GlideApp;
-import com.gcodes.iplayer.helpers.GlideRequests;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.folder.FolderFragment;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.SavedStateViewModelFactory;
+import androidx.lifecycle.ViewModelProvider;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
@@ -37,16 +35,9 @@ import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 public class FragmentMusic extends Fragment {
 
     private View controlView;
-    private GlideRequests request;
 
     private Animation rotate;
     private Music currentMusic;
-//    private SimpleExoPlayer player;
-//    private DefaultDataSourceFactory factory;
-
-    public FragmentMusic() {
-        // Required empty public constructor
-    }
 
     // TODO: Rename and change types and number of parameters
     public static FragmentMusic newInstance() {
@@ -61,7 +52,13 @@ public class FragmentMusic extends Fragment {
     }
 
     private void init() {
-        request = GlideApp.with(FragmentMusic.this);
+        new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).playerManager.observe(requireActivity(), manager -> {
+            if ( manager != null )
+            {
+                ControlListener controlListener = new ControlListener(manager);
+                manager.addListener(controlListener);
+            }
+        });
         initRotateAnimation();
     }
 
@@ -90,26 +87,16 @@ public class FragmentMusic extends Fragment {
 
     private void initView()
     {
-//        PlayerView view;
-        PlayerControlView control = controlView.findViewById(R.id.music_control_view);
-        control.setShowTimeoutMs( -1 );
-        control.setPlayer( MusicPlayer.getInstance().getPlayerManager() );
-//        MusicPlayer.registerOnTrackChange(this::consumeTrack);
-//        MusicPlayer.consumeTrack( this::consumeTrack );
         controlView.setOnClickListener( v -> {
             showMusicPlayer();
         });
-        initRotateAnim();
     }
 
-//    private void initRotateAnim() {
-//        CardView art = controlView.findViewById(R.id.exo_album_art);
-//        MusicPlayer.onStateChange( art );
-//    }
-
-    private void initRotateAnim() {
-        MusicPlayer musicPlayer = MusicPlayer.getInstance();
-        if ( musicPlayer.getPlayerManager().getPlayWhenReady() && musicPlayer.getPlayerManager().getPlaybackState() == Player.STATE_READY )
+    private void initView(PlayerManager manager) {
+        PlayerControlView control = controlView.findViewById(R.id.music_control_view);
+        control.setShowTimeoutMs( -1 );
+        control.setPlayer( manager.getPlayer() );
+        if ( manager.getPlayer().getPlayWhenReady() && manager.getPlayer().getPlaybackState() == Player.STATE_READY )
             startAnimation();
         else
             pauseAnimation();
@@ -119,6 +106,11 @@ public class FragmentMusic extends Fragment {
     {
         Intent intent = new Intent( getContext(), MusicPlayerActivity.class );
         getContext().startActivity( intent );
+    }
+
+    private void showMusicController()
+    {
+
     }
 
     public void consumeTrack( Music music )
@@ -150,6 +142,41 @@ public class FragmentMusic extends Fragment {
         controlView = inflater.inflate(R.layout.fragment_music, container, false);
         initView();
         return controlView;
+    }
+
+    private class ControlListener implements Player.EventListener {
+
+        private PlayerManager manager;
+
+        public ControlListener(PlayerManager manager) {
+            this.manager = manager;
+            initView(manager);
+        }
+
+        @Override
+        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+            int index = manager.getPlayer().getCurrentPeriodIndex();
+            Music music = manager.getMusicManager().getMusic(index);
+            consumeTrack(music);
+        }
+
+        @Override
+        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+//                if ( playing == MediaType.MUSIC && isMusicPlayer() )
+            if ( manager.isMusicPlaying() )
+            {
+                if ( playWhenReady )
+                {
+                    showMusicController();
+                    if ( playbackState == Player.STATE_READY )
+                        startAnimation();
+                }
+                else
+                {
+                    pauseAnimation();
+                }
+            }
+        }
     }
 
 }

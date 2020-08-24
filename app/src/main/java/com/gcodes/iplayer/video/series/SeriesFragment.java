@@ -1,6 +1,5 @@
 package com.gcodes.iplayer.video.series;
 
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -15,18 +14,15 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.VideoFragment;
 import com.gcodes.iplayer.video.player.VideoPlayer;
-import com.google.android.exoplayer2.Player;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,20 +34,9 @@ import java.util.concurrent.TimeUnit;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleEventObserver;
-import androidx.lifecycle.LifecycleOwner;
 import androidx.loader.content.CursorLoader;
-import androidx.navigation.NavBackStackEntry;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import org.joda.time.Period;
-import org.joda.time.format.PeriodFormatter;
-import org.joda.time.format.PeriodFormatterBuilder;
 
 import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 

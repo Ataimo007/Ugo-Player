@@ -13,6 +13,7 @@ import com.gcodes.iplayer.music.album.AlbumFragment;
 import com.gcodes.iplayer.music.artist.ArtistFragment;
 import com.gcodes.iplayer.music.folder.FolderFragment;
 import com.gcodes.iplayer.music.genre.GenreFragment;
+import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.track.TrackFragment;
 import com.google.android.material.tabs.TabLayout;
 
@@ -31,11 +32,13 @@ public class MusicFragment extends Fragment
     private SectionsPagerAdapter mSectionsPagerAdapter;
 //    private MainActivity.BackAction backAction = null;
     private MainActivity app;
+    private MusicPlayer player;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mSectionsPagerAdapter = new SectionsPagerAdapter( getChildFragmentManager() );
+        player = new MusicPlayer(playerManager);
     }
 
     @Override
@@ -85,7 +88,7 @@ public class MusicFragment extends Fragment
 //        return backAction;
 //    }
 
-    public static class SectionsPagerAdapter extends FragmentPagerAdapter
+    public class SectionsPagerAdapter extends FragmentPagerAdapter
     {
         private final Fragment[] views;
         private final String[] fragmentTitles;
@@ -94,11 +97,11 @@ public class MusicFragment extends Fragment
         {
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
             views = new Fragment[ 5 ];
-            views[ 0 ] = new AlbumFragment();
-            views[ 1 ] = new ArtistFragment();
-            views[ 2 ] = new TrackFragment();
-            views[ 3 ] = new GenreFragment();
-            views[ 4 ] = new FolderFragment();
+            views[ 0 ] = new AlbumFragment(player);
+            views[ 1 ] = new ArtistFragment(player);
+            views[ 2 ] = new TrackFragment(player);
+            views[ 3 ] = new GenreFragment(player);
+            views[ 4 ] = new FolderFragment(player);
             fragmentTitles = new String[]{ "Albums", "Artists", "Songs", "Genres", "Folders" };
         }
 

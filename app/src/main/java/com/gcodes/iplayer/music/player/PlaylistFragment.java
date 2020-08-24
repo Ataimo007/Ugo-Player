@@ -1,11 +1,6 @@
 package com.gcodes.iplayer.music.player;
 
-import android.content.Context;
-import android.graphics.PointF;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,16 +8,12 @@ import android.view.ViewGroup;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
-import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
-
-import org.joda.time.Duration;
 
 //import android.support.annotation.NonNull;
 //import androidx.core.app.Fragment;

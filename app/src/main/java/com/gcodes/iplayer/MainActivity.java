@@ -1,21 +1,28 @@
 package com.gcodes.iplayer;
 
 import android.Manifest;
+import android.app.Application;
 import android.app.SearchManager;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.gcodes.iplayer.music.MusicFragment;
+import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.player.MusicPlayerService;
 import com.gcodes.iplayer.player.PlayerManager;
-import com.gcodes.iplayer.video.VideoFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.function.Supplier;
 
 import androidx.annotation.NonNull;
@@ -24,50 +31,30 @@ import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.util.Pair;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.lifecycle.ViewModel;
-import androidx.navigation.NavBackStackEntry;
-import androidx.navigation.NavController;
-import androidx.navigation.NavDestination;
-import androidx.navigation.Navigation;
+import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager.widget.ViewPager;
 
 public class MainActivity extends AppCompatActivity
 {
     private int requestCode = 0;
-    private static AppCompatActivity application;
+//    private static AppCompatActivity application;
     Supplier<Boolean> action;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = this::doSelection;
     private Menu menu;
-//    private BackAction backAction;
     private NavigationPager pager;
     private AppPagerAdapter adapter;
     private int currentPage;
 
     private BackAction[] backActions;
-
-//    public static final int REQUEST_VIDEO = 1000;
-
-
-//    private MusicFragment music;
-//    private VideoFragment video;
-
-//    private TabLayout.ViewPagerOnTabSelectedListener mPagerListener;
-//    private TabLayout.TabLayoutOnPageChangeListener mTabListener;
-//    private TabLayout musicTabs;
-//    private TabLayout videoTabs;
-//    private TabLayout.TabLayoutOnPageChangeListener vTabListener;
-//    private TabLayout.ViewPagerOnTabSelectedListener vPagerListener;
-
-//    private MusicAdapter musicAdapter;
-//    private VideoAdapter videoAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,62 +63,35 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        PlayerManager.getInstance().onDestroyActivity();
-        Log.w("Destroy_Main", "Destroying Main Activity" );
+    protected void onStart() {
+        super.onStart();
+        processIntent();
+    }
+
+    private void processIntent() {
+        Intent intent = getIntent();
+        String playing = intent.getStringExtra("playing");
+        switch (playing)
+        {
+            case "music":
+                obtainMusicManager();
+
+            default:
+        }
+    }
+
+    private void obtainMusicManager() {
+        Intent intent = new Intent(this, MusicPlayerService.class);
+        MusicConnection musicConnection = new MusicConnection();
+        bindService(intent, musicConnection, BIND_IMPORTANT);
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-//        PlayerManager.getInstance().onDestroyActivity( this );
+    protected void onDestroy() {
+        super.onDestroy();
+//        PlayerManager.getInstance().onDestroyActivity();
+        Log.w("Destroy_Main", "Destroying Main Activity" );
     }
-
-//    @Override
-//    public void onBackPressed() {
-//        boolean popped = NavHostFragment.findNavController(adapter.getItem(currentPage)).popBackStack();
-//        if ( !popped )
-//        {
-//            if ( backAction != null )
-//            {
-//                boolean back = backAction.goBack();
-//                if ( !back )
-//                    super.onBackPressed();
-//            }
-//            else
-//                super.onBackPressed();
-//        }
-//    }
-
-//    @Override
-//    public void onBackPressed() {
-//        Log.d("Main_Activity", "On Back Pressed " + backAction );
-//        if ( backAction != null )
-//        {
-//            boolean back = backAction.goBack();
-//            if ( !back )
-//                back();
-//        }
-//        else
-//            back();
-//    }
-
-//    @Override
-//    public void onBackPressed() {
-//        BackActionManager manager = adapter.getManger(pager.getCurrentItem());
-//        Log.d("Main_Activity", "On Back Pressed " + manager);
-//        BackAction action = manager.getAction();
-//        Log.d("Main_Activity", "On Back Pressed " + action );
-//        if ( action != null )
-//        {
-//            boolean back = action.goBack();
-//            if ( !back )
-//                back();
-//        }
-//        else
-//            back();
-//    }
 
     @Override
     public void onBackPressed() {
@@ -162,21 +122,23 @@ public class MainActivity extends AppCompatActivity
 
     private void begin()
     {
-        //        setContentView(R.layout.activity_main);
         setContentView(R.layout.activity_main_default4);
 
         Toolbar toolbar = findViewById(R.id.app_toolbar);
         setSupportActionBar( toolbar );
-
-        init();
-        application = this;
 
         if ( checkPermissions() )
             beginApp();
         else
             getPermission();
 
-//        navigation.setSelectedItemId( R.id.navigation_music );
+        initReceivers();
+    }
+
+    private void initReceivers() {
+        MusicPlayerService.MusicBroadCastReceiver musicReceiver = new MusicPlayerService.MusicBroadCastReceiver();
+        IntentFilter filter = new IntentFilter();
+        LocalBroadcastManager.getInstance(this).registerReceiver(musicReceiver, filter);
     }
 
     private void beginApp()
@@ -206,18 +168,6 @@ public class MainActivity extends AppCompatActivity
         backActions = new BackAction[adapter.getCount()];
     }
 
-//    @Override
-//    protected void onStart() {
-//        super.onStart();
-//    }
-
-//    private boolean doSelection(MenuItem item)
-//    {
-//        if ( checkPermissions() )
-//            return doSelection( item.getItemId() );
-//        return false;
-//    }
-
     private boolean doSelection(MenuItem item)
     {
         switch (item.getItemId()) {
@@ -231,11 +181,6 @@ public class MainActivity extends AppCompatActivity
                 return false;
         }
     }
-
-//    private boolean doSelection( int id )
-//    {
-//
-//    }
 
     private void prepareSearchMenu() {
         MenuItem searchItem = menu.findItem(R.id.action_search);
@@ -260,27 +205,10 @@ public class MainActivity extends AppCompatActivity
 
     private void getPermission()
     {
-        // Here, thisActivity is the current activity
-//        if ( !checkPermissions() ) {
-//            Log.d("Selecting_music", "Getting Permissions is " + checkPermissions() );
-//            ActivityCompat.requestPermissions(this,
-//                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
-//                    requestCode );
-//        }
-
         Log.d("Selecting_music", "Getting Permissions is " + checkPermissions() );
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                 requestCode );
-    }
-
-    private void init()
-    {
-        initPlayer();
-    }
-
-    private void initPlayer() {
-        PlayerManager.init( this );
     }
 
     @Override
@@ -288,58 +216,11 @@ public class MainActivity extends AppCompatActivity
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if ( requestCode == this.requestCode )
         {
-//            for ( String permission : permissions )
-//            {
-//                if ( ContextCompat.checkSelfPermission(this, permission)
-//                        != PackageManager.PERMISSION_GRANTED )
-//                    return;
-//            }
             if ( grantResults.length > 0 && grantResults[ 0 ] == PackageManager.PERMISSION_GRANTED
                     && grantResults[ 1 ] == PackageManager.PERMISSION_GRANTED  )
                 beginApp();
         }
     }
-
-//    @Override
-//    protected void onPostResume() {
-//        super.onPostResume();
-//        VideoPlayer.getInstance().tryRenderVideoPlayer();
-//    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.w("Video_Player", "Rendering Video Controller");
-//        VideoPlayer.getInstance().tryRenderVideoPlayer();
-    }
-
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//        if ( requestCode == REQUEST_VIDEO)
-//        {
-//            if ( resultCode == VideoPlayer.RESULT_PLAYING )
-//            {
-////                VideoPlayer.getInstance().renderVideoPlayer();
-//            }
-//        }
-//    }
-
-//    public void register(BackAction action) {
-//        backAction = action;
-//    }
-//
-//    public void unregister() {
-//        backAction = null;
-//    }
-
-
-//    @Override
-//    public void onAttachFragment(@NonNull Fragment fragment) {
-//        super.onAttachFragment(fragment);
-//        Log.d("Main_Activity", "Attach Fragment " + fragment );
-//        adapter.tryRegister(fragment);
-//    }
 
     public void registerBack(BackAction action) {
         backActions[pager.getCurrentItem()] = action;
@@ -353,70 +234,19 @@ public class MainActivity extends AppCompatActivity
         boolean goBack();
     }
 
-//    public interface BackActionManager {
-//        BackAction getAction();
-//    }
-
-//    public static class BackViewModel extends ViewModel
-//    {
-//        private HashMap<Pair<Integer, Integer>, Supplier<Boolean>> backAction = new HashMap<>();
-//
-//        public void register( int destination, int tab, Supplier<Boolean> action )
-//        {
-//            backAction.put(new Pair<>(destination, tab), action);
-//        }
-//
-//        public void unregister( int destination, int tab, Supplier<Boolean> action )
-//        {
-//            backAction.remove(new Pair<>(destination, tab));
-//        }
-//
-//        public boolean back(NavDestination current)
-//        {
-//            if ( current)
-//            appAdapter.getCurrentDestination()
-//        }
-//    }
-
-    public static class AppPagerAdapter extends FragmentPagerAdapter
-    {
+    public static class AppPagerAdapter extends FragmentPagerAdapter {
         private static final int defaultPage = 0;
         private final Fragment[] host = {new Fragment(R.layout.music_host), new Fragment(R.layout.video_host)};
 //        private BackActionManager[] managers = new BackActionManager[  ];
 
-        public AppPagerAdapter(FragmentManager fm)
-        {
+        public AppPagerAdapter(FragmentManager fm) {
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
         }
 
         @Override
-        public Fragment getItem(int position)
-        {
-            return host[ position ];
+        public Fragment getItem(int position) {
+            return host[position];
         }
-
-//        public BackActionManager getManger(int position)
-//        {
-//            return managers[ position ];
-//        }
-
-//        public NavDestination getCurrentDestination(int position)
-//        {
-//            NavController navController = null;
-//            switch (position)
-//            {
-//                case 0:
-//                    navController = Navigation.findNavController(activity, R.id.music_session);
-//                    return navController.getCurrentDestination();
-//
-//                case 1:
-//                    navController = Navigation.findNavController(activity, R.id.video_session);
-//                    return navController.getCurrentDestination();
-//
-//                default:
-//                    throw new IllegalStateException("Unexpected value: " + position);
-//            }
-//        }
 
         @Override
         public int getCount() {
@@ -426,110 +256,68 @@ public class MainActivity extends AppCompatActivity
         public int getDefaultTabPos() {
             return 0;
         }
-
-//        public void tryRegister(Fragment fragment) {
-//            if (fragment instanceof BackActionManager)
-//            {
-//                BackActionManager manager = (BackActionManager) fragment;
-//                Log.d("Main_Activity", "Back Action Manager " + manager );
-//                if (fragment instanceof MusicFragment)
-//                    managers[0] = manager;
-//                if (fragment instanceof VideoFragment)
-//                    managers[1] = manager;
-//            }
-//        }
     }
 
-//    public void musicSwitch()
-//    {
-//        videoTabs.setVisibility(View.GONE);
-//        musicTabs.setVisibility(View.VISIBLE);
-//
-//        pager.setAdapter(musicAdapter);
-//        pager.addOnPageChangeListener( mTabListener );
-//        musicTabs.addOnTabSelectedListener( mPagerListener );
-//        pager.invalidate();
-//    }
-//
-//    public void videoSwitch()
-//    {
-//        musicTabs.setVisibility(View.GONE);
-//        videoTabs.setVisibility(View.VISIBLE);
-//
-//        pager.setAdapter(videoAdapter);
-//        pager.addOnPageChangeListener( vTabListener );
-//        musicTabs.addOnTabSelectedListener( vPagerListener );
-//        pager.invalidate();
-//    }
-//
-//    public static class MusicAdapter extends FragmentPagerAdapter
-//    {
-//        private Fragment[] views;
-//
-//        public MusicAdapter(FragmentManager fm)
-//        {
-//            super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
-//            init();
-//        }
-//
-//        public void init()
-//        {
-//            views = new Fragment[ 5 ];
-//            views[ 0 ] = new AlbumFragment();
-//            views[ 1 ] = new ArtistFragment();
-//            views[ 2 ] = new TrackFragment();
-//            views[ 3 ] = new GenreFragment();
-//            views[ 4 ] = new FolderFragment();
-//        }
-//
-//        @Override
-//        public Fragment getItem(int position)
-//        {
-//            return views[ position ];
-//        }
-//
-//        @Override
-//        public int getCount() {
-//            return 5;
-//        }
-//
-//        public int getDefaultTabPos() {
-//            return 2;
-//        }
-//    }
-//
-//    public static class VideoAdapter extends FragmentPagerAdapter
-//    {
-//        private Fragment[] views;
-//
-//        public VideoAdapter(FragmentManager fm) {
-//            super(fm);
-//            init();
-//        }
-//
-//        public void init()
-//        {
-//            views = new Fragment[ 4 ];
-//            views[ 0 ] = new Fragment();
-//            views[ 1 ] = new com.gcodes.iplayer.video.folder.FolderFragment();
-//            views[ 2 ] = new SeriesFragment();
-//            views[ 3 ] = new AllFragment();
-//        }
-//
-//        @Override
-//        public Fragment getItem(int position)
-//        {
-//            return views[ position ];
-//        }
-//
-//        @Override
-//        public int getCount() {
-//            return 4;
-//        }
-//
-//        public int getDefaultTabPos() {
-//            return 2;
-//        }
-//    }
+    private class MusicConnection implements ServiceConnection
+    {
 
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
+            MusicPlayerService.PlayerBinder binder = (MusicPlayerService.PlayerBinder) service;
+            PlayerManager playerManager = binder.getPlayerManager();
+            if (playerManager != null)
+            {
+                playerModel.setPlayerManager(playerManager);
+
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
+            playerModel.setPlayerManager(null);
+        }
+    }
+
+    public static class PlayerModel extends AndroidViewModel
+    {
+        public PlayerManager getPlayerManager() {
+            return playerManager.getValue();
+        }
+
+        public PlayerManager getLivePlayerManager() {
+            return playerManager.getValue();
+        }
+
+        public void setPlayerManager(PlayerManager playerManager) {
+            this.playerManager.setValue(playerManager);
+        }
+
+        public MutableLiveData<PlayerManager> playerManager;
+
+        private PlayerModel(@NonNull Application application) {
+            super(application);
+            playerManager = new MutableLiveData<>();
+        }
+
+        public void play(ArrayList<Music> musics)
+        {
+            PlayerManager manager = playerManager.getValue();
+            if (manager == null)
+                manager.getMusicManager().playAll(musics);
+            else
+            {
+                String[] gMusics = Music.toGson(musics);
+                Intent intent = new Intent(getApplication().getBaseContext(), MusicPlayerService.class);
+                intent.putExtra("music", gMusics );
+                intent.putExtra("broadcast", true );
+                getApplication().getBaseContext().startService(intent);
+            }
+        }
+
+        public void play(Music music) {
+            play( new ArrayList< Music >(Collections.singletonList(music)) );
+        }
+    }
 }
