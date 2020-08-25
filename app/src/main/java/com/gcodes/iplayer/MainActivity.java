@@ -70,17 +70,11 @@ public class MainActivity extends AppCompatActivity
 
     private void processIntent() {
         Intent intent = getIntent();
-        String playing = intent.getStringExtra("playing");
-        switch (playing)
-        {
-            case "music":
-                obtainMusicManager();
-
-            default:
-        }
+        if  (intent.hasExtra("playing") && intent.getBooleanExtra("has_player", false ))
+            obtainPlayerManager();
     }
 
-    private void obtainMusicManager() {
+    private void obtainPlayerManager() {
         Intent intent = new Intent(this, MusicPlayerService.class);
         MusicConnection musicConnection = new MusicConnection();
         bindService(intent, musicConnection, BIND_IMPORTANT);
@@ -132,13 +126,19 @@ public class MainActivity extends AppCompatActivity
         else
             getPermission();
 
-        initReceivers();
+        registerReceivers();
     }
 
-    private void initReceivers() {
+    private void registerReceivers() {
         MusicPlayerService.MusicBroadCastReceiver musicReceiver = new MusicPlayerService.MusicBroadCastReceiver();
         IntentFilter filter = new IntentFilter();
+        filter.addAction(MusicPlayerService.ON_START_PLAYER_MANAGER);
         LocalBroadcastManager.getInstance(this).registerReceiver(musicReceiver, filter);
+    }
+
+    private void unRegisterReceiver() {
+        MusicPlayerService.MusicBroadCastReceiver musicReceiver = new MusicPlayerService.MusicBroadCastReceiver();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(musicReceiver);
     }
 
     private void beginApp()
@@ -260,17 +260,14 @@ public class MainActivity extends AppCompatActivity
 
     private class MusicConnection implements ServiceConnection
     {
-
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
             MusicPlayerService.PlayerBinder binder = (MusicPlayerService.PlayerBinder) service;
             PlayerManager playerManager = binder.getPlayerManager();
             if (playerManager != null)
-            {
                 playerModel.setPlayerManager(playerManager);
-
-            }
+            unRegisterReceiver();
         }
 
         @Override

@@ -23,7 +23,6 @@ import com.google.android.exoplayer2.ui.PlayerControlView;
 
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.SavedStateViewModelFactory;
 import androidx.lifecycle.ViewModelProvider;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
@@ -32,7 +31,7 @@ import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment
  */
-public class FragmentMusic extends Fragment {
+public class MusicController extends Fragment {
 
     private View controlView;
 
@@ -40,8 +39,8 @@ public class FragmentMusic extends Fragment {
     private Music currentMusic;
 
     // TODO: Rename and change types and number of parameters
-    public static FragmentMusic newInstance() {
-        FragmentMusic fragment = new FragmentMusic();
+    public static MusicController newInstance() {
+        MusicController fragment = new MusicController();
         return fragment;
     }
 
@@ -110,7 +109,12 @@ public class FragmentMusic extends Fragment {
 
     private void showMusicController()
     {
+        controlView.findViewById(R.id.controller_host).setVisibility(View.VISIBLE);
+    }
 
+    private void hideMusicController()
+    {
+        controlView.findViewById(R.id.controller_host).setVisibility(View.GONE);
     }
 
     public void consumeTrack( Music music )
@@ -129,8 +133,8 @@ public class FragmentMusic extends Fragment {
 
     public void setImage(Music music, ImageView image)
     {
-        if  ( FragmentMusic.this.isAdded() )
-            GlideApp.with( FragmentMusic.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( FragmentMusic.this.getContext(), music ) )
+        if  ( MusicController.this.isAdded() )
+            GlideApp.with( MusicController.this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( MusicController.this.getContext(), music ) )
                     .placeholder( R.drawable.u_song_art_padded ).apply( circleCropTransform() ).into( image );
     }
 
@@ -174,6 +178,7 @@ public class FragmentMusic extends Fragment {
                 else
                 {
                     pauseAnimation();
+                    hideMusicController();
                 }
             }
         }

@@ -7,7 +7,7 @@
     android:layout_height="wrap_content"
     android:layout_gravity="bottom"
     android:minHeight="70dp"
-    tools:context=".music.player.FragmentMusic">
+    tools:context=".music.player.MusicController">
 
     <com.google.android.exoplayer2.ui.DefaultTimeBar
         android:id="@+id/exo_progress"

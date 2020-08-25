@@ -13,6 +13,8 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -89,7 +91,8 @@ public class MusicPlayerFragment extends Fragment
     private KaraokePlayerHandler karaokePlayerHandler;
 
     private ConcatenatingMediaSource backupSource;
-    private MusicPlayer player;
+    private PlayerManager.MusicManager manager;
+    private Animation rotate;
 
     private boolean synced;
     private final Runnable syncer = new Runnable() {
@@ -101,6 +104,10 @@ public class MusicPlayerFragment extends Fragment
             handler.postDelayed(syncer, LYRICSYNCER);
         }
     };
+
+    public MusicPlayerFragment(PlayerManager.MusicManager manager) {
+        this.manager = manager;
+    }
 
     private void syncPost()
     {
@@ -144,7 +151,7 @@ public class MusicPlayerFragment extends Fragment
 
     private void sync()
     {
-        Duration playback = Duration.millis( PlayerManager.getInstance().getCurrentPosition() );
+        Duration playback = Duration.millis( manager.getPlayerManager().getCurrentPosition() );
         int pos = (int) (playback.getStandardSeconds() / lyricSpanSec);
         Log.d("Lyrics_Sync", String.format( "Sync lyrics %d %d %d %d", playback.getStandardSeconds(), pos, lyricSpanSec, lyrics.length ) );
         if ( currentPos != pos )
@@ -165,7 +172,7 @@ public class MusicPlayerFragment extends Fragment
     private Duration getDuration()
     {
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        retriever.setDataSource(PlayerManager.getInstance().getContext(), currentMusic.toUri());
+        retriever.setDataSource(getContext(), currentMusic.toUri());
         String milliDuration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
         return Duration.millis(Long.parseLong(milliDuration));
     }
@@ -182,7 +189,6 @@ public class MusicPlayerFragment extends Fragment
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        player = MusicPlayer.getInstance();
     }
 
     @Override
@@ -203,6 +209,7 @@ public class MusicPlayerFragment extends Fragment
         initRecycleView( content );
         initButton();
         initKaraoke(content);
+        initRotateAnim();
 
 //        musicName = content.findViewById( R.id.song_name );
 //        artistName = content.findViewById( R.id.artist_name );
@@ -278,7 +285,7 @@ public class MusicPlayerFragment extends Fragment
     {
 //        PlayerView playerView;
         control.setShowTimeoutMs( -1 );
-        control.setPlayer( MusicPlayer.getInstance().getPlayerManager() );
+        control.setPlayer( manager.getPlayerManager() );
 
         if ( currentMusic != null )
             setImage( currentMusic );
@@ -294,14 +301,33 @@ public class MusicPlayerFragment extends Fragment
 
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        initRotateAnim();
+    private void initRotateAnim() {
+        rotate = AnimationUtils.loadAnimation(getContext(), R.anim.u_rotate);
+        rotate.setFillAfter( true );
+        processRotate();
     }
 
-    private void initRotateAnim() {
-        eventListener = MusicPlayer.onStateChange(art);
+    private void processRotate() {
+        if ( manager.getPlayerManager().getPlayWhenReady() && manager.getPlayerManager().getPlaybackState() == Player.STATE_READY )
+        {
+            Log.d("Animation_View", "playing music" );
+            art.startAnimation( rotate );
+        }
+        else
+        {
+            Log.d("Animation_View", "music paused" );
+            art.clearAnimation();
+        }
+    }
+
+    public void processRotate(boolean playWhenReady, int playbackState) {
+        if (playWhenReady && playbackState == Player.STATE_READY) {
+            Log.d("Animation_View", "playing music");
+            art.startAnimation(rotate);
+        } else {
+            Log.d("Animation_View", "music paused");
+            art.clearAnimation();
+        }
     }
 
 //    @Override
@@ -313,7 +339,7 @@ public class MusicPlayerFragment extends Fragment
     public void updateMusic(Music music)
     {
         Log.d("Music_Player", " Consuming track " + music.getName() );
-        int newTrack = MusicPlayer.getCurrentTrack();
+        int newTrack = manager.getCurrentTrack();
         if ( currentTrack != -1 || currentTrack != newTrack )
         {
             if ( isAdded() )
@@ -421,7 +447,7 @@ public class MusicPlayerFragment extends Fragment
         public void success(File file, Music music) {
             uiHandler.post(() -> {
                 finishProgress();
-                if ( player.inPlayList(music) )
+                if ( manager.inPlayList(music) )
                     playKaraoke(file, music);
             });
         }
@@ -452,26 +478,26 @@ public class MusicPlayerFragment extends Fragment
 
     public void playKaraoke(File file, Music music)
     {
-        ProgressiveMediaSource musicSource = player.getMusicSource(file);
-        int index = player.getIndex(music);
+        ProgressiveMediaSource musicSource = manager.getMusicSource(file);
+        int index = manager.getIndex(music);
         if ( index < 0 )
         {
-            player.addToPlaylist(music);
-            index = player.getIndex(music);
+            manager.addToPlaylist(music);
+            index = manager.getIndex(music);
         }
-        Pair<ConcatenatingMediaSource, MediaSource> sourcePair = player.buildNewSource(musicSource, index);
+        Pair<ConcatenatingMediaSource, MediaSource> sourcePair = manager.buildNewSource(musicSource, index);
         ConcatenatingMediaSource newSource = sourcePair.first;
         backupSource();
-        player.switchSources(newSource);
+        manager.switchSources(newSource);
     }
 
     private void backupSource()
     {
-        backupSource = player.getMediaSource();
+        backupSource = manager.getMediaSource();
     }
 
     public void restore() {
-        player.switchSources(backupSource);
+        manager.switchSources(backupSource);
     }
 
     public class CustomAdapter extends RecyclerView.Adapter<ItemHolder>

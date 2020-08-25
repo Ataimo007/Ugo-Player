@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 
 import androidx.annotation.NonNull;
@@ -24,12 +25,19 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class PlaylistFragment extends Fragment
 {
+    private final PlayerManager.MusicManager manager;
     private Music current;
     private RecyclerView listView;
     private CustomAdapter adapter;
     private int currentPos;
 
     // try joining audio column to media column
+
+
+    public PlaylistFragment(PlayerManager.MusicManager manager) {
+        this.manager = manager;
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -61,7 +69,7 @@ public class PlaylistFragment extends Fragment
 
     private void updateList(Music music) {
         int oldPos = currentPos;
-        currentPos = MusicPlayer.getInstance().getPosition(music);
+        currentPos = manager.getPosition(music);
         if ( oldPos != currentPos )
             adapter.notifyItemChanged( oldPos );
         adapter.notifyItemChanged( currentPos );
@@ -81,14 +89,14 @@ public class PlaylistFragment extends Fragment
 
         @Override
         public void onBindViewHolder(@NonNull TrackItemHolder holder, int position) {
-            Music music = MusicPlayer.getInstance().getMusic(position);
+            Music music = manager.getMusic(position);
             holder.setTitle( music.getName() );
             holder.setSubtitle( music.getArtist() );
             holder.setImage( PlaylistFragment.this, music );
             initSelection(holder, position);
 
             holder.itemView.setOnClickListener(v -> {
-                MusicPlayer.play( position );
+                manager.play( position );
             });
         }
 
@@ -98,7 +106,7 @@ public class PlaylistFragment extends Fragment
 
         @Override
         public int getItemCount() {
-            return MusicPlayer.getInstance().getMusicsCount();
+            return manager.getMusicsCount();
         }
     }
 }

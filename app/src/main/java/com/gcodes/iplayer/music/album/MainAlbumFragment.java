@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
@@ -23,6 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -262,7 +264,7 @@ public class MainAlbumFragment extends Fragment
 
 
             holder.itemView.setOnClickListener(v -> {
-                MusicPlayer.play( music, MainAlbumFragment.this.getActivity() );
+                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(music);
             });
         }
 

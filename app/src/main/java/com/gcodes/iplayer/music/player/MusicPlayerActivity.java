@@ -1,8 +1,11 @@
 package com.gcodes.iplayer.music.player;
 
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,7 +18,10 @@ import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.api.services.youtube.model.Video;
@@ -35,19 +41,67 @@ public class MusicPlayerActivity extends AppCompatActivity
 {
 
     private Music currentMusic;
-    private Player.EventListener trackListener;
+//    private Player.EventListener trackListener;
     private PlayerDatabase.MusicInfo musicInfo;
     private PlayerControlView control;
     private TextView musicName;
     private TextView artistName;
     private SectionsPagerAdapter pagerAdapter;
     private PlayerDatabase manager;
+    private PlayerManager.MusicManager musicManager;
 
     private ImageView background;
     private final Handler handler = new Handler();
     private View loadingView;
 
     public static final String PLAY_KARAOKE = "PLAY_KARAOKE";
+    private PlayerListener listener;
+
+    private class MusicConnection implements ServiceConnection
+    {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicPlayerService.PlayerBinder binder = (MusicPlayerService.PlayerBinder) service;
+            musicManager = binder.getMusicManager();
+            if (musicManager != null)
+                manageMusic();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            musicManager = null;
+            releaseManager();
+        }
+    }
+
+    private class PlayerListener implements Player.EventListener {
+
+        private PlayerManager.MusicManager manager;
+
+        public PlayerListener(PlayerManager.MusicManager manager) {
+            this.manager = manager;
+//            initView(manager);
+        }
+
+        @Override
+        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+            consumeTrack();
+        }
+
+        @Override
+        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+            if ( manager.isMusicPlaying() && playWhenReady )
+                consumeTrack();
+            pagerAdapter.processPlayerRotate(playWhenReady, playbackState);
+        }
+
+        public void consumeTrack()
+        {
+            int index = musicManager.getPlayerManager().getCurrentPeriodIndex();
+            Music music = musicManager.getMusic( index );
+            MusicPlayerActivity.this.consumeTrack(music);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,8 +109,16 @@ public class MusicPlayerActivity extends AppCompatActivity
         setContentView(R.layout.main_music_player);
         manager = PlayerDatabase.getInstance();
 
-        pagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+        pagerAdapter = new SectionsPagerAdapter();
         initView();
+
+        obtainMusicManager();
+    }
+
+    private void obtainMusicManager() {
+        Intent intent = new Intent(this, MusicPlayerService.class);
+        MusicConnection musicConnection = new MusicConnection();
+        bindService(intent, musicConnection, BIND_IMPORTANT);
     }
 
     @Override
@@ -166,25 +228,17 @@ public class MusicPlayerActivity extends AppCompatActivity
         background = findViewById( R.id.player_background );
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        manageMusic();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if ( trackListener != null )
-        {
-            MusicPlayer.unRegisterOnTrackChange( trackListener );
-            trackListener = null;
-        }
-    }
-
     private void manageMusic() {
-        trackListener = MusicPlayer.registerOnTrackChange(this::consumeTrack);
-        MusicPlayer.consumeTrack( this::consumeTrack );
+        listener = new PlayerListener(musicManager);
+        musicManager.addListener(listener);
+    }
+
+    private void releaseManager() {
+        if ( listener != null )
+        {
+            musicManager.removeListener( listener );
+            listener = null;
+        }
     }
 
     private final int NETWORKWATCHER = 1000;
@@ -282,7 +336,7 @@ public class MusicPlayerActivity extends AppCompatActivity
         });
     }
 
-    private void consumeTrack( Music music )
+    public void consumeTrack( Music music )
     {
         updatePlayer( music );
         pagerAdapter.updatePlayer( music );
@@ -368,16 +422,21 @@ public class MusicPlayerActivity extends AppCompatActivity
         }
     }
 
-    public static class SectionsPagerAdapter extends FragmentPagerAdapter
+    public class SectionsPagerAdapter extends FragmentPagerAdapter
     {
         private MusicVideoFragment musicVideo;
         private MusicPlayerFragment player;
         private PlaylistFragment playlist;
 
-        public SectionsPagerAdapter(FragmentManager fm)
+        public SectionsPagerAdapter()
         {
-            super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+            super(getSupportFragmentManager(), BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
             init();
+        }
+
+        private void processPlayerRotate(boolean playWhenReady, int playbackState)
+        {
+            player.processRotate(playWhenReady, playbackState);
         }
 
         private void updatePlayer(Music music)
@@ -417,9 +476,9 @@ public class MusicPlayerActivity extends AppCompatActivity
 
         public void init()
         {
-            musicVideo = new MusicVideoFragment();
-            player = new MusicPlayerFragment();
-            playlist = new PlaylistFragment();
+            musicVideo = new MusicVideoFragment(musicManager);
+            player = new MusicPlayerFragment(musicManager);
+            playlist = new PlaylistFragment(musicManager);
         }
 
         @Override

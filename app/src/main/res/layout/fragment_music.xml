@@ -2,11 +2,13 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/controller_host"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="bottom"
     android:background="@color/colorAccent"
-    tools:context=".music.player.FragmentMusic">
+    android:visibility="visible"
+    tools:context=".music.player.MusicController">
 
 
     <com.google.android.exoplayer2.ui.PlayerControlView

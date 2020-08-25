@@ -32,13 +32,11 @@ public class MusicFragment extends Fragment
     private SectionsPagerAdapter mSectionsPagerAdapter;
 //    private MainActivity.BackAction backAction = null;
     private MainActivity app;
-    private MusicPlayer player;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mSectionsPagerAdapter = new SectionsPagerAdapter( getChildFragmentManager() );
-        player = new MusicPlayer(playerManager);
     }
 
     @Override
@@ -97,11 +95,11 @@ public class MusicFragment extends Fragment
         {
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
             views = new Fragment[ 5 ];
-            views[ 0 ] = new AlbumFragment(player);
-            views[ 1 ] = new ArtistFragment(player);
-            views[ 2 ] = new TrackFragment(player);
-            views[ 3 ] = new GenreFragment(player);
-            views[ 4 ] = new FolderFragment(player);
+            views[ 0 ] = new AlbumFragment();
+            views[ 1 ] = new ArtistFragment();
+            views[ 2 ] = new TrackFragment();
+            views[ 3 ] = new GenreFragment();
+            views[ 4 ] = new FolderFragment();
             fragmentTitles = new String[]{ "Albums", "Artists", "Songs", "Genres", "Folders" };
         }
 

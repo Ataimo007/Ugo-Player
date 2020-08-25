@@ -25,6 +25,7 @@ import java.util.TreeMap;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -284,7 +285,7 @@ public class FolderFragment extends Fragment implements MainActivity.BackAction
                 holder.setFileImage(music);
                 holder.itemView.setOnClickListener( null );
                 holder.itemView.setOnClickListener( v -> {
-                    MusicPlayer.play( music );
+                    new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(music);
                 });
             }
             else

@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.music.player.MusicPlayer;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -75,7 +77,7 @@ public class TrackFragment extends Fragment
     {
         FloatingActionButton floating = getActivity().findViewById(R.id.action_floating);
         floating.setOnClickListener( v -> {
-            MusicPlayer.play( musics );
+            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(musics);
         });
     }
 
@@ -140,7 +142,7 @@ public class TrackFragment extends Fragment
             Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
 
             holder.itemView.setOnClickListener(v -> {
-                MusicPlayer.play( music );
+                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(music);
             });
         }
 

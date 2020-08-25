@@ -21,6 +21,7 @@ import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.player.PlayerDownloadService;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.services.YouTubeService;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.player.VideoPlayer;
@@ -60,6 +61,7 @@ import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 
 public class MusicVideoFragment extends Fragment
 {
+    private final PlayerManager.MusicManager manager;
     private Music music;
     private RecyclerView listView;
     private CustomAdapter adapter;
@@ -74,28 +76,19 @@ public class MusicVideoFragment extends Fragment
     private boolean loading = false;
     private MusicPlayerActivity player;
 
-    public MusicVideoFragment() {
+    public MusicVideoFragment(PlayerManager.MusicManager manager) {
+        this.manager = manager;
     }
 
     public void updateMusic(Music music) {
         this.music = music;
     }
 
-    @Override
-    public void onStop() {
-        super.onStop();
-        if ( trackListener != null )
-            MusicPlayer.unRegisterOnTrackChange( trackListener );
-    }
-
-//    public void setVideoPrepare(Consumer<Void> showVideo )
-//    {
-//        this.showVideo = showVideo;
-//    }
-
-//    public void setMusicPrepare(Consumer<Void> showMusic )
-//    {
-//        this.showMusic = showMusic;
+//    @Override
+//    public void onStop() {
+//        super.onStop();
+//        if ( trackListener != null )
+//            MusicPlayer.unRegisterOnTrackChange( trackListener );
 //    }
 
     @Override
@@ -123,7 +116,7 @@ public class MusicVideoFragment extends Fragment
         if ( requestCode == VideoPlayer.REQUEST_PLAYER )
         {
             MusicPlayer player = MusicPlayer.getInstance();
-            player.restoreCurrentState();
+            manager.restoreCurrentState();
             this.player.notLoading();
         }
     }
@@ -333,7 +326,7 @@ public class MusicVideoFragment extends Fragment
 //                    musicPlayer.playVideo( ytFile.getUrl(), music );
 //                    showVideo.accept(null);
                     player.loading();
-                    MusicPlayer.getInstance().saveCurrentState();
+                    manager.saveCurrentState();
                     VideoPlayer.play( MusicVideoFragment.this, ytFile.getUrl() );
                 }, getContext() );
             });

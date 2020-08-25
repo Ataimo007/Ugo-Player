@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.helpers.GlideApp;
@@ -30,6 +31,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -281,7 +283,7 @@ public class MainArtistFragment extends Fragment
 //            holder.setImage( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)));
 
                 holder.itemView.setOnClickListener(v -> {
-                    MusicPlayer.play( music, activity );
+                    new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(music);
                 });
             }
 

@@ -80,8 +80,8 @@ public class MusicPlayerService extends Service {
 
     private void broadcast() {
         Intent broadcast = new Intent();
-        broadcast.setAction("com.gcodes.iplayer.music.player.MusicBroadCastReceiver");
-        broadcast.putExtra("playing", "music" );
+        broadcast.setAction(ON_START_PLAYER_MANAGER);
+        broadcast.putExtra("has_player", true );
         sendBroadcast(broadcast);
     }
 
