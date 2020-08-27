@@ -283,6 +283,14 @@ public class MainActivity extends AppCompatActivity
             return playerManager.getValue();
         }
 
+        public PlayerManager.MusicManager getMusicManager() {
+            return playerManager.getValue().getMusicManager();
+        }
+
+        public PlayerManager.VideoManager getVideoManager() {
+            return playerManager.getValue().getVideoManager();
+        }
+
         public PlayerManager getLivePlayerManager() {
             return playerManager.getValue();
         }

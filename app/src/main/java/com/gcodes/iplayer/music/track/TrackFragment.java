@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 

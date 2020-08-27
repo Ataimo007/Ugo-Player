@@ -14,10 +14,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
@@ -34,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -122,10 +125,11 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         Log.w("Video_Player", String.format("Video Controller state handling result" ) );
+        PlayerManager.VideoManager videoManager = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
         super.onActivityResult(requestCode, resultCode, data);
-        if ( requestCode == VideoPlayer.REQUEST_PLAYER )
+        if (requestCode == PlayerManager.REQUEST_VIDEO_PLAYER)
         {
-            VideoPlayer.getInstance().tryRenderVideoPlayer( resultCode );
+            videoManager.tryRenderVideoPlayer( resultCode );
         }
     }
 
