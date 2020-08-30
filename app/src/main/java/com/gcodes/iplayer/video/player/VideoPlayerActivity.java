@@ -52,7 +52,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private final Handler videoHandler = new Handler();
     private PopupWindow brightnessPopup;
     private PopupWindow volumePopup;
-    private VideoPlayer player;
+    private PlayerManager.VideoManager player;
     private OpenSubtitleService openSubtitleService;
     private ArrayList<Supplier<Boolean>> touchables;
 //    private DefaultDataSourceFactory factory;
@@ -79,8 +79,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
         else
         {
             player.saveState();
-            Log.w("Video_Player", String.format("Video Controller state setting back result" ) );
-            setResult( VideoPlayer.RESULT_PLAYING );
+//            Log.w("Video_Player", String.format("Video Controller state setting back result" ) );
+//            setResult( VideoPlayer.RESULT_PLAYING );
         }
     }
 

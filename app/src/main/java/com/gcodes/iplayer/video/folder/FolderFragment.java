@@ -157,16 +157,16 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
         homePageTitle();
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        Log.w("Video_Player", String.format("Video Controller state handling result" ) );
-        PlayerManager.VideoManager videoManager = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PlayerManager.REQUEST_VIDEO_PLAYER)
-        {
-            videoManager.tryRenderVideoPlayer( resultCode );
-        }
-    }
+//    @Override
+//    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+//        Log.w("Video_Player", String.format("Video Controller state handling result" ) );
+//        PlayerManager.VideoManager videoManager = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
+//        super.onActivityResult(requestCode, resultCode, data);
+//        if (requestCode == PlayerManager.REQUEST_VIDEO_PLAYER)
+//        {
+//            videoManager.tryRenderVideoPlayer( resultCode );
+//        }
+//    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,

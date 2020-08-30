@@ -804,6 +804,11 @@ public class PlayerManager
 
         private ConcatenatingMediaSource mediaSource;
         private Video currentVideos[];
+
+        public Series getCurrentSeries() {
+            return currentSeries;
+        }
+
         private Series currentSeries;
 
         public VideoSourceType getCurrentType() {
@@ -878,11 +883,11 @@ public class PlayerManager
 
         public void renderVideoPlayer()
         {
-            renderVideoPlayer();
+            PlayerManager.this.renderVideoPlayer();
         }
 
         public void tryRenderVideoPlayer() {
-            tryRenderVideoPlayer();
+            PlayerManager.this.tryRenderVideoPlayer();
         }
 
         public void tryRenderVideoPlayer( int result ) {
@@ -890,7 +895,7 @@ public class PlayerManager
         }
 
         public void tryHideVideoPlayer() {
-            tryHideVideoPlayer();
+            PlayerManager.this.tryHideVideoPlayer();
         }
 
         public ProgressiveMediaSource getMediaSource(String url )
@@ -987,9 +992,13 @@ public class PlayerManager
             beginAt = currentIndex;
         }
 
-        public void showSeriesFragment() {
-            SeriesPlayerFragment.navigate( currentSeries );
-        }
+//        public void showSeriesFragment() {
+//            SeriesPlayerFragment.navigate( currentSeries );
+//
+//            Bundle bundle = new Bundle();
+//            bundle.putString( "series", aSeries.toGson() );
+//            navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment, bundle );
+//        }
 
         public void playNow()
         {
@@ -1001,27 +1010,27 @@ public class PlayerManager
 
         public boolean isPlaying()
         {
-            return isPlaying();
+            return PlayerManager.this.isPlaying();
         }
 
         public boolean isInPlayingState()
         {
-            return isInPlayingState();
+            return PlayerManager.this.isInPlayingState();
         }
 
         public void play()
         {
-            play();
+            PlayerManager.this.play();
         }
 
         public void pause()
         {
-            pause();
+            PlayerManager.this.pause();
         }
 
         public void stop()
         {
-            stop();
+            PlayerManager.this.stop();
             clearState();
             clearSource();
         }
@@ -1038,7 +1047,7 @@ public class PlayerManager
 
         public int getCurrentIndex()
         {
-            return getCurrentIndex();
+            return PlayerManager.this.getCurrentIndex();
         }
 
         public int findIndex(Video video )

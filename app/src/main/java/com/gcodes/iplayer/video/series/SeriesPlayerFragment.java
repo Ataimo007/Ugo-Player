@@ -18,12 +18,14 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavBackStackEntry;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CustomVideoGesture;
 import com.gcodes.iplayer.helpers.GlideApp;
@@ -34,6 +36,7 @@ import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.player.VideoPlayer;
+import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -47,7 +50,7 @@ public class SeriesPlayerFragment extends Fragment
     private static NavController navController;
     private Series series;
     private CustomAdapter adapter;
-    private VideoPlayer player;
+    private PlayerManager.VideoManager player;
     private PlayerManager playerManager;
 
 //    private boolean playing = false;
@@ -84,7 +87,9 @@ public class SeriesPlayerFragment extends Fragment
     private void initPlayer(View view) {
         control = view.findViewById(R.id.video_control_view);
 //        control.setControllerShowTimeoutMs( -1 );
-        player = VideoPlayer.getInstance();
+//        player = VideoPlayer.getInstance();
+        player = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
+
         playerManager = player.getPlayerManager();
         playerManager.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
         playerManager.setView( control );
@@ -105,7 +110,7 @@ public class SeriesPlayerFragment extends Fragment
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if ( requestCode == VideoPlayer.REQUEST_PLAYER )
+        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER )
         {
             playerManager.setView( control );
             control.showController();
@@ -216,7 +221,9 @@ public class SeriesPlayerFragment extends Fragment
     }
 
     private void showVideoPlayer() {
-        VideoPlayer.play(this);
+        Intent intent = new Intent( getContext(), VideoPlayerActivity.class );
+        intent.putExtra( "data_type", "controller" );
+        startActivity( intent );
     }
 
     private void initList(View view)
@@ -228,38 +235,38 @@ public class SeriesPlayerFragment extends Fragment
         listView.addItemDecoration(new UIConstance.AppItemDecorator( 1, 20 ));
     }
 
-    public static void navigate(Series aSeries)
-    {
-        if ( navController != null )
-            navigate( aSeries, navController );
-    }
+//    public static void navigate(Series aSeries)
+//    {
+//        if ( navController != null )
+//            navigate( aSeries, navController );
+//    }
+//
+//    public static void navigate(Series aSeries, Fragment fragment )
+//    {
+//        navController = NavHostFragment.findNavController( fragment );
+//        navigate( aSeries, navController );
+//    }
 
-    public static void navigate(Series aSeries, Fragment fragment )
-    {
-        navController = NavHostFragment.findNavController( fragment );
-        navigate( aSeries, navController );
-    }
-
-    public static void navigate(Series aSeries, NavController navController)
-    {
-        Bundle bundle = new Bundle();
-        bundle.putString( "series", aSeries.toGson() );
-        navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment, bundle );
-
-        navController.getBackStackEntry(R.id.seriesPlayerFragment).getLifecycle().addObserver(new DefaultLifecycleObserver() {
-            @Override
-            public void onStop(@NonNull LifecycleOwner owner) {
-                try {
-                    navController.getBackStackEntry(R.id.seriesPlayerFragment);
-                } catch (IllegalArgumentException ex)
-                {
-                    VideoPlayer.getInstance().tryRenderVideoPlayer(VideoPlayer.RESULT_PLAYING);
-                }
-            }
-
-
-        });
-    }
+//    public static void navigate(Series aSeries, NavController navController)
+//    {
+//        Bundle bundle = new Bundle();
+//        bundle.putString( "series", aSeries.toGson() );
+//        navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment, bundle );
+//
+//        navController.getBackStackEntry(R.id.seriesPlayerFragment).getLifecycle().addObserver(new DefaultLifecycleObserver() {
+//            @Override
+//            public void onStop(@NonNull LifecycleOwner owner) {
+//                try {
+//                    navController.getBackStackEntry(R.id.seriesPlayerFragment);
+//                } catch (IllegalArgumentException ex)
+//                {
+//                    VideoPlayer.getInstance().tryRenderVideoPlayer(VideoPlayer.RESULT_PLAYING);
+//                }
+//            }
+//
+//
+//        });
+//    }
 
     public class CustomAdapter extends RecyclerView.Adapter< ItemHolder >
     {

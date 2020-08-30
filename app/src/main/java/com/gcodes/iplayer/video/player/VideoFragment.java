@@ -1,5 +1,6 @@
 package com.gcodes.iplayer.video.player;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -9,13 +10,20 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 
 import com.gcodes.iplayer.helpers.CustomVideoGesture;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.player.PlayerManager;
+import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.video.series.SeriesFragment;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ui.PlayerView;
 
@@ -24,7 +32,7 @@ public class VideoFragment extends Fragment {
     private View controlView;
     private Video currentVideo;
     private PlayerManager playerManager;
-    private VideoPlayer player;
+    private PlayerManager.VideoManager player;
     private boolean playing = false;
     private boolean expanded = false;
     private PlayerView control;
@@ -44,7 +52,7 @@ public class VideoFragment extends Fragment {
 
         control = controlView.findViewById(R.id.video_control_view);
 //        control.setControllerShowTimeoutMs( -1 );
-        player = VideoPlayer.getInstance();
+        player = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
         playerManager = player.getPlayerManager();
         playerManager.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
         playerManager.setView( control );
@@ -70,9 +78,9 @@ public class VideoFragment extends Fragment {
                     public void onClick() {
                         expanded = true;
                         player.saveState();
-                        if  ( player.getCurrentType() == VideoPlayer.MediaType.VIDEOS )
+                        if  ( player.getCurrentType() == PlayerManager.VideoSourceType.VIDEOS )
                             showVideoPlayer();
-                        if  ( player.getCurrentType() == VideoPlayer.MediaType.SERIES )
+                        if  ( player.getCurrentType() == PlayerManager.VideoSourceType.SERIES )
                             showSeriesFragment();
                     }
                 }
@@ -85,7 +93,11 @@ public class VideoFragment extends Fragment {
     }
 
     private void showSeriesFragment() {
-        player.showSeriesFragment();
+        NavController navController = Navigation.findNavController(requireActivity(), R.id.video_session);
+        Bundle bundle = new Bundle();
+        Series series = player.getCurrentSeries();
+        bundle.putString( "series", series.toGson() );
+        navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment, bundle );
     }
 
     @Override
@@ -117,7 +129,13 @@ public class VideoFragment extends Fragment {
     }
 
     private void showVideoPlayer() {
-        VideoPlayer.play(this);
+//        VideoPlayer.play(this);
+
+        Intent intent = new Intent( getContext(), VideoPlayerActivity.class );
+        intent.putExtra( "data_type", "controller" );
+//        activity.startActivity(intent);
+//        fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
+        startActivity( intent );
     }
 
     public void consumeVideo(Video video) {
@@ -132,5 +150,10 @@ public class VideoFragment extends Fragment {
     public static VideoFragment newInstance() {
         VideoFragment fragment = new VideoFragment();
         return fragment;
+    }
+
+    private void prepare()
+    {
+        PlayerManager.VideoManager videoManager = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
     }
 }

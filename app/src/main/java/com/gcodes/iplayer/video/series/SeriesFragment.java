@@ -38,6 +38,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
+import androidx.navigation.NavController;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -122,16 +124,16 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
         return collection.toArray( new Series[]{} );
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        Log.w("Video_Player", String.format("Video Controller state handling result" ) );
-        PlayerManager.VideoManager videoManager = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PlayerManager.REQUEST_VIDEO_PLAYER)
-        {
-            videoManager.tryRenderVideoPlayer( resultCode );
-        }
-    }
+//    @Override
+//    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+//        Log.w("Video_Player", String.format("Video Controller state handling result" ) );
+//        PlayerManager.VideoManager videoManager = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
+//        super.onActivityResult(requestCode, resultCode, data);
+//        if (requestCode == PlayerManager.REQUEST_VIDEO_PLAYER)
+//        {
+//            videoManager.tryRenderVideoPlayer( resultCode );
+//        }
+//    }
 
     private int similarityIndex(Video last, Video video)
     {
@@ -226,7 +228,11 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
 
             holder.itemView.setOnClickListener(v ->
             {
-                SeriesPlayerFragment.navigate( aSeries, SeriesFragment.this );
+//                SeriesPlayerFragment.navigate( aSeries, SeriesFragment.this );
+                NavController navController = NavHostFragment.findNavController(SeriesFragment.this);
+                Bundle bundle = new Bundle();
+                bundle.putString( "series", aSeries.toGson() );
+                navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment, bundle );
             });
         }
 

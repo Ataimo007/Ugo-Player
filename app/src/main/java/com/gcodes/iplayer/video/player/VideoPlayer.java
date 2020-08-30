@@ -251,13 +251,10 @@ public class VideoPlayer {
         fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
     }
 
-    public static void play(Fragment fragment)
-    {
-        Intent intent = new Intent( fragment.getContext(), VideoPlayerActivity.class );
-        intent.putExtra( "data_type", "controller" );
-//        activity.startActivity(intent);
-        fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
-    }
+//    public static void play(Fragment fragment)
+//    {
+//
+//    }
 
 //    public static void play(Activity activity)
 //    {
