@@ -3,6 +3,7 @@ package com.gcodes.iplayer;
 import android.Manifest;
 import android.app.Application;
 import android.app.SearchManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -17,8 +18,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.music.player.MusicPlayerService;
+import com.gcodes.iplayer.player.PlayerService;
 import com.gcodes.iplayer.player.PlayerManager;
+import com.gcodes.iplayer.video.Series;
+import com.gcodes.iplayer.video.Video;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
@@ -35,9 +38,10 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager.widget.ViewPager;
 
@@ -55,37 +59,39 @@ public class MainActivity extends AppCompatActivity
     private int currentPage;
 
     private BackAction[] backActions;
+    private MusicBroadCastReceiver musicReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d("Player_Model", "Creating a new Activity " + savedInstanceState );
         begin();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        processIntent();
     }
 
     private void processIntent() {
         Intent intent = getIntent();
-        if  (intent.hasExtra("playing") && intent.getBooleanExtra("has_player", false ))
+        processIntent(intent);
+    }
+
+    private void processIntent(Intent intent) {
+        Log.d("Player_Model", "Processing Broadcast from Player Service" );
+        if  (intent.getBooleanExtra("has_player", false ))
             obtainPlayerManager();
     }
 
     private void obtainPlayerManager() {
-        Intent intent = new Intent(this, MusicPlayerService.class);
+        Log.d("Player_Model", "Obtaining Player Manager from Player Service" );
+        Intent intent = new Intent(this, PlayerService.class);
         MusicConnection musicConnection = new MusicConnection();
         bindService(intent, musicConnection, BIND_IMPORTANT);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+//    @Override
+//    protected void onDestroy() {
+//        super.onDestroy();
 //        PlayerManager.getInstance().onDestroyActivity();
-        Log.w("Destroy_Main", "Destroying Main Activity" );
-    }
+//        Log.w("Destroy_Main", "Destroying Main Activity" );
+//    }
 
     @Override
     public void onBackPressed() {
@@ -130,15 +136,17 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void registerReceivers() {
-        MusicPlayerService.MusicBroadCastReceiver musicReceiver = new MusicPlayerService.MusicBroadCastReceiver();
+        Log.d("Player_Model", "Registering BroadCast for Player Model" );
+        musicReceiver = new MusicBroadCastReceiver();
         IntentFilter filter = new IntentFilter();
-        filter.addAction(MusicPlayerService.ON_START_PLAYER_MANAGER);
-        LocalBroadcastManager.getInstance(this).registerReceiver(musicReceiver, filter);
+        filter.addAction(PlayerService.ON_START_PLAYER_MANAGER);
+        registerReceiver(musicReceiver, filter);
+//        LocalBroadcastManager.getInstance(this).registerReceiver(musicReceiver, filter);
     }
 
     private void unRegisterReceiver() {
-        MusicPlayerService.MusicBroadCastReceiver musicReceiver = new MusicPlayerService.MusicBroadCastReceiver();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(musicReceiver);
+        unregisterReceiver(musicReceiver);
+//        LocalBroadcastManager.getInstance(this).unregisterReceiver(musicReceiver);
     }
 
     private void beginApp()
@@ -262,8 +270,9 @@ public class MainActivity extends AppCompatActivity
     {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d("Player_Model", "Connected to player manager, Initializing PlayerModel" );
             PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
-            MusicPlayerService.PlayerBinder binder = (MusicPlayerService.PlayerBinder) service;
+            PlayerService.PlayerBinder binder = (PlayerService.PlayerBinder) service;
             PlayerManager playerManager = binder.getPlayerManager();
             if (playerManager != null)
                 playerModel.setPlayerManager(playerManager);
@@ -277,47 +286,123 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    public class MusicBroadCastReceiver extends BroadcastReceiver
+    {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("Player_Model", "Broadcast for Player Model as been received " + intent );
+            processIntent(intent);
+        }
+    }
+
     public static class PlayerModel extends AndroidViewModel
     {
-        public PlayerManager getPlayerManager() {
-            return playerManager.getValue();
+        public synchronized PlayerManager getPlayerManager() {
+            return getLivePlayerManager().getValue();
         }
 
-        public PlayerManager.MusicManager getMusicManager() {
-            return playerManager.getValue().getMusicManager();
+        public synchronized PlayerManager.MusicManager getMusicManager() {
+            return getLivePlayerManager().getValue().getMusicManager();
         }
 
-        public PlayerManager.VideoManager getVideoManager() {
-            return playerManager.getValue().getVideoManager();
+        public synchronized PlayerManager.VideoManager getVideoManager() {
+            return getLivePlayerManager().getValue().getVideoManager();
         }
 
-        public PlayerManager getLivePlayerManager() {
-            return playerManager.getValue();
+        public synchronized MutableLiveData<PlayerManager> getLivePlayerManager() {
+            if (playerManager == null)
+                playerManager = new MutableLiveData<>();
+            return playerManager;
         }
 
-        public void setPlayerManager(PlayerManager playerManager) {
+        public synchronized void setPlayerManager(PlayerManager playerManager) {
             this.playerManager.setValue(playerManager);
         }
 
-        public MutableLiveData<PlayerManager> playerManager;
+        public synchronized PlayerManager.VideoManager getOrListenForVideoManager(LifecycleOwner owner, @NonNull Observer<PlayerManager> observer) {
+            PlayerManager.VideoManager videoManager = getLivePlayerManager().getValue().getVideoManager();
+            if (videoManager != null)
+                return videoManager;
+            getLivePlayerManager().observe(owner, observer);
+            return null;
+        }
 
-        private PlayerModel(@NonNull Application application) {
+        private MutableLiveData<PlayerManager> playerManager;
+
+        public PlayerModel(@NonNull Application application) {
             super(application);
-            playerManager = new MutableLiveData<>();
         }
 
         public void play(ArrayList<Music> musics)
         {
-            PlayerManager manager = playerManager.getValue();
-            if (manager == null)
+            PlayerManager manager = getPlayerManager();
+            Log.d("Player_Model", "The current manager " + manager );
+            if (manager != null){
                 manager.getMusicManager().playAll(musics);
+                Log.d("Player_Model", "The manager " + manager );
+            }
             else
             {
+                Log.d("Player_Model", "Manager don't exists" );
                 String[] gMusics = Music.toGson(musics);
-                Intent intent = new Intent(getApplication().getBaseContext(), MusicPlayerService.class);
+                Intent intent = new Intent(getApplication().getBaseContext(), PlayerService.class);
                 intent.putExtra("music", gMusics );
                 intent.putExtra("broadcast", true );
                 getApplication().getBaseContext().startService(intent);
+            }
+        }
+
+        public void initSource(Video...videos) {
+            PlayerManager manager = getPlayerManager();
+            if (manager != null)
+                manager.getVideoManager().initVideoSources(videos);
+            else
+            {
+                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+                String[] gsonVideos = Video.toGson(videos);
+                intent.putExtra( "video", gsonVideos );
+                intent.putExtra( "media_type", "video" );
+                getApplication().getBaseContext().startService( intent );
+            }
+        }
+
+        public void initSource(Video[] videos, int begin) {
+            PlayerManager manager = getPlayerManager();
+            if (manager != null)
+                manager.getVideoManager().initVideoSources(videos);
+            else
+            {
+                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+                String[] gsonVideos = Video.toGson(videos);
+                intent.putExtra( "video", gsonVideos );
+                intent.putExtra( "begin", begin );
+                getApplication().getBaseContext().startService( intent );
+            }
+        }
+
+        public void initSource(Series aSeries) {
+            PlayerManager manager = getPlayerManager();
+            if (manager != null)
+                manager.getVideoManager().initVideoSources(aSeries);
+            else
+            {
+                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+                String series = aSeries.toGson();
+                intent.putExtra( "series", series );
+                getApplication().getBaseContext().startService( intent );
+            }
+        }
+
+        public void initSource(String url)
+        {
+            PlayerManager manager = getPlayerManager();
+            if (manager != null)
+                manager.getVideoManager().initOnlineSources(url);
+            else
+            {
+                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+                intent.putExtra( "url", url );
+                getApplication().getBaseContext().startService( intent );
             }
         }
 

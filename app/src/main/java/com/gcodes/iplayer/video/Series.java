@@ -2,6 +2,8 @@ package com.gcodes.iplayer.video;
 
 import android.util.Log;
 
+import com.google.common.base.Objects;
+
 import org.joda.time.Period;
 import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
@@ -28,6 +30,21 @@ public final class Series implements Comparable< Series >
         String name = similarity > 0 ? videos[ 0 ].getName().substring( 0, similarity ) : videos[ 0 ].getName();
 //            String name = videos[ 0 ].getName().substring( 0, similarity );
         return new Series( name, videos );
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Series)) return false;
+        Series series = (Series) o;
+        return duration == series.duration &&
+                Objects.equal(name, series.name) &&
+                Objects.equal(videos, series.videos);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(name, videos, duration);
     }
 
     public String getDuration()

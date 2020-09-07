@@ -15,8 +15,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavBackStackEntry;
@@ -35,7 +33,6 @@ import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
-import com.gcodes.iplayer.video.player.VideoPlayer;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ui.PlayerView;
@@ -56,6 +53,7 @@ public class SeriesPlayerFragment extends Fragment
 //    private boolean playing = false;
     private PlayerView control;
     private FloatingActionButton controlButton;
+    private View view;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -66,17 +64,30 @@ public class SeriesPlayerFragment extends Fragment
 
     public void load()
     {
-        series = Series.fromGson( getArguments().getString("series") );
+//        series = Series.fromGson( getArguments().getString("series") );
+        series = player.getCurrentSeries();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.series_player, container, false);
+        view = inflater.inflate(R.layout.series_player, container, false);
         initView( view );
+
+        PlayerManager.VideoManager videoManager = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getOrListenForVideoManager(this, manager -> {
+            if (manager != null)
+                onAttachPlayer(manager.getVideoManager());
+        });
+        if (videoManager != null)
+            onAttachPlayer(videoManager);
+        return view;
+    }
+
+    private void onAttachPlayer(PlayerManager.VideoManager videoManager) {
+        player = videoManager;
+        load();
         initList( view );
         initPlayer( view );
-        return view;
     }
 
     private void initView(View view) {
@@ -99,12 +110,11 @@ public class SeriesPlayerFragment extends Fragment
 
         if ( !player.isPlaying() )
         {
-            initSource();
+//            initSource();
             player.playNow();
         }
 
         initControlButton(view);
-        player.tryHideVideoPlayer();
     }
 
     @Override
@@ -161,9 +171,9 @@ public class SeriesPlayerFragment extends Fragment
             controlButton.setImageResource(R.drawable.u_play);
     }
 
-    private void initSource() {
-        player.initVideoSources( series, control );
-    }
+//    private void initSource() {
+//        player.initVideoSources( series );
+//    }
 
 //    @Override
 //    public void onResume() {
@@ -222,7 +232,7 @@ public class SeriesPlayerFragment extends Fragment
 
     private void showVideoPlayer() {
         Intent intent = new Intent( getContext(), VideoPlayerActivity.class );
-        intent.putExtra( "data_type", "controller" );
+//        intent.putExtra( "data_type", "controller" );
         startActivity( intent );
     }
 

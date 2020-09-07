@@ -1,11 +1,9 @@
-package com.gcodes.iplayer.music.player;
+package com.gcodes.iplayer.player;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Binder;
@@ -13,8 +11,10 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.player.PlayerManager;
+import com.gcodes.iplayer.music.player.MusicPlayerActivity;
 import com.gcodes.iplayer.R;
+import com.gcodes.iplayer.video.Series;
+import com.gcodes.iplayer.video.Video;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.PlayerNotificationManager;
 
@@ -22,7 +22,7 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 
-public class MusicPlayerService extends Service {
+public class PlayerService extends Service {
     private PlayerNotificationManager notificationManager;
     private String CHANNEL_ID;
     private int NOTIFICATION_ID;
@@ -67,14 +67,51 @@ public class MusicPlayerService extends Service {
     private void processRequest(Intent intent) {
         if (intent.hasExtra("music"))
             processMusic(intent);
+        else if (intent.hasExtra("video"))
+            processVideo(intent);
+        else if (intent.hasExtra("series"))
+            processSeries(intent);
+        else if (intent.hasExtra("url"))
+            processUrl(intent);
+
         if (intent.hasExtra("broadcast") && intent.getBooleanExtra("broadcast", false ))
+        {
+            Log.d("Player_Model", "BroadCast Sent for Player Model" );
             broadcast();
+        }
+    }
+
+    private void processUrl(Intent intent) {
+        String url = intent.getStringExtra("url");
+        PlayerManager.VideoManager videoManager = manager.getVideoManager();
+        videoManager.initOnlineSources(url);
+    }
+
+    private void processVideo(Intent intent) {
+        String[] gsonVideos = intent.getStringArrayExtra("video");
+        Video[] videos = Video.fromGson(gsonVideos);
+        PlayerManager.VideoManager videoManager = manager.getVideoManager();
+        if  ( intent.hasExtra("begin") )
+        {
+            int begin = intent.getIntExtra("begin", -1);
+            videoManager.initVideoSources(videos, begin);
+        }
+        else
+            videoManager.initVideoSources(videos);
+    }
+
+    private void processSeries(Intent intent) {
+        String gsonSeries = intent.getStringExtra("series");
+        Series series = Series.fromGson(gsonSeries);
+        PlayerManager.VideoManager videoManager = manager.getVideoManager();
+        videoManager.initVideoSources(series);
     }
 
     private void processMusic(Intent intent) {
         String[] musics = intent.getStringArrayExtra("music");
         ArrayList<Music> music = Music.fromGson(musics);
         PlayerManager.MusicManager musicManager = manager.getMusicManager();
+        Log.d("Player_Manager", "playing " + music);
         musicManager.playAll(music);
     }
 
@@ -107,8 +144,8 @@ public class MusicPlayerService extends Service {
                     @Nullable
                     @Override
                     public PendingIntent createCurrentContentIntent(Player player) {
-                        Intent intent = new Intent( MusicPlayerService.this, MusicPlayerActivity.class );
-                        return PendingIntent.getActivities( MusicPlayerService.this, 0, new Intent[]{intent},
+                        Intent intent = new Intent( PlayerService.this, MusicPlayerActivity.class );
+                        return PendingIntent.getActivities( PlayerService.this, 0, new Intent[]{intent},
                                 PendingIntent.FLAG_UPDATE_CURRENT);
                     }
 
@@ -122,7 +159,7 @@ public class MusicPlayerService extends Service {
                     @Override
                     public Bitmap getCurrentLargeIcon(Player player, PlayerNotificationManager.BitmapCallback callback) {
                         return manager.getMusicManager().getMusic( player.getCurrentWindowIndex() ).
-                                getArtBitmap( MusicPlayerService.this );
+                                getArtBitmap( PlayerService.this );
 //                        return null;
                     }
                 });
@@ -150,17 +187,14 @@ public class MusicPlayerService extends Service {
             return manager.getMusicManager();
         }
 
+        public PlayerManager.VideoManager getVideoManager()
+        {
+            return manager.getVideoManager();
+        }
+
         public PlayerManager getPlayerManager()
         {
             return manager;
-        }
-    }
-
-    public static class MusicBroadCastReceiver extends BroadcastReceiver
-    {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
         }
     }
 }

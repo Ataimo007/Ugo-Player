@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,15 +18,13 @@ import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.VideoFragment;
-import com.gcodes.iplayer.video.player.VideoPlayer;
+import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 
 import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
@@ -136,7 +133,9 @@ public class AllFragment extends Fragment implements VideoFragment.SectionsPager
             final Video video = Video.getIntance(cursor);
 
             holder.itemView.setOnClickListener(v -> {
-                VideoPlayer.play( AllFragment.this, video );
+                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource(video);
+                Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
+                startActivity(intent);
             });
         }
 

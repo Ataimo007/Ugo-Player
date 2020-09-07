@@ -11,13 +11,10 @@ import android.widget.Toast;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.music.player.MusicController;
 import com.gcodes.iplayer.services.ACRService;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
-import com.gcodes.iplayer.video.player.VideoFragment;
-import com.gcodes.iplayer.video.player.VideoPlayer;
-import com.gcodes.iplayer.video.series.SeriesPlayerFragment;
+import com.gcodes.iplayer.video.player.VideoController;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerFactory;
@@ -69,7 +66,7 @@ public class PlayerManager
     private final VideoManager videoManager;
     private SimpleExoPlayer player;
     private DefaultDataSourceFactory factory;
-//    private FragmentActivity context;
+    private Context context;
 
     private MediaSource mediaSource;
 //    private Intent service;
@@ -79,10 +76,11 @@ public class PlayerManager
     private DatabaseProvider databaseProvider;
     private static final String DOWNLOAD_CONTENT_DIRECTORY = "downloads";
 
-    private MusicController musicController;
-    private VideoFragment fragmentVideo;
-    private static final String MUSIC_FRAGMENT_TAG = "music_controller_view";
-    private static final String VIDEO_FRAGMENT_TAG = "video_controller_view";
+//    private MusicController musicController;
+//    private VideoController fragmentVideo;
+//    private static final String MUSIC_FRAGMENT_TAG = "music_controller_view";
+//    private static final String VIDEO_FRAGMENT_TAG = "video_controller_view";
+
     private MediaType playing;
     ArrayList< Player.EventListener > listeners = new ArrayList<>();
 
@@ -106,7 +104,7 @@ public class PlayerManager
         userAgent = Util.getUserAgent(context, context.getResources().getString(R.string.app_name));
         factory = new DefaultDataSourceFactory( context, userAgent);
         player = ExoPlayerFactory.newSimpleInstance( context, new DefaultTrackSelector() );
-//        this.context = context;
+        this.context = context;
 
         PlayerDatabase.initialize( context );
         ACRService.initialize(context);
@@ -115,49 +113,8 @@ public class PlayerManager
         videoManager = new VideoManager();
     }
 
-    private void consumeVideoState(boolean playWhenReady, int playbackState) {
-        boolean isPlaying = playWhenReady && playbackState == Player.STATE_READY;
-        NavController navController = Navigation.findNavController(getActivity(), R.id.video_host);
-        try {
-            NavBackStackEntry backStackEntry = navController.getBackStackEntry(R.id.videoFragment);
-            backStackEntry.getSavedStateHandle().set( "is_playing", isPlaying );
-        } catch (IllegalArgumentException ignored){}
-    }
-
-    private boolean isMusicPlayer()
-    {
-        return MusicPlayer.getInstance().isMusicPlaying();
-    }
-
-    private void consumeMedia()
-    {
-        switch ( playing )
-        {
-            case MUSIC:
-//                if  ( isMusicPlayer() )
-                consumeTrack();
-                break;
-
-            case VIDEO:
-                consumeVideo();
-                break;
-
-            default:
-        }
-    }
-
-    private void consumeTrack()
-    {
-        int index = player.getCurrentPeriodIndex();
-        Music music = MusicPlayer.getInstance().getMusic(index);
-        if  ( musicController != null )
-        {
-            musicController.consumeTrack( music );
-            if ( player.getPlayWhenReady() && player.getPlaybackState() == Player.STATE_READY )
-                musicController.startAnimation();
-            else
-                musicController.pauseAnimation();
-        }
+    public String getUserAgent() {
+        return userAgent;
     }
 
     public boolean isMusicPlaying()
@@ -165,96 +122,147 @@ public class PlayerManager
         return playing == MediaType.MUSIC;
     }
 
-    private void consumeVideo()
+    public boolean isVideoPlaying()
     {
-        VideoPlayer videoPlayer = VideoPlayer.getInstance();
-        if (videoPlayer.getCurrentType().equals(VideoSourceType.URL))
-            return;
-
-        int index = player.getCurrentPeriodIndex();
-        Video video = videoPlayer.getVideo(index);
-        if ( fragmentVideo != null && fragmentVideo.isAdded() )
-        {
-            fragmentVideo.consumeVideo( video );
-        }
-//        SeriesPlayerFragment.tryUpdateControllerButton( isPlaying() );
+        return playing == MediaType.MUSIC;
     }
 
-    public void getState()
-    {
-        player.getCurrentPeriodIndex();
-    }
 
-    private void renderMusicPlayer()
-    {
-        FragmentManager manager = context.getSupportFragmentManager();
-        Fragment fragment = manager.findFragmentByTag(MUSIC_FRAGMENT_TAG);
-        if ( fragment != null )
-        {
-//            Log.d( "Music_Controller", "Fragment Exists" );
-            musicController = (MusicController) fragment;
-            consumeTrack();
-        }
-        else
-        {
-//            Log.d( "Music_Controller", "A new Fragment" );
-            FragmentTransaction transaction = manager.beginTransaction();
-            musicController = MusicController.newInstance();
-            View musicControl = context.findViewById(R.id.player_control);
-            musicControl.setVisibility( View.VISIBLE );
-            transaction.replace( R.id.player_control, musicController, MUSIC_FRAGMENT_TAG );
-            transaction.runOnCommit(this::consumeTrack);
-            transaction.commit();
-        }
+//    private void consumeVideoState(boolean playWhenReady, int playbackState) {
+//        boolean isPlaying = playWhenReady && playbackState == Player.STATE_READY;
+//        NavController navController = Navigation.findNavController(getActivity(), R.id.video_host);
+//        try {
+//            NavBackStackEntry backStackEntry = navController.getBackStackEntry(R.id.videoFragment);
+//            backStackEntry.getSavedStateHandle().set( "is_playing", isPlaying );
+//        } catch (IllegalArgumentException ignored){}
+//    }
 
-//        consumeTrack();
-    }
+//    private boolean isMusicPlayer()
+//    {
+//        return MusicPlayer.getInstance().isMusicPlaying();
+//    }
+//
+//    private void consumeMedia()
+//    {
+//        switch ( playing )
+//        {
+//            case MUSIC:
+////                if  ( isMusicPlayer() )
+//                consumeTrack();
+//                break;
+//
+//            case VIDEO:
+//                consumeVideo();
+//                break;
+//
+//            default:
+//        }
+//    }
 
-    public void tryRenderVideoPlayer() {
-        Log.w("Video_Player", String.format("Video Controller state %b ready %b", Player.STATE_READY, player.getPlayWhenReady() ) );
-        Log.w("Video_Player", String.format("Video Controller state %s ready %s", playing, player.getPlaybackState() ) );
-        if ( playing == MediaType.VIDEO && player.getPlaybackState() == Player.STATE_READY )
-        {
-            Log.w("Video_Player", "Showing Video Controller");
-            renderVideoPlayer();
-        }
-    }
+//    private void consumeTrack()
+//    {
+//        int index = player.getCurrentPeriodIndex();
+//        Music music = MusicPlayer.getInstance().getMusic(index);
+//        if  ( musicController != null )
+//        {
+//            musicController.consumeTrack( music );
+//            if ( player.getPlayWhenReady() && player.getPlaybackState() == Player.STATE_READY )
+//                musicController.startAnimation();
+//            else
+//                musicController.pauseAnimation();
+//        }
+//    }
 
-    public void tryHideVideoPlayer()
-    {
-        FragmentManager manager = context.getSupportFragmentManager();
-        Fragment fragment = manager.findFragmentByTag(VIDEO_FRAGMENT_TAG);
-        if ( fragment != null )
-        {
-            FragmentTransaction transaction = manager.beginTransaction();
-            View musicControl = context.findViewById(R.id.player_control);
-            musicControl.setVisibility( View.GONE );
-            transaction.remove( fragment );
-            transaction.commit();
-        }
-    }
+//    private void consumeVideo()
+//    {
+//        VideoPlayer videoPlayer = VideoPlayer.getInstance();
+//        if (videoPlayer.getCurrentType().equals(VideoSourceType.URL))
+//            return;
+//
+//        int index = player.getCurrentPeriodIndex();
+//        Video video = videoPlayer.getVideo(index);
+//        if ( fragmentVideo != null && fragmentVideo.isAdded() )
+//        {
+//            fragmentVideo.consumeVideo( video );
+//        }
+////        SeriesPlayerFragment.tryUpdateControllerButton( isPlaying() );
+//    }
 
-    public void renderVideoPlayer()
-    {
-        FragmentManager manager = context.getSupportFragmentManager();
-        Fragment fragment = manager.findFragmentByTag(VIDEO_FRAGMENT_TAG);
+//    public void getState()
+//    {
+//        player.getCurrentPeriodIndex();
+//    }
 
-        if ( fragment != null )
-        {
-            fragmentVideo = (VideoFragment) fragment;
-            consumeVideo();
-        }
-        else
-        {
-            FragmentTransaction transaction = manager.beginTransaction();
-            fragmentVideo = VideoFragment.newInstance();
-            View musicControl = context.findViewById(R.id.player_control);
-            musicControl.setVisibility( View.VISIBLE );
-            transaction.replace( R.id.player_control, fragmentVideo, VIDEO_FRAGMENT_TAG );
-            transaction.runOnCommit(this::consumeVideo);
-            transaction.commit();
-        }
-    }
+//    private void renderMusicPlayer()
+//    {
+//        FragmentManager manager = context.getSupportFragmentManager();
+//        Fragment fragment = manager.findFragmentByTag(MUSIC_FRAGMENT_TAG);
+//        if ( fragment != null )
+//        {
+////            Log.d( "Music_Controller", "Fragment Exists" );
+//            musicController = (MusicController) fragment;
+//            consumeTrack();
+//        }
+//        else
+//        {
+////            Log.d( "Music_Controller", "A new Fragment" );
+//            FragmentTransaction transaction = manager.beginTransaction();
+//            musicController = MusicController.newInstance();
+//            View musicControl = context.findViewById(R.id.player_control);
+//            musicControl.setVisibility( View.VISIBLE );
+//            transaction.replace( R.id.player_control, musicController, MUSIC_FRAGMENT_TAG );
+//            transaction.runOnCommit(this::consumeTrack);
+//            transaction.commit();
+//        }
+//
+////        consumeTrack();
+//    }
+
+//    public void tryRenderVideoPlayer() {
+//        Log.w("Video_Player", String.format("Video Controller state %b ready %b", Player.STATE_READY, player.getPlayWhenReady() ) );
+//        Log.w("Video_Player", String.format("Video Controller state %s ready %s", playing, player.getPlaybackState() ) );
+//        if ( playing == MediaType.VIDEO && player.getPlaybackState() == Player.STATE_READY )
+//        {
+//            Log.w("Video_Player", "Showing Video Controller");
+//            renderVideoPlayer();
+//        }
+//    }
+
+//    public void tryHideVideoPlayer()
+//    {
+//        FragmentManager manager = context.getSupportFragmentManager();
+//        Fragment fragment = manager.findFragmentByTag(VIDEO_FRAGMENT_TAG);
+//        if ( fragment != null )
+//        {
+//            FragmentTransaction transaction = manager.beginTransaction();
+//            View musicControl = context.findViewById(R.id.player_control);
+//            musicControl.setVisibility( View.GONE );
+//            transaction.remove( fragment );
+//            transaction.commit();
+//        }
+//    }
+//
+//    public void renderVideoPlayer()
+//    {
+//        FragmentManager manager = context.getSupportFragmentManager();
+//        Fragment fragment = manager.findFragmentByTag(VIDEO_FRAGMENT_TAG);
+//
+//        if ( fragment != null )
+//        {
+//            fragmentVideo = (VideoController) fragment;
+//            consumeVideo();
+//        }
+//        else
+//        {
+//            FragmentTransaction transaction = manager.beginTransaction();
+//            fragmentVideo = VideoController.newInstance();
+//            View musicControl = context.findViewById(R.id.player_control);
+//            musicControl.setVisibility( View.VISIBLE );
+//            transaction.replace( R.id.player_control, fragmentVideo, VIDEO_FRAGMENT_TAG );
+//            transaction.runOnCommit(this::consumeVideo);
+//            transaction.commit();
+//        }
+//    }
 
 //    private boolean readyToRender()
 //    {
@@ -263,26 +271,22 @@ public class PlayerManager
 //        return host != null && fragmentMusic == null;
 //    }
 
-    private boolean isRendered()
-    {
-        return musicController != null;
-    }
+//    private boolean isRendered()
+//    {
+//        return musicController != null;
+//    }
 
 //    private synchronized boolean readyToChangeTrack()
 //    {
 //        return host != null && fragmentMusic != null;
 //    }
 
-    public void onDestroyActivity()
-    {
-        context = null;
-        musicController = null;
-        destroy();
-    }
-
-    public String getUserAgent() {
-        return userAgent;
-    }
+//    public void onDestroyActivity()
+//    {
+//        context = null;
+//        musicController = null;
+//        destroy();
+//    }
 
 //    public static PlayerManager getInstance()
 //    {
@@ -298,15 +302,15 @@ public class PlayerManager
 //        }
 //    }
 
-    public Handler getHandler()
-    {
-        return new Handler( context.getMainLooper() );
-    }
+//    public Handler getHandler()
+//    {
+//        return new Handler( context.getMainLooper() );
+//    }
 
-    public void destroy()
-    {
-        player.release();
-        player = null;
+//    public void destroy()
+//    {
+//        player.release();
+//        player = null;
 //        SimpleExoPlayer player = getInstance().getPlayer();
 //        if ( player != null )
 //        {
@@ -314,8 +318,8 @@ public class PlayerManager
 //                player.removeListener(listener);
 //            }
 //        }
-        listeners = null;
-    }
+//        listeners = null;
+//    }
 
 //    public static PlayerManager getInstance(AppCompatActivity context )
 //    {
@@ -432,9 +436,9 @@ public class PlayerManager
         return context;
     }
 
-    public FragmentActivity getActivity() {
-        return context;
-    }
+//    public FragmentActivity getActivity() {
+//        return context;
+//    }
 
     public void shuffle()
     {
@@ -817,7 +821,7 @@ public class PlayerManager
 
         private VideoSourceType currentType;
 
-        private int beginAt;
+        private int beginAt = -1;
 
 //        private static com.gcodes.iplayer.video.player.VideoPlayer player;
         private long currentPosition;
@@ -881,22 +885,22 @@ public class PlayerManager
             mediaSource = source;
         }
 
-        public void renderVideoPlayer()
-        {
-            PlayerManager.this.renderVideoPlayer();
-        }
-
-        public void tryRenderVideoPlayer() {
-            PlayerManager.this.tryRenderVideoPlayer();
-        }
-
-        public void tryRenderVideoPlayer( int result ) {
-            tryRenderVideoPlayer();
-        }
-
-        public void tryHideVideoPlayer() {
-            PlayerManager.this.tryHideVideoPlayer();
-        }
+//        public void renderVideoPlayer()
+//        {
+//            PlayerManager.this.renderVideoPlayer();
+//        }
+//
+//        public void tryRenderVideoPlayer() {
+//            PlayerManager.this.tryRenderVideoPlayer();
+//        }
+//
+//        public void tryRenderVideoPlayer( int result ) {
+//            tryRenderVideoPlayer();
+//        }
+//
+//        public void tryHideVideoPlayer() {
+//            PlayerManager.this.tryHideVideoPlayer();
+//        }
 
         public ProgressiveMediaSource getMediaSource(String url )
         {
@@ -941,16 +945,11 @@ public class PlayerManager
             seekTo( currentIndex, currentPosition );
         }
 
-        public void initVideoSources(String[] vids, int start, PlayerView player)
+        public void initVideoSources(Video[] videos, int start)
         {
-            MediaSource sources[] = new MediaSource[ vids.length ];
-            Video videos[] = new Video[vids.length];
-            for ( int i = 0; i < vids.length; ++i )
-            {
-                Video video = Video.fromGson(vids[i]);
-                videos[ i ] = video;
-                sources[ i ] = getSource(video, player);
-            }
+            MediaSource sources[] = new MediaSource[ videos.length ];
+            for ( int i = 0; i < videos.length; ++i )
+                sources[ i ] = getSource(videos[i]);
             this.currentVideos = videos;
             currentType = VideoSourceType.VIDEOS;
             mediaSource = new ConcatenatingMediaSource( sources );
@@ -958,12 +957,23 @@ public class PlayerManager
             beginAt = start;
         }
 
-        public void initVideoSources(Series series, PlayerView player)
+        public void initVideoSources(Video[] videos)
+        {
+            MediaSource sources[] = new MediaSource[ videos.length ];
+            for ( int i = 0; i < videos.length; ++i )
+                sources[ i ] = getSource(videos[i]);
+            this.currentVideos = videos;
+            currentType = VideoSourceType.VIDEOS;
+            mediaSource = new ConcatenatingMediaSource( sources );
+            prepare( mediaSource, PlayerManager.MediaType.VIDEO );
+        }
+
+        public void initVideoSources(Series series)
         {
             MediaSource sources[] = new MediaSource[ series.getCount() ];
             for ( int i = 0; i < series.getCount(); ++i )
             {
-                sources[ i ] = getSource(series.getVideo( i ), player);
+                sources[ i ] = getSource(series.getVideo( i ));
             }
             this.currentVideos = series.getVideos();
             this.currentSeries = series;
@@ -983,6 +993,13 @@ public class PlayerManager
             mediaSource = new ConcatenatingMediaSource( sources );
             prepare( mediaSource, PlayerManager.MediaType.VIDEO );
             beginAt = start;
+        }
+
+
+        public void initOnlineSources(String url) {
+            this.mediaSource = new ConcatenatingMediaSource( mediaSource );
+            currentType = VideoSourceType.URL;
+            prepare(this.mediaSource, PlayerManager.MediaType.VIDEO );
         }
 
 
@@ -1055,7 +1072,7 @@ public class PlayerManager
             return Arrays.binarySearch( currentVideos, video );
         }
 
-        private MediaSource getSource(Video video, PlayerView player)
+        private MediaSource getSource(Video video)
         {
             return getVideoSource(video.getId());
         }

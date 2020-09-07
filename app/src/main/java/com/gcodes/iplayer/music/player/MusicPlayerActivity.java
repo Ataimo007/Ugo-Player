@@ -19,6 +19,7 @@ import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.player.PlayerManager;
+import com.gcodes.iplayer.player.PlayerService;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
@@ -28,7 +29,6 @@ import com.google.api.services.youtube.model.Video;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
@@ -61,7 +61,7 @@ public class MusicPlayerActivity extends AppCompatActivity
     {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicPlayerService.PlayerBinder binder = (MusicPlayerService.PlayerBinder) service;
+            PlayerService.PlayerBinder binder = (PlayerService.PlayerBinder) service;
             musicManager = binder.getMusicManager();
             if (musicManager != null)
                 manageMusic();
@@ -116,7 +116,7 @@ public class MusicPlayerActivity extends AppCompatActivity
     }
 
     private void obtainMusicManager() {
-        Intent intent = new Intent(this, MusicPlayerService.class);
+        Intent intent = new Intent(this, PlayerService.class);
         MusicConnection musicConnection = new MusicConnection();
         bindService(intent, musicConnection, BIND_IMPORTANT);
     }

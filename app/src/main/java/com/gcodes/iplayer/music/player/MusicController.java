@@ -38,12 +38,6 @@ public class MusicController extends Fragment {
     private Animation rotate;
     private Music currentMusic;
 
-    // TODO: Rename and change types and number of parameters
-    public static MusicController newInstance() {
-        MusicController fragment = new MusicController();
-        return fragment;
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,11 +45,10 @@ public class MusicController extends Fragment {
     }
 
     private void init() {
-        new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).playerManager.observe(requireActivity(), manager -> {
+        new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getLivePlayerManager().observe(this, manager -> {
             if ( manager != null )
             {
                 ControlListener controlListener = new ControlListener(manager);
-                manager.addListener(controlListener);
             }
         });
         initRotateAnimation();
@@ -155,6 +148,7 @@ public class MusicController extends Fragment {
         public ControlListener(PlayerManager manager) {
             this.manager = manager;
             initView(manager);
+            this.manager.addListener(this);
         }
 
         @Override

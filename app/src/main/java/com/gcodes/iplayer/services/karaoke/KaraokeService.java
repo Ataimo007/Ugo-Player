@@ -28,8 +28,8 @@ import com.gcodes.iplayer.music.Music;
 
 import com.arthenica.mobileffmpeg.Config;
 import com.arthenica.mobileffmpeg.FFmpeg;
-import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.player.MusicPlayerActivity;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.google.common.collect.Lists;
 
 
@@ -47,6 +47,7 @@ public class KaraokeService extends Service
 
     public static final String CANCEL_KARAOKE = "CANCEL_KARAOKE";
     public static final String CREATE_KARAOKE = "CREATE_KARAOKE";
+    private PlayerManager.MusicManager manager;
 
     public static class KaraokeMaker
     {
@@ -56,6 +57,7 @@ public class KaraokeService extends Service
         private Context context;
         private KaraokeHandler handler;
         private boolean attached = false;
+        private PlayerManager.MusicManager manager;
 
 
         public static KaraokeMaker getInstance()
@@ -65,19 +67,20 @@ public class KaraokeService extends Service
             return maker;
         }
 
-        public void createKaraoke(Music music, KaraokeHandler handler, Fragment fragment)
+        public void createKaraoke(Music music, PlayerManager.MusicManager manager, KaraokeHandler handler, Fragment fragment)
         {
             Log.d("FFmpag_Service", "The Service attach state " + attached);
             if ( !attached)
-                karaoke(music, handler, fragment);
+                karaoke(music, manager, handler, fragment);
         }
 
-        private synchronized void attach(Fragment fragment, KaraokeHandler handler)
+        private synchronized void attach(Fragment fragment, KaraokeHandler handler, PlayerManager.MusicManager manager)
         {
             if ( !fragment.isDetached() )
             {
                 this.context = fragment.getContext();
                 this.handler = handler;
+                this.manager = manager;
                 attached = true;
             }
         }
@@ -86,6 +89,7 @@ public class KaraokeService extends Service
         {
             context = null;
             handler = null;
+            manager = null;
             attached = false;
         }
 
@@ -94,14 +98,14 @@ public class KaraokeService extends Service
             return attached;
         }
 
-        public void karaoke(Music music, KaraokeHandler handler, Fragment fragment)
+        public void karaoke(Music music, PlayerManager.MusicManager manager, KaraokeHandler handler, Fragment fragment)
         {
             Log.d("FFmpag_Service", String.format("Creating karaoke for %s", music));
             Context context = fragment.getContext();
             String karaokePath = getKaraokePath(music, context);
             execute(music, karaokePath, context);
             Log.d("FFmpag_Service", String.format("Attaching session for %s path %s", music, karaokePath));
-            attach(fragment, handler);
+            attach(fragment, handler, manager);
 //            return karaokePath;
         }
 
@@ -152,7 +156,7 @@ public class KaraokeService extends Service
             if (attached)
             {
                 Intent intent = new Intent(getContext(), KaraokeService.class);
-                KaraokeConnection connection = new KaraokeConnection(handler);
+                KaraokeConnection connection = new KaraokeConnection(handler, manager);
                 context.bindService(intent, connection, BIND_IMPORTANT);
             }
         }
@@ -169,11 +173,13 @@ public class KaraokeService extends Service
 
     private static class KaraokeConnection implements ServiceConnection
     {
+        private final PlayerManager.MusicManager manager;
         private KaraokeService.KaraokeBinder binder;
         private final KaraokeHandler karaokePlayerHandler;
 
-        private KaraokeConnection(KaraokeHandler karaokePlayerHandler) {
+        private KaraokeConnection(KaraokeHandler karaokePlayerHandler, PlayerManager.MusicManager manager) {
             this.karaokePlayerHandler = karaokePlayerHandler;
+            this.manager = manager;
         }
 
         @Override
@@ -181,7 +187,7 @@ public class KaraokeService extends Service
             if (service instanceof KaraokeService.KaraokeBinder)
             {
                 binder = (KaraokeService.KaraokeBinder) service;
-                binder.prepare(karaokePlayerHandler);
+                binder.prepare(karaokePlayerHandler, manager);
             }
 
         }
@@ -234,16 +240,25 @@ public class KaraokeService extends Service
     public class KaraokeBinder extends Binder {
         private KaraokeHandler playerHandler;
 
-        public void prepare(KaraokeHandler handler)
+        public void prepare(KaraokeHandler handler, PlayerManager.MusicManager manager)
         {
             playerHandler = handler;
             addKaraokeHandler(handler);
+            setManager(manager);
         }
 
         public synchronized void release()
         {
             removeKaraokeHandler(playerHandler);
         }
+    }
+
+    private void setManager(PlayerManager.MusicManager manager) {
+        this.manager = manager;
+    }
+
+    private PlayerManager.MusicManager getManager() {
+        return manager;
     }
 
     @Nullable
@@ -433,8 +448,8 @@ public class KaraokeService extends Service
     }
 
     private void processOutput(File file, Music music) {
-        MusicPlayer player = MusicPlayer.getInstance();
-        if (!player.inPlayList(music))
+        PlayerManager.MusicManager manager = getManager();
+        if (!manager.inPlayList(music))
             finishNotification();
         else
             removeNotification();

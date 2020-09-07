@@ -1,37 +1,37 @@
-package com.gcodes.iplayer.video.player;
-
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.provider.MediaStore;
-import android.util.Log;
-
-import androidx.annotation.NonNull;
-import androidx.core.util.Pair;
-import androidx.fragment.app.Fragment;
-
-import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.player.PlayerManager;
-import com.gcodes.iplayer.video.Series;
-import com.gcodes.iplayer.video.Video;
-import com.gcodes.iplayer.video.series.SeriesPlayerFragment;
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.Format;
-import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.MergingMediaSource;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.source.SingleSampleMediaSource;
-import com.google.android.exoplayer2.ui.PlayerView;
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
-import com.google.android.exoplayer2.util.MimeTypes;
-import com.google.android.exoplayer2.util.Util;
-
-import java.io.File;
-import java.util.Arrays;
-
-public class VideoPlayer {
+//package com.gcodes.iplayer.video.player;
+//
+//import android.app.Activity;
+//import android.content.Context;
+//import android.content.Intent;
+//import android.net.Uri;
+//import android.provider.MediaStore;
+//import android.util.Log;
+//
+//import androidx.annotation.NonNull;
+//import androidx.core.util.Pair;
+//import androidx.fragment.app.Fragment;
+//
+//import com.gcodes.iplayer.R;
+//import com.gcodes.iplayer.player.PlayerManager;
+//import com.gcodes.iplayer.video.Series;
+//import com.gcodes.iplayer.video.Video;
+//import com.gcodes.iplayer.video.series.SeriesPlayerFragment;
+//import com.google.android.exoplayer2.C;
+//import com.google.android.exoplayer2.Format;
+//import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
+//import com.google.android.exoplayer2.source.MediaSource;
+//import com.google.android.exoplayer2.source.MergingMediaSource;
+//import com.google.android.exoplayer2.source.ProgressiveMediaSource;
+//import com.google.android.exoplayer2.source.SingleSampleMediaSource;
+//import com.google.android.exoplayer2.ui.PlayerView;
+//import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+//import com.google.android.exoplayer2.util.MimeTypes;
+//import com.google.android.exoplayer2.util.Util;
+//
+//import java.io.File;
+//import java.util.Arrays;
+//
+//public class VideoPlayer {
 
 //    private final PlayerManager playerManager = PlayerManager.getInstance();
 //    private ConcatenatingMediaSource mediaSource;
@@ -240,17 +240,6 @@ public class VideoPlayer {
 //        beginAt = currentIndex;
 //    }
 
-    public static void play(Fragment fragment, Video ...videos) {
-        Intent intent = new Intent( fragment.getContext(), VideoPlayerActivity.class );
-        String gsonVideos[] = new String[ videos.length ];
-        for ( int i = 0; i < videos.length; ++i )
-            gsonVideos[ i ] = videos[ i ].toGson();
-        intent.putExtra( "medias", gsonVideos );
-        intent.putExtra( "data_type", "video" );
-//        activity.startActivityForResult(intent, MainActivity.REQUEST_VIDEO);
-        fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
-    }
-
 //    public static void play(Fragment fragment)
 //    {
 //
@@ -268,28 +257,39 @@ public class VideoPlayer {
 //        SeriesPlayerFragment.navigate( currentSeries );
 //    }
 
-    public static void play(Fragment fragment, String url )
-    {
-        Intent intent = new Intent( fragment.getContext(), VideoPlayerActivity.class );
-        intent.putExtra( "medias", new String[]{ url } );
-        intent.putExtra( "data_type", "url" );
+//    public static void play(Fragment fragment, String url )
+//    {
+//        Intent intent = new Intent( fragment.getContext(), VideoPlayerActivity.class );
+//        intent.putExtra( "medias", new String[]{ url } );
+//        intent.putExtra( "data_type", "url" );
+//
+//        fragment.startActivityForResult(intent, VideoPlayer.REQUEST_PLAYER);
+////        activity.startActivity(intent);
+//    }
 
-        fragment.startActivityForResult(intent, VideoPlayer.REQUEST_PLAYER);
-//        activity.startActivity(intent);
-    }
+//    public static void play(Fragment fragment, int pos, Video ...videos) {
+//        Intent intent = new Intent( fragment.getContext(), VideoPlayerActivity.class );
+//        String gsonVideos[] = new String[ videos.length ];
+//        for ( int i = 0; i < videos.length; ++i )
+//            gsonVideos[ i ] = videos[ i ].toGson();
+//        intent.putExtra( "medias", gsonVideos );
+//        intent.putExtra( "data_type", "video" );
+//        intent.putExtra( "begin", pos );
+////        activity.startActivityForResult(intent, MainActivity.REQUEST_VIDEO);
+////        activity.startActivity(intent);
+//        fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
+//    }
 
-    public static void play(Fragment fragment, int pos, Video ...videos) {
-        Intent intent = new Intent( fragment.getContext(), VideoPlayerActivity.class );
-        String gsonVideos[] = new String[ videos.length ];
-        for ( int i = 0; i < videos.length; ++i )
-            gsonVideos[ i ] = videos[ i ].toGson();
-        intent.putExtra( "medias", gsonVideos );
-        intent.putExtra( "data_type", "video" );
-        intent.putExtra( "begin", pos );
-//        activity.startActivityForResult(intent, MainActivity.REQUEST_VIDEO);
-//        activity.startActivity(intent);
-        fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
-    }
+//    public static void play(Fragment fragment, Video ...videos) {
+//        Intent intent = new Intent( fragment.getContext(), VideoPlayerActivity.class );
+//        String gsonVideos[] = new String[ videos.length ];
+//        for ( int i = 0; i < videos.length; ++i )
+//            gsonVideos[ i ] = videos[ i ].toGson();
+//        intent.putExtra( "medias", gsonVideos );
+//        intent.putExtra( "data_type", "video" );
+////        activity.startActivityForResult(intent, MainActivity.REQUEST_VIDEO);
+//        fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
+//    }
 
 //    public void playNow()
 //    {
@@ -423,5 +423,5 @@ public class VideoPlayer {
 //
 //    public PlayerManager getPlayerManager() {
 //        return playerManager;
-//    }
-}
+////    }
+//}

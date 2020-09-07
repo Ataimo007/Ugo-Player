@@ -247,7 +247,7 @@ public class MusicPlayerFragment extends Fragment
                 if ( karaoke != null && karaoke.exists() )
                     playKaraoke(karaoke, currentMusic);
                 else
-                    maker.createKaraoke(currentMusic, karaokePlayerHandler, this);
+                    maker.createKaraoke(currentMusic, manager, karaokePlayerHandler, this);
             }
             else
                 restore();

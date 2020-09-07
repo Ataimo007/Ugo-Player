@@ -1,6 +1,7 @@
 package com.gcodes.iplayer.player;
 
 import android.app.Notification;
+import android.content.Context;
 import android.net.Uri;
 
 import androidx.annotation.DrawableRes;
@@ -70,18 +71,19 @@ public class PlayerDownloadService extends DownloadService {
         nextNotification = DEFAULT_NOTIFICATION_ID + 1;
     }
 
-    public static void download(Video video, String uri, Music music, Consumer<Download> onStart )
+    public static void download(Video video, String uri, Music music, Consumer<Download> onStart, Context context)
     {
-        download( video, uri, music );
+        download( video, uri, music, context );
         onDownload.put( video.getId(), onStart );
     }
 
-    public static void download(Video video, String uri, Music music)
+    public static void download(Video video, String uri, Music music, Context context)
     {
         Uri media = Uri.parse( uri );
         DownloadRequest request = new DownloadRequest(video.getId(), DownloadRequest.TYPE_PROGRESSIVE, media, Collections.emptyList(),
                 null, music.getName().getBytes() );
-        DownloadService.sendAddDownload( PlayerManager.getInstance().getContext(), PlayerDownloadService.class, request, true );
+//        DownloadService.sendAddDownload( PlayerManager.getInstance().getContext(), PlayerDownloadService.class, request, true );
+        DownloadService.sendAddDownload( context, PlayerDownloadService.class, request, true );
         PlayerDatabase.MusicVideo musicVideo = new PlayerDatabase.MusicVideo(video, uri, music);
         downloadInfo.put( video.getId(), musicVideo );
     }
@@ -96,7 +98,7 @@ public class PlayerDownloadService extends DownloadService {
     public void onCreate() {
         super.onCreate();
         notificationHelper = new DownloadNotificationHelper( this, CHANNEL_ID );
-        manager = PlayerManager.getInstance();
+//        manager = PlayerManager.getInstance();
     }
 
     @Nullable

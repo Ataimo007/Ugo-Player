@@ -60,7 +60,7 @@
         <!-- android:parentActivityName=".MainActivity" -->
         <!-- android:screenOrientation="sensor" -->
         <!-- android:theme="@style/FullscreenTheme" /> -->
-        <service android:name=".music.player.MusicPlayerService" />
+        <service android:name=".player.PlayerService" />
 
         <service android:name=".player.PlayerDownloadService" android:exported="false">
             <intent-filter>

@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,12 +18,11 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.VideoFragment;
-import com.gcodes.iplayer.video.player.VideoPlayer;
+import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +32,6 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
@@ -211,7 +208,9 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
                     .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             holder.itemView.setOnClickListener(v -> {
-                VideoPlayer.play( SeriesFragment.this, video );
+                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource(video);
+                Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
+                startActivity(intent);
             });
         }
 
@@ -229,10 +228,12 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
             holder.itemView.setOnClickListener(v ->
             {
 //                SeriesPlayerFragment.navigate( aSeries, SeriesFragment.this );
+//                Bundle bundle = new Bundle();
+//                bundle.putString( "series", aSeries.toGson() );
+
+                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource(aSeries);
                 NavController navController = NavHostFragment.findNavController(SeriesFragment.this);
-                Bundle bundle = new Bundle();
-                bundle.putString( "series", aSeries.toGson() );
-                navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment, bundle );
+                navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment );
             });
         }
 

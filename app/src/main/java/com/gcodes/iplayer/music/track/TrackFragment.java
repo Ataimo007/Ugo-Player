@@ -18,6 +18,7 @@ import java.util.ArrayList;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -76,7 +77,11 @@ public class TrackFragment extends Fragment
     {
         FloatingActionButton floating = getActivity().findViewById(R.id.action_floating);
         floating.setOnClickListener( v -> {
-            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(musics);
+            FragmentActivity owner = requireActivity();
+            Log.w("Player_Model", "Owner of Player Model " + owner );
+            MainActivity.PlayerModel playerModel = new ViewModelProvider(owner).get(MainActivity.PlayerModel.class);
+            Log.d("Player_Model", "Player Model Music " + playerModel );
+            playerModel.play(musics);
         });
     }
 
@@ -141,6 +146,7 @@ public class TrackFragment extends Fragment
             Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
 
             holder.itemView.setOnClickListener(v -> {
+                Log.d("Player_Manager", "playing " + music);
                 new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(music);
             });
         }

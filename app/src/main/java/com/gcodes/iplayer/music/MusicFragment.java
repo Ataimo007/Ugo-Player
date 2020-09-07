@@ -13,7 +13,6 @@ import com.gcodes.iplayer.music.album.AlbumFragment;
 import com.gcodes.iplayer.music.artist.ArtistFragment;
 import com.gcodes.iplayer.music.folder.FolderFragment;
 import com.gcodes.iplayer.music.genre.GenreFragment;
-import com.gcodes.iplayer.music.player.MusicPlayer;
 import com.gcodes.iplayer.music.track.TrackFragment;
 import com.google.android.material.tabs.TabLayout;
 

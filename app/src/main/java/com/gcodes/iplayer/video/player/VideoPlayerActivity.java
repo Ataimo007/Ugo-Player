@@ -8,11 +8,15 @@ import androidx.core.util.Supplier;
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -24,6 +28,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.gcodes.iplayer.player.PlayerService;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CustomVideoGesture;
@@ -45,10 +50,11 @@ import java.util.concurrent.TimeUnit;
 public class VideoPlayerActivity extends AppCompatActivity {
 
 //    private static SimpleExoPlayer player;
-    private final PlayerManager playerManager = PlayerManager.getInstance();
 
     private PopupWindow seekToPopup;
     private PlayerView playerView;
+    private PlayerManager playerManager;
+
     private final Handler videoHandler = new Handler();
     private PopupWindow brightnessPopup;
     private PopupWindow volumePopup;
@@ -57,14 +63,28 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private ArrayList<Supplier<Boolean>> touchables;
 //    private DefaultDataSourceFactory factory;
 
+    private class PlayerConnection implements ServiceConnection
+    {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            preparePlayer(service);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            releasePlayer();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        attachPlayer();
 
         setContentView(R.layout.video_player);
 
         initPlayer();
-
         initPopup();
     }
 
@@ -123,11 +143,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
         mVisible = true;
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-//        player.setPlayWhenReady(true);
-    }
+//    @Override
+//    protected void onStart() {
+//        super.onStart();
+////        player.setPlayWhenReady(true);
+//    }
 
     private void begin()
     {
@@ -157,35 +177,32 @@ public class VideoPlayerActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         player.pause();
-//        player.stop();
-//        playerManager.pause();
-//        playerManager.stop();
-//        playerView.setPlayer(null);
     }
-
-//    @Override
-//    protected void onStop() {
-//        super.onStop();
-//        playerManager.stop();
-//        playerView.setPlayer(null);
-//    }
 
     private void initPlayer()
     {
-        initView();
-
-//        if ( playerManager.isReady() )
-//            playerManager.saveState();
-
-        player = VideoPlayer.getInstance();
-
-        initSource();
-//        initAutoSubtitle();
         initSubtitle();
-
         initControls();
+    }
 
+    private void preparePlayer(IBinder service)
+    {
+        player = ((PlayerService.PlayerBinder) service).getVideoManager();
+        playerManager = player.getPlayerManager();
+        initView();
         begin();
+    }
+
+    private void releasePlayer()
+    {
+        player = null;
+        playerManager = null;
+    }
+
+    private void attachPlayer() {
+        Intent intent = new Intent(this, PlayerService.class);
+        PlayerConnection connection = new PlayerConnection();
+        bindService(intent, connection, BIND_IMPORTANT);
     }
 
     private void initSubtitle() {
@@ -316,26 +333,26 @@ public class VideoPlayerActivity extends AppCompatActivity {
 //        getSource( video );
 //    }
 
-    private void initSource()
-    {
-        String dataType = getIntent().getStringExtra("data_type");
-        String[] medias = getIntent().getStringArrayExtra("medias");
-        int begin = getIntent().getIntExtra("begin", -1);
-        switch ( dataType )
-        {
-            case "video" :
-//                boolean displaySubtitle = isDisplaySubtitle();
-                player.initVideoSources(medias, begin, playerView);
-                break;
-
-            case "url" :
-                player.initOnlineSources( medias, begin );
-                break;
-
-            case "controller" :
-                player.initSavedSource();
-        }
-    }
+//    private void initSource()
+//    {
+//        String dataType = getIntent().getStringExtra("data_type");
+//        String[] medias = getIntent().getStringArrayExtra("medias");
+//        int begin = getIntent().getIntExtra("begin", -1);
+//        switch ( dataType )
+//        {
+//            case "video" :
+////                boolean displaySubtitle = isDisplaySubtitle();
+//                player.initVideoSources(medias, begin, playerView);
+//                break;
+//
+//            case "url" :
+//                player.initOnlineSources( medias, begin );
+//                break;
+//
+//            case "controller" :
+//                player.initSavedSource();
+//        }
+//    }
 
     private boolean isFromController()
     {

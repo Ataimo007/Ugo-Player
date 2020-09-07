@@ -134,6 +134,20 @@ public class Video implements Comparable< Video >, Serializable
         return gson.fromJson( json.toString(), Video.class );
     }
 
+    public static String[] toGson(Video[] videos)
+    {
+        String gsonVideos[] = new String[ videos.length ];
+        for ( int i = 0; i < videos.length; ++i )
+            gsonVideos[ i ] = videos[ i ].toGson();
+        return gsonVideos;
+    }
 
+    public static Video[] fromGson(String[] gsonVideos)
+    {
+        Video videos[] = new Video[ gsonVideos.length ];
+        for ( int i = 0; i < videos.length; ++i )
+            videos[ i ] = Video.fromGson(gsonVideos[ i ]);
+        return videos;
+    }
 
 }

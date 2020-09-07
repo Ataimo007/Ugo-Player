@@ -15,6 +15,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.helpers.GlideApp;
@@ -24,7 +25,7 @@ import com.gcodes.iplayer.player.PlayerDownloadService;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.services.YouTubeService;
 import com.gcodes.iplayer.ui.UIConstance;
-import com.gcodes.iplayer.video.player.VideoPlayer;
+import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.offline.Download;
 import com.google.api.services.youtube.model.Video;
@@ -42,6 +43,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.SparseArrayCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -113,9 +115,8 @@ public class MusicVideoFragment extends Fragment
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         Log.w("Video_Player", String.format("Video Controller state handling result" ) );
         super.onActivityResult(requestCode, resultCode, data);
-        if ( requestCode == VideoPlayer.REQUEST_PLAYER )
+        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER )
         {
-            MusicPlayer player = MusicPlayer.getInstance();
             manager.restoreCurrentState();
             this.player.notLoading();
         }
@@ -327,7 +328,10 @@ public class MusicVideoFragment extends Fragment
 //                    showVideo.accept(null);
                     player.loading();
                     manager.saveCurrentState();
-                    VideoPlayer.play( MusicVideoFragment.this, ytFile.getUrl() );
+
+                    new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource(ytFile.getUrl());
+                    Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
+                    startActivityForResult(intent, PlayerManager.REQUEST_VIDEO_PLAYER);
                 }, getContext() );
             });
 
@@ -385,7 +389,7 @@ public class MusicVideoFragment extends Fragment
                     updateProgress.removeCallbacks( previous );
                 updateProgress.postDelayed( update, PROGRESS_DELAY);
                 progresses.put( holder.getAdapterPosition(), update );
-            } );
+            }, getContext());
         }
 
         @Override
