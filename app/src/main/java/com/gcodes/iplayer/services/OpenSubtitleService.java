@@ -66,6 +66,7 @@ public class OpenSubtitleService
 {
     private static OpenSubtitleService subtitle;
     private final static String host = "https://api.opensubtitles.org/xml-rpc";
+//    private final static String host = "http://api.opensubtitles.org/xml-rpc";
     private final static String username = "Ataimo7";
     private final static String password = "alex1234";
     private final static String userAgent = "Ultimate Player v1.0";
@@ -187,7 +188,7 @@ public class OpenSubtitleService
         XMLRPCClient client1;
         try
         {
-            client1 = new XMLRPCClient( new URL( host ));
+            client1 = new XMLRPCClient( new URL( host ), XMLRPCClient.FLAGS_DEBUG );
             initSubUI( player );
         } catch (MalformedURLException e) {
             client1 = null;
@@ -1001,6 +1002,14 @@ public class OpenSubtitleService
                 login = true;
             } catch (XMLRPCException e) {
                 e.printStackTrace();
+//                Throwable[] suppressed = new Throwable[0];
+//                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+//                    suppressed = e.getSuppressed();
+//                }
+//                for (Throwable s:suppressed)
+//                {
+//                    s.printStackTrace();
+//                }
                 login = false;
             }
         }

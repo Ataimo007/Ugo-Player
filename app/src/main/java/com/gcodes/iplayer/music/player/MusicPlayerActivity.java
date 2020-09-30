@@ -1,11 +1,14 @@
 package com.gcodes.iplayer.music.player;
 
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,6 +30,7 @@ import com.google.android.exoplayer2.ui.PlayerControlView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.api.services.youtube.model.Video;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -34,6 +38,8 @@ import androidx.viewpager.widget.ViewPager;
 
 import java.io.File;
 import java.util.List;
+
+import kotlin.Triple;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
@@ -56,6 +62,26 @@ public class MusicPlayerActivity extends AppCompatActivity
 
     public static final String PLAY_KARAOKE = "PLAY_KARAOKE";
     private PlayerListener listener;
+    private MusicConnection musicConnection;
+    private Handler infoRenderer;
+    private Handler infoRetriever;
+    private ViewPager pager;
+
+//    private static class LooperThread extends Thread {
+//        public Handler mHandler;
+//
+//        public void run() {
+//            Looper.prepare();
+//
+//            mHandler = new Handler() {
+//                public void handleMessage(Message msg) {
+//                    // process incoming messages here
+//                }
+//            };
+//
+//            Looper.loop();
+//        }
+//    }
 
     private class MusicConnection implements ServiceConnection
     {
@@ -70,7 +96,6 @@ public class MusicPlayerActivity extends AppCompatActivity
         @Override
         public void onServiceDisconnected(ComponentName name) {
             musicManager = null;
-            releaseManager();
         }
     }
 
@@ -80,6 +105,7 @@ public class MusicPlayerActivity extends AppCompatActivity
 
         public PlayerListener(PlayerManager.MusicManager manager) {
             this.manager = manager;
+            consumeTrack();
 //            initView(manager);
         }
 
@@ -90,12 +116,12 @@ public class MusicPlayerActivity extends AppCompatActivity
 
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-            if ( manager.isMusicPlaying() && playWhenReady )
-                consumeTrack();
+//            if ( manager.isMusicPlaying() && playWhenReady )
+//                consumeTrack();
             pagerAdapter.processPlayerRotate(playWhenReady, playbackState);
         }
 
-        public void consumeTrack()
+        public synchronized void consumeTrack()
         {
             int index = musicManager.getPlayerManager().getCurrentPeriodIndex();
             Music music = musicManager.getMusic( index );
@@ -108,30 +134,34 @@ public class MusicPlayerActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_music_player);
         manager = PlayerDatabase.getInstance();
-
-        pagerAdapter = new SectionsPagerAdapter();
-        initView();
-
+        initInfoRenderer();
+        initInfoRetriever(manager, this);
         obtainMusicManager();
     }
 
+//    @Override
+//    protected void onNewIntent(Intent intent) {
+//        super.onNewIntent(intent);
+//        processAction(intent);
+//    }
+
     private void obtainMusicManager() {
         Intent intent = new Intent(this, PlayerService.class);
-        MusicConnection musicConnection = new MusicConnection();
+        musicConnection = new MusicConnection();
         bindService(intent, musicConnection, BIND_IMPORTANT);
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        processAction(intent);
-    }
+//    @Override
+//    protected void onNewIntent(Intent intent) {
+//        super.onNewIntent(intent);
+//        processAction(intent);
+//    }
 
     private void processAction(Intent intent) {
-        switch (intent.getAction())
-        {
-            case PLAY_KARAOKE:
-                playKaraoke(intent);
+        Log.d("Play_Karaoke", "Processing New Intent");
+        if (PLAY_KARAOKE.equals(intent.getAction())) {
+            Log.d("Play_Karaoke", "Processing Karaoke");
+            playKaraoke(intent);
         }
     }
 
@@ -186,13 +216,15 @@ public class MusicPlayerActivity extends AppCompatActivity
 
     private void initView()
     {
+        pagerAdapter = new SectionsPagerAdapter();
         TabLayout tabs = getTabs();
-        ViewPager pager = findViewById(R.id.player_pager);
+        pager = findViewById(R.id.player_pager);
         pager.setAdapter( pagerAdapter );
         pager.addOnPageChangeListener( new TabLayout.TabLayoutOnPageChangeListener( tabs ) );
         tabs.addOnTabSelectedListener( new TabLayout.ViewPagerOnTabSelectedListener( pager ) );
 
-        tabs.getTabAt( pagerAdapter.getDefaultTabPos() ).select();
+//        tabs.getTabAt( pagerAdapter.getDefaultTabPos() ).select();
+        pager.setCurrentItem(pagerAdapter.getDefaultTabPos(), true);
         findViewById( R.id.player_bar).setVisibility( View.VISIBLE );
 
         pager.addOnPageChangeListener( new ViewPager.SimpleOnPageChangeListener(){
@@ -229,56 +261,106 @@ public class MusicPlayerActivity extends AppCompatActivity
     }
 
     private void manageMusic() {
+        initView();
         listener = new PlayerListener(musicManager);
-        musicManager.addListener(listener);
+        beginListening();
+        processAction(getIntent());
     }
 
-    private void releaseManager() {
-        if ( listener != null )
+    private synchronized void beginListening()
+    {
+        if (listener != null)
         {
-            musicManager.removeListener( listener );
-            listener = null;
+            Log.d("Player_List", "begin to listen");
+            musicManager.addListener(listener);
         }
+    }
+
+    private synchronized void endListening()
+    {
+        if (listener != null)
+        {
+            Log.d("Player_List", "stop to listen");
+            musicManager.removeListener(listener);
+        }
+    }
+
+    private synchronized void releaseManager() {
+        listener = null;
+//        handler.removeCallbacks( runnable );
+        infoRetriever.getLooper().quit();
+        manager = null;
     }
 
     private final int NETWORKWATCHER = 1000;
     private boolean watching = false;
-    private final Runnable runnable = new Runnable() {
-//        int count = 0;
-//        boolean flag = true;
-        @Override
-        public void run() {
 
-            boolean deviceOnline = Helper.isDeviceOnline( MusicPlayerActivity.this );
-            Log.d("Music_Player_Service", "is the device online " + deviceOnline );
-            if (  deviceOnline )
-            {
-                retrieveInfoOnline( currentMusic );
-            }
-            else
-            {
-                handler.postDelayed( runnable, NETWORKWATCHER );
-            }
-        }
-    };
+//    private final Runnable runnable = new Runnable() {
+////        int count = 0;
+////        boolean flag = true;
+//        @Override
+//        public void run() {
+//
+//            boolean deviceOnline = Helper.isDeviceOnline( MusicPlayerActivity.this );
+//            Log.d("Music_Player_Service", "is the device online " + deviceOnline );
+//            if (  deviceOnline )
+//            {
+//                retrieveInfoOnline( currentMusic );
+//            }
+//            else
+//            {
+//                handler.postDelayed( runnable, NETWORKWATCHER );
+//            }
+//        }
+//    };
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks( runnable );
+        releaseManager();
+        unbindService(musicConnection);
     }
+
+//    @Override
+//    protected void onStart() {
+//
+//        super.onStart();
+//    }
+
+    @Override
+    protected void onResume() {
+        beginListening();
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        endListening();
+        super.onPause();
+    }
+
+//    @Override
+//    protected void onStop() {
+//
+//        super.onStop();
+//    }
 
     private void retrieveInfo(Music music)
     {
-        boolean deviceOnline = Helper.isDeviceOnline(this);
-        Log.d("Music_Player_Service", "is the device online " + deviceOnline );
-        if (  !deviceOnline && !watching )
-        {
-            handler.postDelayed( runnable, NETWORKWATCHER );
-            watching = true;
-        }
-        retrieveInfoOnline( music );
+        infoRetriever.obtainMessage(0, music).sendToTarget();
     }
+
+//    private void retrieveInfo(Music music)
+//    {
+//        boolean deviceOnline = Helper.isDeviceOnline(this);
+//        Log.d("Music_Player_Service", "is the device online " + deviceOnline );
+//        if (  !deviceOnline && !watching )
+//        {
+//            handler.postDelayed( runnable, NETWORKWATCHER );
+//            watching = true;
+//        }
+//        retrieveInfoOnline( music );
+//    }
 
 //    private void retrieveInfo(Music music)
 //    {
@@ -300,41 +382,87 @@ public class MusicPlayerActivity extends AppCompatActivity
 //        retrieveInfoOnline( music );
 //    }
 
-    private void retrieveInfoOnline(Music music)
-    {
-        Helper.Worker.executeTask(() -> {
-            PlayerDatabase.MusicInfo info = manager.getInfo(music);
-            List<Video> musicVideo = null;
-            PlayerDatabase.MusicLyrics lyrics = null;
+//    private synchronized void retrieveInfoOnline(Music music)
+//    {
+//        Helper.Worker.executeTask(() -> {
+//            PlayerDatabase manager = null;
+//            if ( this.manager != null )
+//                manager = this.manager;
+//
+//            PlayerDatabase.MusicInfo info = manager.getInfo(music);
+//            List<Video> musicVideo = null;
+//            PlayerDatabase.MusicLyrics lyrics = null;
+//
+//            if ( info != null )
+//            {
+//                Log.d("Music_Player", "The info is " + info );
+//                lyrics = manager.getLyrics( info );
+//                musicVideo = manager.getMusicVideo( info );
+//            }
+//            else
+//            {
+//                lyrics = manager.getLyrics(music);
+//                musicVideo = manager.getMusicVideo(music);
+//            }
+////            manager.getKaraoke(music);
+//
+//            final PlayerDatabase.MusicLyrics finalLyrics = lyrics;
+//            final List<Video> finalMusicVideo = musicVideo;
+//            return () -> {
+//                if ( info != null )
+//                {
+//                    pagerAdapter.updatePlayer( info, finalLyrics );
+//                }
+//                else
+//                {
+//                    pagerAdapter.updatePlayer(finalLyrics);
+//                }
+//                pagerAdapter.updateMusicVideos( finalMusicVideo );
+//            };
+//        });
+//    }
 
-            if ( info != null )
-            {
-                Log.d("Music_Player", "The info is " + info );
-                lyrics = manager.getLyrics( info );
-                musicVideo = manager.getMusicVideo( info );
-            }
-            else
-            {
-                lyrics = manager.getLyrics(music);
-                musicVideo = manager.getMusicVideo(music);
-            }
-//            manager.getKaraoke(music);
-
-            final PlayerDatabase.MusicLyrics finalLyrics = lyrics;
-            final List<Video> finalMusicVideo = musicVideo;
-            return () -> {
-                if ( info != null )
-                {
-                    pagerAdapter.updatePlayer( info, finalLyrics );
-                }
-                else
-                {
-                    pagerAdapter.updatePlayer(finalLyrics);
-                }
-                pagerAdapter.updateMusicVideos( finalMusicVideo );
-            };
-        });
-    }
+//    private synchronized void retrieveInfoOnline(Music music)
+//    {
+//        Helper.Worker.executeTask(() -> {
+//            PlayerDatabase.MusicInfo info = null;
+//            try {
+//                if ( manager != null )
+//                {
+//                    info = manager.getInfo(music);
+//                    List<Video> musicVideo = null;
+//                    PlayerDatabase.MusicLyrics lyrics = null;
+//
+//                    if ( info != null )
+//                    {
+//                        Log.d("Music_Player", "The info is " + info );
+//                        lyrics = manager.getLyrics( info );
+//                        musicVideo = manager.getMusicVideo( info );
+//                    }
+//                    else
+//                    {
+//                        lyrics = manager.getLyrics(music);
+//                        musicVideo = manager.getMusicVideo(music);
+//                    }
+//                    final PlayerDatabase.MusicLyrics finalLyrics = lyrics;
+//                    final List<Video> finalMusicVideo = musicVideo;
+//                }
+//            } catch (Exception ignored) {}
+//
+//            return () -> {
+//                if ( info != null )
+//                {
+//                    pagerAdapter.updatePlayer( info, finalLyrics );
+//                }
+//                else
+//                {
+//                    pagerAdapter.updatePlayer(finalLyrics);
+//                }
+//                pagerAdapter.updateMusicVideos( finalMusicVideo );
+//            };
+////            manager.getKaraoke(music);
+//        });
+//    }
 
     public void consumeTrack( Music music )
     {
@@ -348,6 +476,112 @@ public class MusicPlayerActivity extends AppCompatActivity
         retrieveInfo( music );
     }
 
+    private void initInfoRenderer() {
+        infoRenderer = new Handler(Looper.getMainLooper()){
+            @Override
+            public void handleMessage(@NonNull Message msg)
+            {
+                Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>> result = (Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>>) msg.obj;
+                PlayerDatabase.MusicInfo info = result.getFirst();
+                PlayerDatabase.MusicLyrics finalLyrics = result.getSecond();
+                List<Video> finalMusicVideo = result.getThird();
+
+                if ( info != null )
+                    pagerAdapter.updatePlayer( info, finalLyrics );
+                else
+                    pagerAdapter.updatePlayer(finalLyrics);
+                if (finalMusicVideo != null )
+                    pagerAdapter.updateMusicVideos( finalMusicVideo );
+            }
+        };
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (pager.getCurrentItem() != pagerAdapter.getDefaultTabPos())
+            pager.setCurrentItem(pagerAdapter.getDefaultTabPos(), true);
+        else
+            super.onBackPressed();
+    }
+
+    private void initInfoRetriever(PlayerDatabase manager, Context context) {
+        Thread thread = new Thread(() -> {
+            Looper.prepare();
+            infoRetriever = new Handler(Looper.myLooper()){
+                private Music music;
+                private Runnable retriever = new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean deviceOnline = Helper.isDeviceOnline(context);
+                        if (  deviceOnline )
+                            retrieve();
+                        else
+                            infoRetriever.postDelayed( this, NETWORKWATCHER );
+                    }
+                };
+
+                @Override
+                public void handleMessage(@NonNull Message msg) {
+                    music = (Music) msg.obj;
+                    infoRetriever.removeCallbacks(retriever);
+                    boolean deviceOnline = Helper.isDeviceOnline(context);
+                    if (  deviceOnline )
+                        retrieve();
+                    else
+                    {
+                        retrieveLocally();
+                        infoRetriever.postDelayed( retriever, NETWORKWATCHER );
+                    }
+                }
+
+                private void retrieve()
+                {
+                    PlayerDatabase.MusicInfo info = manager.getInfo(music);
+                    List<Video> musicVideo = null;
+                    PlayerDatabase.MusicLyrics lyrics = null;
+
+                    if ( info != null )
+                    {
+                        Log.d("Music_Player", "The info is " + info );
+                        lyrics = manager.getLyrics( info );
+                        musicVideo = manager.getMusicVideo( info );
+                    }
+                    else
+                    {
+                        lyrics = manager.getLyrics(music);
+                        musicVideo = manager.getMusicVideo(music);
+                    }
+
+                    Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>> result = new Triple<>(info, lyrics, musicVideo);
+                    infoRenderer.obtainMessage(0, result).sendToTarget();
+                }
+
+                private void retrieveLocally()
+                {
+                    PlayerDatabase.MusicInfo info = manager.getInfo(music);
+                    PlayerDatabase.MusicLyrics lyrics = null;
+
+                    if ( info != null )
+                    {
+                        Log.d("Music_Player", "The info is " + info );
+                        lyrics = manager.getLyrics( info );
+                    }
+                    else
+                    {
+                        lyrics = manager.getLyrics(music);
+                    }
+
+                    if (info != null || lyrics != null )
+                    {
+                        Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>> result = new Triple<>(info, lyrics, null);
+                        infoRenderer.obtainMessage(0, result).sendToTarget();
+                    }
+                }
+            };
+            Looper.loop();
+        });
+        thread.start();
+    }
 
 
     private void updatePlayer(Music music) {
@@ -461,6 +695,7 @@ public class MusicPlayerActivity extends AppCompatActivity
 
         private void playKaraoke(File file, Music music)
         {
+            Log.d("Play_Karaoke", "Applying Karaoke " + music);
             player.playKaraoke(file, music);
         }
 

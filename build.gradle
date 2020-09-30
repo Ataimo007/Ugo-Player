@@ -7,10 +7,13 @@ buildscript {
         jcenter()
         mavenCentral()
         maven { url 'https://jitpack.io'}
+        maven { url "https://storage.googleapis.com/cloudflare-maven/public/" }
+
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.0.1'
-        
+        classpath "com.cloudflare.cfandroidservices:cfandroid-perf:1.0.4-beta"
+
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -22,6 +25,8 @@ allprojects {
         google()
         jcenter()
         maven { url "https://jitpack.io" }
+        maven { url "https://storage.googleapis.com/cloudflare-maven/public/" }
+
     }
 }
 

@@ -38,20 +38,11 @@ public class MusicController extends Fragment {
     private Animation rotate;
     private Music currentMusic;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        init();
-    }
+    private final PlayerManager.MusicManager manager;
 
-    private void init() {
-        new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getLivePlayerManager().observe(this, manager -> {
-            if ( manager != null )
-            {
-                ControlListener controlListener = new ControlListener(manager);
-            }
-        });
-        initRotateAnimation();
+    public MusicController(PlayerManager.MusicManager manager) {
+        super();
+        this.manager = manager;
     }
 
     private void initRotateAnimation() {
@@ -77,37 +68,29 @@ public class MusicController extends Fragment {
         }
     }
 
-    private void initView()
-    {
-        controlView.setOnClickListener( v -> {
-            showMusicPlayer();
-        });
-    }
-
-    private void initView(PlayerManager manager) {
+    private void initView() {
         PlayerControlView control = controlView.findViewById(R.id.music_control_view);
         control.setShowTimeoutMs( -1 );
-        control.setPlayer( manager.getPlayer() );
-        if ( manager.getPlayer().getPlayWhenReady() && manager.getPlayer().getPlaybackState() == Player.STATE_READY )
+        control.setPlayer( manager.getPlayerManager() );
+        initRotateAnimation();
+
+        if (  manager.getPlayerManager().getPlayWhenReady() &&  manager.getPlayerManager().getPlaybackState() == Player.STATE_READY )
             startAnimation();
         else
             pauseAnimation();
+
+        controlView.setOnClickListener( v -> {
+            showMusicPlayer();
+        });
+
+        ControlListener controlListener = new ControlListener(manager);
+        manager.addListener(controlListener);
     }
 
     private void showMusicPlayer()
     {
         Intent intent = new Intent( getContext(), MusicPlayerActivity.class );
         getContext().startActivity( intent );
-    }
-
-    private void showMusicController()
-    {
-        controlView.findViewById(R.id.controller_host).setVisibility(View.VISIBLE);
-    }
-
-    private void hideMusicController()
-    {
-        controlView.findViewById(R.id.controller_host).setVisibility(View.GONE);
     }
 
     public void consumeTrack( Music music )
@@ -135,7 +118,6 @@ public class MusicController extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         controlView = inflater.inflate(R.layout.fragment_music, container, false);
         initView();
         return controlView;
@@ -143,38 +125,25 @@ public class MusicController extends Fragment {
 
     private class ControlListener implements Player.EventListener {
 
-        private PlayerManager manager;
+        private PlayerManager.MusicManager manager;
 
-        public ControlListener(PlayerManager manager) {
+        public ControlListener(PlayerManager.MusicManager manager) {
             this.manager = manager;
-            initView(manager);
-            this.manager.addListener(this);
         }
 
         @Override
         public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-            int index = manager.getPlayer().getCurrentPeriodIndex();
-            Music music = manager.getMusicManager().getMusic(index);
+            int index = manager.getPlayerManager().getCurrentPeriodIndex();
+            Music music = manager.getMusic(index);
             consumeTrack(music);
         }
 
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-//                if ( playing == MediaType.MUSIC && isMusicPlayer() )
-            if ( manager.isMusicPlaying() )
-            {
-                if ( playWhenReady )
-                {
-                    showMusicController();
-                    if ( playbackState == Player.STATE_READY )
-                        startAnimation();
-                }
-                else
-                {
-                    pauseAnimation();
-                    hideMusicController();
-                }
-            }
+            if ( playWhenReady && playbackState == Player.STATE_READY )
+                startAnimation();
+            else
+                pauseAnimation();
         }
     }
 

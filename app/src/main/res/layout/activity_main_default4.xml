@@ -40,7 +40,7 @@
         app:elevation="10dp"
         app:fabSize="auto"
         app:hideMotionSpec="@android:anim/fade_out"
-        app:layout_constraintBottom_toTopOf="@+id/player_control"
+        app:layout_constraintBottom_toTopOf="@+id/controller_host"
         app:layout_constraintEnd_toEndOf="parent"
         app:rippleColor="@color/colorPrimary"
         app:showMotionSpec="@android:anim/fade_in"
@@ -65,13 +65,14 @@
 
     </com.google.android.material.bottomnavigation.BottomNavigationView>
 
-    <fragment
-        android:id="@+id/fragment"
-        android:name="com.gcodes.iplayer.music.player.MusicController"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
+    <FrameLayout
+        android:id="@+id/controller_host"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@+id/layout_main"
-        app:layout_constraintEnd_toEndOf="@+id/layout_main"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

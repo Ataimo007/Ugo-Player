@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,7 @@ import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.VideoFragment;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
@@ -25,6 +27,7 @@ import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
@@ -34,6 +37,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
+import static android.app.Activity.RESULT_OK;
 import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
 import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 
@@ -81,6 +85,16 @@ public class AllFragment extends Fragment implements VideoFragment.SectionsPager
             CursorLoader loader = new CursorLoader( this.getContext(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
                     projection, null, null, sort );
             cursor = loader.loadInBackground();
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER && resultCode == RESULT_OK )
+        {
+            Log.d("Video_Controller", "Rendering Video Controller");
+            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(requireActivity().getSupportFragmentManager());
         }
     }
 
@@ -135,7 +149,7 @@ public class AllFragment extends Fragment implements VideoFragment.SectionsPager
             holder.itemView.setOnClickListener(v -> {
                 new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource(video);
                 Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, PlayerManager.REQUEST_VIDEO_PLAYER);
             });
         }
 

@@ -34,6 +34,8 @@ public class PlayerService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
+//        if (manager == null)
+//            return null;
         PlayerBinder playerBinder = new PlayerBinder();
         return playerBinder;
     }
@@ -162,22 +164,24 @@ public class PlayerService extends Service {
                                 getArtBitmap( PlayerService.this );
 //                        return null;
                     }
+                }, new PlayerNotificationManager.NotificationListener() {
+
+                    @Override
+                    public void onNotificationCancelled(int notificationId, boolean dismissedByUser) {
+                        stopSelf();
+                    }
+
+                    @Override
+                    public void onNotificationPosted(int notificationId, Notification notification, boolean ongoing) {
+                        if  (manager.isMusicPlaying())
+                        {
+                            startForeground( notificationId, notification);
+                            Log.d( "Music_Player", "Starting Service" );
+                        }
+                    }
                 });
 
-        notificationManager.setNotificationListener(new PlayerNotificationManager.NotificationListener() {
-            @Override
-            public void onNotificationStarted(int notificationId, Notification notification) {
-                startForeground( notificationId, notification);
-                Log.d( "Music_Player", "Starting Service" );
-            }
-
-            @Override
-            public void onNotificationCancelled(int notificationId) {
-                stopSelf();
-            }
-        });
-
-        notificationManager.setPlayer(manager.getPlayer());
+//        notificationManager.setPlayer(manager.getPlayer());
     }
 
     public class PlayerBinder extends Binder

@@ -478,6 +478,7 @@ public class MusicPlayerFragment extends Fragment
 
     public void playKaraoke(File file, Music music)
     {
+        Log.d("Play_Karaoke", "Applying Karaoke " + music);
         ProgressiveMediaSource musicSource = manager.getMusicSource(file);
         int index = manager.getIndex(music);
         if ( index < 0 )

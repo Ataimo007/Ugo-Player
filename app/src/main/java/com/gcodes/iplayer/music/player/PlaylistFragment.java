@@ -1,6 +1,7 @@
 package com.gcodes.iplayer.music.player;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,7 +55,7 @@ public class PlaylistFragment extends Fragment
         listView.setAdapter(adapter);
 //        listView.addItemDecoration(new UIConstance.AppItemDecorator( 1, 0, 0 ));
         listView.addItemDecoration(UIConstance.AppItemDecorator.AppItemDecoratorToolBarOffset(getContext()));
-        updateList( current );
+        updateMusic();
         return view;
     }
 
@@ -67,9 +68,20 @@ public class PlaylistFragment extends Fragment
         }
     }
 
+    public void updateMusic()
+    {
+        current = manager.getMusic(manager.getCurrentTrack());
+        if ( isAdded() )
+        {
+            updateList( current );
+        }
+    }
+
     private void updateList(Music music) {
+        Log.d("Player_List", "updating playlist");
         int oldPos = currentPos;
         currentPos = manager.getPosition(music);
+        Log.d("Player_List", String.format("updating playlist oldPos:%d, newPos:%d", oldPos, currentPos));
         if ( oldPos != currentPos )
             adapter.notifyItemChanged( oldPos );
         adapter.notifyItemChanged( currentPos );

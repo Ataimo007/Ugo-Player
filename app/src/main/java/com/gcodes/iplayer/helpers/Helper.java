@@ -106,9 +106,9 @@ public class Helper
         public UIAction perform();
     }
 
-    public static boolean isDeviceOnline(Activity activity)
+    public static boolean isDeviceOnline(Context context)
     {
-        ConnectivityManager connMgr = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         return (networkInfo != null && networkInfo.isConnected());
     }

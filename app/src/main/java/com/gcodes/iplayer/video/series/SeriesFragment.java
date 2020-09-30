@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,7 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
@@ -32,6 +34,7 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
@@ -40,6 +43,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import static android.app.Activity.RESULT_OK;
 import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 
 public class SeriesFragment extends Fragment implements VideoFragment.SectionsPagerAdapter.PageTitle
@@ -64,6 +68,14 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
     {
         super.onCreate(savedInstanceState);
         load();
+//        initForwardResult();
+    }
+
+    private void initForwardResult() {
+        NavController navController = NavHostFragment.findNavController(SeriesFragment.this);
+        navController.getCurrentBackStackEntry().getSavedStateHandle().getLiveData("result").observe(this, o -> {
+            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(getParentFragmentManager());
+        });
     }
 
     public void load()
@@ -156,6 +168,16 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
     }
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER && resultCode == RESULT_OK )
+        {
+            Log.d("Video_Controller", "Rendering Video Controller");
+            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(requireActivity().getSupportFragmentManager());
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.item_list, container, false);
@@ -210,7 +232,7 @@ public class SeriesFragment extends Fragment implements VideoFragment.SectionsPa
             holder.itemView.setOnClickListener(v -> {
                 new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource(video);
                 Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, PlayerManager.REQUEST_VIDEO_PLAYER);
             });
         }
 

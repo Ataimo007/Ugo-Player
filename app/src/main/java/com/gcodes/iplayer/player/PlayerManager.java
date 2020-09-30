@@ -1,11 +1,11 @@
 package com.gcodes.iplayer.player;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
-import android.os.Handler;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
 import com.gcodes.iplayer.R;
@@ -14,7 +14,6 @@ import com.gcodes.iplayer.music.Music;
 import com.gcodes.iplayer.services.ACRService;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
-import com.gcodes.iplayer.video.player.VideoController;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerFactory;
@@ -45,13 +44,6 @@ import com.google.android.exoplayer2.util.Util;
 
 import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.navigation.NavBackStackEntry;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -124,7 +116,7 @@ public class PlayerManager
 
     public boolean isVideoPlaying()
     {
-        return playing == MediaType.MUSIC;
+        return playing == MediaType.VIDEO;
     }
 
 
@@ -354,12 +346,17 @@ public class PlayerManager
 //            stopService();
 //    }
 
-    public void play()
-    {
+//    public void play()
+//    {
 //        if  ( !player.getPlayWhenReady() )
-        player.setPlayWhenReady( true );
+//        player.setPlayWhenReady( true );
 //        if  ( isServiceRunning() )
 //            stopService();
+//    }
+
+    public void play()
+    {
+        player.setPlayWhenReady( true );
     }
 
     public void stop()
@@ -387,13 +384,28 @@ public class PlayerManager
 //        int index = player.getCurrentPeriodIndex();
 //        Video video = VideoPlayer.getInstance().getVideo(index);
 //        Log.w("Video_Player", String.format("Showing Video Controller for %s %s", video, mediaSource ) );
+
         player.prepare(mediaSource);
         player.setPlayWhenReady( true );
     }
 
     public void playAt( int begin )
     {
+        if ( !player.getPlayWhenReady() )
+            player.setPlayWhenReady( true );
         player.seekToDefaultPosition( begin );
+    }
+
+//    private void playAt(int index, int position) {
+//        if ( !player.getPlayWhenReady() )
+//            player.setPlayWhenReady( true );
+//        player.seekTo(index, position);
+//    }
+
+    private void playAt(int index, long position) {
+        if ( !player.getPlayWhenReady() )
+            player.setPlayWhenReady( true );
+        player.seekTo(index, position);
     }
 
     public void playMusic()
@@ -527,7 +539,7 @@ public class PlayerManager
         player.addListener( listener );
     }
 
-    private void removeListener(com.google.android.exoplayer2.Player.EventListener listener ) {
+    public void removeListener(com.google.android.exoplayer2.Player.EventListener listener ) {
         listeners.remove(listener);
         player.removeListener(listener);
     }
@@ -595,6 +607,10 @@ public class PlayerManager
 //    public static interface PlayerListener extends Player.EventListener {
 //        public void initialize(PlayerManager manager);
 //    }
+
+    public static void setTo(Intent intent, int index) {
+        intent.putExtra("index", index);
+    }
 
     public class MusicManager
     {
@@ -802,6 +818,10 @@ public class PlayerManager
         public void removeListener(Player.EventListener listener) {
             PlayerManager.this.removeListener(listener);
         }
+
+        public boolean isMusicPlaying(Music music) {
+            return getMusic(getCurrentTrack()).equals(music);
+        }
     }
 
     public class VideoManager {
@@ -821,11 +841,11 @@ public class PlayerManager
 
         private VideoSourceType currentType;
 
-        private int beginAt = -1;
+//        private int beginAt = -1;
 
 //        private static com.gcodes.iplayer.video.player.VideoPlayer player;
-        private long currentPosition;
-        private int currentIndex;
+//        private long currentPosition;
+//        private int currentIndex;
 
         @NonNull
         public Pair<ConcatenatingMediaSource, MediaSource> buildNewMergedSource(SingleSampleMediaSource subtitleSource, int position )
@@ -909,17 +929,17 @@ public class PlayerManager
             return source;
         }
 
-        public void saveState()
-        {
-            currentPosition = getCurrentPosition();
-            currentIndex = getCurrentWindow();
-        }
-
-        public void clearState()
-        {
-            currentPosition = -1;
-            currentIndex = -1;
-        }
+//        public void saveState()
+//        {
+//            currentPosition = getCurrentPosition();
+//            currentIndex = getCurrentWindow();
+//        }
+//
+//        public void clearState()
+//        {
+//            currentPosition = -1;
+//            currentIndex = -1;
+//        }
 
         public void clearSource()
         {
@@ -929,21 +949,24 @@ public class PlayerManager
             currentType = null;
         }
 
-        public boolean hasState()
-        {
-            return currentIndex != -1 && currentPosition != -1;
-        }
+//        public boolean hasState()
+//        {
+//            return currentIndex != -1 && currentPosition != -1;
+//        }
 
         public void continuePlay()
         {
+            int currentIndex = getCurrentIndex();
+            long currentPeriod = getCurrentPeriod();
             playAgain();
-            restoreState();
+            player.seekTo(currentIndex, currentPeriod);
+//            restoreState();
         }
 
-        public void restoreState()
-        {
-            seekTo( currentIndex, currentPosition );
-        }
+//        public void restoreState()
+//        {
+//            seekTo( currentIndex, currentPosition );
+//        }
 
         public void initVideoSources(Video[] videos, int start)
         {
@@ -954,7 +977,7 @@ public class PlayerManager
             currentType = VideoSourceType.VIDEOS;
             mediaSource = new ConcatenatingMediaSource( sources );
             prepare( mediaSource, PlayerManager.MediaType.VIDEO );
-            beginAt = start;
+//            beginAt = start;
         }
 
         public void initVideoSources(Video[] videos)
@@ -980,7 +1003,7 @@ public class PlayerManager
             currentType = VideoSourceType.SERIES;
             mediaSource = new ConcatenatingMediaSource( sources );
             prepare( mediaSource, PlayerManager.MediaType.VIDEO );
-            beginAt = 0;
+//            beginAt = 0;
         }
 
         public void initOnlineSources(String[] vids, int start) {
@@ -992,7 +1015,7 @@ public class PlayerManager
             currentType = VideoSourceType.URL;
             mediaSource = new ConcatenatingMediaSource( sources );
             prepare( mediaSource, PlayerManager.MediaType.VIDEO );
-            beginAt = start;
+//            beginAt = start;
         }
 
 
@@ -1003,11 +1026,11 @@ public class PlayerManager
         }
 
 
-        public void initSavedSource()
-        {
-            restoreState();
-            beginAt = currentIndex;
-        }
+//        public void initSavedSource()
+//        {
+//            restoreState();
+//            beginAt = currentIndex;
+//        }
 
 //        public void showSeriesFragment() {
 //            SeriesPlayerFragment.navigate( currentSeries );
@@ -1017,12 +1040,34 @@ public class PlayerManager
 //            navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment, bundle );
 //        }
 
-        public void playNow()
+//        public void playNow()
+//        {
+//            playVideo();
+//            if  ( getBeginAt() >= 0 )
+//                playAt( getBeginAt() );
+//            clearState();
+//        }
+
+        public boolean playFrom(Intent intent)
         {
-            playVideo();
-            if  ( getBeginAt() >= 0 )
-                playAt( getBeginAt() );
-            clearState();
+            if (intent.hasExtra("index") && intent.hasExtra("position"))
+            {
+                PlayerManager.this.playAt(intent.getIntExtra("index", 0 ), intent.getLongExtra("position", 0) );
+                return true;
+            }
+            return false;
+        }
+
+        public boolean playFrom(Bundle bundle)
+        {
+            int index = bundle.getInt("index", -1);
+            int position = bundle.getInt("position", -1);
+            if (index != -1 && position != -1)
+            {
+                PlayerManager.this.playAt(index, position);
+                return true;
+            }
+            return false;
         }
 
         public boolean isPlaying()
@@ -1040,6 +1085,18 @@ public class PlayerManager
             PlayerManager.this.play();
         }
 
+        public void play(Intent intent)
+        {
+            int playAt = intent.getIntExtra("index", -1);
+            if ( playAt != -1 )
+                playAt(playAt);
+            PlayerManager.this.play();
+        }
+
+        public void playAt(int at) {
+            PlayerManager.this.playAt(at);
+        }
+
         public void pause()
         {
             PlayerManager.this.pause();
@@ -1048,7 +1105,7 @@ public class PlayerManager
         public void stop()
         {
             PlayerManager.this.stop();
-            clearState();
+//            clearState();
             clearSource();
         }
 
@@ -1065,6 +1122,11 @@ public class PlayerManager
         public int getCurrentIndex()
         {
             return PlayerManager.this.getCurrentIndex();
+        }
+
+        public long getCurrentPeriod()
+        {
+            return PlayerManager.this.getCurrentPosition();
         }
 
         public int findIndex(Video video )
@@ -1105,16 +1167,38 @@ public class PlayerManager
             return source;
         }
 
-        public int getBeginAt() {
-            return beginAt;
-        }
-
-        public void setBeginAt(int beginAt) {
-            this.beginAt = beginAt;
-        }
+//        public int getBeginAt() {
+//            return beginAt;
+//        }
+//
+//        public void setBeginAt(int beginAt) {
+//            this.beginAt = beginAt;
+//        }
 
         public PlayerManager getPlayerManager() {
             return PlayerManager.this;
+        }
+
+        public void addListener(Player.EventListener listener) {
+            PlayerManager.this.addListener(listener);
+        }
+
+        public void removeListener(Player.EventListener listener) {
+            PlayerManager.this.removeListener(listener);
+        }
+
+        public void saveTo(Intent intent) {
+            intent.putExtra("index", getCurrentIndex());
+            intent.putExtra("position", getCurrentPosition());
+        }
+
+        public void setTo(Intent intent, int index) {
+            intent.putExtra("index", index);
+        }
+
+        public void saveTo(Bundle bundle) {
+            bundle.putInt("index", getCurrentIndex());
+            bundle.putLong("position", getCurrentPosition());
         }
     }
 

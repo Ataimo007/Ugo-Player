@@ -23,6 +23,7 @@ import androidx.fragment.app.Fragment;
 import com.arthenica.mobileffmpeg.ExecuteCallback;
 import com.arthenica.mobileffmpeg.Statistics;
 import com.arthenica.mobileffmpeg.StatisticsCallback;
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.Music;
 
@@ -58,6 +59,7 @@ public class KaraokeService extends Service
         private KaraokeHandler handler;
         private boolean attached = false;
         private PlayerManager.MusicManager manager;
+        private KaraokeConnection connection;
 
 
         public static KaraokeMaker getInstance()
@@ -156,7 +158,7 @@ public class KaraokeService extends Service
             if (attached)
             {
                 Intent intent = new Intent(getContext(), KaraokeService.class);
-                KaraokeConnection connection = new KaraokeConnection(handler, manager);
+                connection = new KaraokeConnection(handler, manager);
                 context.bindService(intent, connection, BIND_IMPORTANT);
             }
         }
@@ -166,6 +168,7 @@ public class KaraokeService extends Service
             {
 //                Intent intent = new Intent(getContext(), KaraokeService.class);
 //                context.stopService(intent);
+                context.unbindService(connection);
                 dettach();
             }
         }
@@ -319,7 +322,7 @@ public class KaraokeService extends Service
         builder.setProgress(MAX, MIN, false);
         Notification notification = builder.build();
         startForeground(NOTIFICATION_ID, notification);
-        builder.setChannelId(getString(R.string.karaoke_id)).setPriority(NotificationCompat.PRIORITY_DEFAULT);
+        builder.setChannelId(getString(R.string.karaoke_id)).setPriority(NotificationCompat.PRIORITY_LOW);
     }
 
     private void requestBinder() {
@@ -403,7 +406,7 @@ public class KaraokeService extends Service
             CharSequence name = getString(R.string.karaoke_channel);
             String id = getString(R.string.karaoke_id);
             String description = getString(R.string.karaoke_description);
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            int importance = NotificationManager.IMPORTANCE_LOW;
             NotificationChannel channel = new NotificationChannel(id, name, importance);
             headsupChannel.setDescription(description);
 
@@ -444,12 +447,13 @@ public class KaraokeService extends Service
                 .setContentText("0%")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setChannelId(getString(R.string.headsup_karaoke_id))
                 .addAction( 0, "Cancel", cancelKaraoke);
     }
 
     private void processOutput(File file, Music music) {
         PlayerManager.MusicManager manager = getManager();
-        if (!manager.inPlayList(music))
+        if (!manager.isMusicPlaying(music))
             finishNotification();
         else
             removeNotification();
@@ -461,7 +465,8 @@ public class KaraokeService extends Service
 
     public void finishNotification()
     {
-        Intent karaoke = new Intent(this, MusicPlayerActivity.class);
+//        Intent karaoke = new Intent(this, MusicPlayerActivity.class);
+        Intent karaoke = new Intent(this, MainActivity.class);
 //        karaoke.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         karaoke.putExtra("music", music.toGson());
         karaoke.putExtra("output", output);

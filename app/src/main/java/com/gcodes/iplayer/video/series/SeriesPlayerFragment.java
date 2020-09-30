@@ -15,9 +15,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavBackStackEntry;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,23 +33,22 @@ import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.concurrent.TimeUnit;
 
+import static android.app.Activity.RESULT_OK;
 import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 
 public class SeriesPlayerFragment extends Fragment
 {
-    private static NavController navController;
+//    private static NavController navController;
     private Series series;
-    private CustomAdapter adapter;
     private PlayerManager.VideoManager player;
     private PlayerManager playerManager;
 
-//    private boolean playing = false;
-    private PlayerView control;
     private FloatingActionButton controlButton;
     private View view;
 
@@ -59,8 +56,39 @@ public class SeriesPlayerFragment extends Fragment
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        load();
+        initBackPressed();
     }
+
+//    @Override
+//    public void onStop() {
+//        super.onStop();
+//        Log.d("Video_Controller", "Rendering Video Controller");
+//        new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(requireActivity().getSupportFragmentManager());
+//    }
+
+    private void initBackPressed() {
+        new ViewModelProvider(requireActivity()).get(MainActivity.BackStackModel.class).onStackPopped.observe(this, aBoolean -> {
+            if (aBoolean)
+            {
+                Log.d("Video_Controller", "Rendering Video Controller from Series Player");
+                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(requireActivity().getSupportFragmentManager());
+            }
+        });
+    }
+
+//    private void initBackPressed() {
+//        OnBackPressedCallback onBack = new OnBackPressedCallback(true) {
+//            @Override
+//            public void handleOnBackPressed() {
+////                Bundle result = new Bundle();
+////                player.saveTo(result);
+////                navController.getPreviousBackStackEntry().getSavedStateHandle().set("result", result);
+//                Log.d("Video_Controller", "Rendering Video Controller");
+//                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(requireActivity().getSupportFragmentManager());
+//            }
+//        };
+//        requireActivity().getOnBackPressedDispatcher().addCallback(this, onBack);
+//    }
 
     public void load()
     {
@@ -72,8 +100,6 @@ public class SeriesPlayerFragment extends Fragment
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.series_player, container, false);
-        initView( view );
-
         PlayerManager.VideoManager videoManager = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getOrListenForVideoManager(this, manager -> {
             if (manager != null)
                 onAttachPlayer(manager.getVideoManager());
@@ -86,6 +112,7 @@ public class SeriesPlayerFragment extends Fragment
     private void onAttachPlayer(PlayerManager.VideoManager videoManager) {
         player = videoManager;
         load();
+        initView( view );
         initList( view );
         initPlayer( view );
     }
@@ -95,62 +122,127 @@ public class SeriesPlayerFragment extends Fragment
         name.setText( series.getName() );
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.w("Series_Player", "on resume play" );
+        if (playerManager != null)
+        {
+//            playerManager.setView( control );
+//            control.showController();
+            player.play();
+        }
+    }
+
     private void initPlayer(View view) {
-        control = view.findViewById(R.id.video_control_view);
+        //    private boolean playing = false;
+        PlayerView control = view.findViewById(R.id.video_control_view);
+
 //        control.setControllerShowTimeoutMs( -1 );
 //        player = VideoPlayer.getInstance();
-        player = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
+//        player = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
 
         playerManager = player.getPlayerManager();
         playerManager.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
-        playerManager.setView( control );
+        playerManager.setView(control);
         control.showController();
 
-        prepareTouch( control );
+        prepareTouch(control);
 
-        if ( !player.isPlaying() )
-        {
-//            initSource();
-            player.playNow();
-        }
+//        if ( !player.isPlaying() )
+//        {
+//            player.playFrom();
+//        }
 
-        initControlButton(view);
+        initControlButton(view, player);
+
+        new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).removeController(requireActivity().getSupportFragmentManager());
+
+        player.continuePlay();
+
+//        Bundle arguments = getArguments();
+//        Log.d("Video_Controller", "Remove Video Controller " + arguments);
+//        if (arguments == null)
+//            player.continuePlay();
+//        else
+//        {
+//            boolean fromController = arguments.getBoolean("from_controller", false);
+//            Log.d("Video_Controller", "Remove Video Controller " + fromController);
+//            if (fromController)
+//            {
+//                Log.d("Video_Controller", "Remove Video Controller");
+//                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).removeVideoController(requireActivity().getSupportFragmentManager());
+//            }
+//            player.continuePlay();
+//        }
+
     }
+
+//    @Override
+//    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER && resultCode == RESULT_OK )
+//        {
+//            playerManager.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
+//            playerManager.setView( control );
+//            control.showController();
+////            player.play(data);
+//            player.continuePlay();
+//        }
+//    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER )
+        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER && resultCode == RESULT_OK )
         {
-            playerManager.setView( control );
-            control.showController();
-            player.continuePlay();
+            getParentFragmentManager().beginTransaction().detach(this).attach(this).commit();
         }
     }
 
-    private void initControlButton(View view) {
+    private void initControlButton(View view, PlayerManager.VideoManager player) {
         controlButton = view.findViewById(R.id.series_player_control);
-        NavBackStackEntry backStackEntry = NavHostFragment.findNavController( this ).getBackStackEntry(R.id.videoFragment);
-        MutableLiveData<Boolean> isPlaying = backStackEntry.getSavedStateHandle().getLiveData("is_playing");
-        isPlaying.observe(getViewLifecycleOwner(), isPlaying1 -> {
-            if (isPlaying1)
-                controlButton.setImageResource(R.drawable.u_pause);
-            else
-                controlButton.setImageResource(R.drawable.u_play);
+        player.addListener(new Player.EventListener() {
+            @Override
+            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+                updateState(playWhenReady, playbackState);
+            }
         });
 
+        updateState(player.isPlaying());
+
+//        NavBackStackEntry backStackEntry = NavHostFragment.findNavController( this ).getBackStackEntry(R.id.videoFragment);
+//        MutableLiveData<Boolean> isPlaying = backStackEntry.getSavedStateHandle().getLiveData("is_playing");
+//        isPlaying.observe(getViewLifecycleOwner(), isPlaying1 -> {
+//            if (isPlaying1)
+//                controlButton.setImageResource(R.drawable.u_pause);
+//            else
+//                controlButton.setImageResource(R.drawable.u_play);
+//        });
+
         controlButton.setOnClickListener(v -> {
-            if ( player.isInPlayingState() )
-            {
-                player.pause();
-                controlButton.setImageResource(R.drawable.u_play);
-            }
+            if ( this.player.isInPlayingState() )
+                this.player.pause();
             else
-            {
-                player.play();
-                controlButton.setImageResource(R.drawable.u_pause);
-            }
+                this.player.play();
+
         });
+    }
+
+    private void updateState(boolean playWhenReady, int playbackState)
+    {
+        if (playWhenReady && playbackState == Player.STATE_READY)
+            controlButton.setImageResource(R.drawable.u_pause);
+        else
+            controlButton.setImageResource(R.drawable.u_play);
+    }
+
+    private void updateState(boolean isPlaying)
+    {
+        if (isPlaying)
+            controlButton.setImageResource(R.drawable.u_pause);
+        else
+            controlButton.setImageResource(R.drawable.u_play);
     }
 
 //    public static void tryUpdateControllerButton( boolean isPlaying ) {
@@ -200,21 +292,15 @@ public class SeriesPlayerFragment extends Fragment
 //    }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        Log.w("Series_Player", "on resume play" );
-        playerManager.setView( control );
-        control.showController();
-        player.play();
-    }
-
-    @Override
     public void onPause() {
         super.onPause();
-        player.saveState();
 //        playerManager.stop();
-        player.pause();
-        control.setPlayer(null);
+        if (player != null)
+        {
+//            player.saveState();
+            player.pause();
+//            control.setPlayer(null);
+        }
     }
 
     private void prepareTouch(PlayerView control) {
@@ -223,6 +309,9 @@ public class SeriesPlayerFragment extends Fragment
             @Override
             public void onClick() {
 //                player.saveState();
+//                player.pause();
+//                player.saveState();
+                control.setPlayer(null);
                 showVideoPlayer();
             }
         }
@@ -233,16 +322,25 @@ public class SeriesPlayerFragment extends Fragment
     private void showVideoPlayer() {
         Intent intent = new Intent( getContext(), VideoPlayerActivity.class );
 //        intent.putExtra( "data_type", "controller" );
-        startActivity( intent );
+        player.saveTo(intent);
+        startActivityForResult( intent, PlayerManager.REQUEST_VIDEO_PLAYER );
+    }
+
+    private void showVideoPlayer(int position) {
+        Intent intent = new Intent( getContext(), VideoPlayerActivity.class );
+//        intent.putExtra( "data_type", "controller" );
+        player.setTo(intent, position);
+        startActivityForResult( intent, PlayerManager.REQUEST_VIDEO_PLAYER );
     }
 
     private void initList(View view)
     {
-        adapter = new CustomAdapter();
+        CustomAdapter adapter = new CustomAdapter();
         RecyclerView listView = view.findViewById(R.id.list_video);
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
-        listView.setAdapter( adapter );
+        listView.setAdapter(adapter);
         listView.addItemDecoration(new UIConstance.AppItemDecorator( 1, 20 ));
+        adapter.notifyDataSetChanged();
     }
 
 //    public static void navigate(Series aSeries)
@@ -300,10 +398,10 @@ public class SeriesPlayerFragment extends Fragment
                     .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( holder.getImage() );
 
             holder.itemView.setOnClickListener(v -> {
-                playerManager.playAt( position );
+//                playerManager.playAt( position );
 //                player.saveState();
-                showVideoPlayer();
 //                VideoPlayer.play( getActivity(), position, video );
+                showVideoPlayer(position);
             });
         }
 

@@ -90,7 +90,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
+        Log.d("Video_Controller", "Setting Result Code " + RESULT_OK);
         if ( isUrlSource() )
         {
             player.stop();
@@ -98,10 +98,14 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
         else
         {
-            player.saveState();
+            Intent intent = new Intent();
+            player.saveTo(intent);
+            setResult(RESULT_OK, intent);
+            finish();
 //            Log.w("Video_Player", String.format("Video Controller state setting back result" ) );
 //            setResult( VideoPlayer.RESULT_PLAYING );
         }
+        super.onBackPressed();
     }
 
     private boolean isUrlSource() {
@@ -151,22 +155,32 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     private void begin()
     {
-        if ( !isFromController() )
-            play();
+        if ( !player.playFrom(getIntent()) )
+        {
+            player.play(getIntent());
+//            player.continuePlay();
+        }
     }
 
-//    private final Handler testHandler = new Handler();
+//    private boolean isFromController()
+//    {
+//        String dataType = getIntent().getStringExtra("data_type");
+//        return dataType.equals("controller");
+//    }
+
+    //    private final Handler testHandler = new Handler();
     @Override
     protected void onResume() {
         super.onResume();
-        player.play();
+        if (player != null)
+            player.play();
 //        begin();
     }
 
-    private void play()
-    {
-        player.playNow();
-    }
+//    private void continuePlaying(Intent intent)
+//    {
+//        player.playFrom(intent);
+//    }
 
     private Video getVideoAt( int position )
     {
@@ -176,12 +190,12 @@ public class VideoPlayerActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        player.pause();
+        if (player != null)
+            player.pause();
     }
 
     private void initPlayer()
     {
-        initSubtitle();
         initControls();
     }
 
@@ -190,6 +204,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         player = ((PlayerService.PlayerBinder) service).getVideoManager();
         playerManager = player.getPlayerManager();
         initView();
+        initSubtitle();
         begin();
     }
 
@@ -353,12 +368,6 @@ public class VideoPlayerActivity extends AppCompatActivity {
 //                player.initSavedSource();
 //        }
 //    }
-
-    private boolean isFromController()
-    {
-        String dataType = getIntent().getStringExtra("data_type");
-        return dataType.equals("controller");
-    }
 
 //    private boolean isDisplaySubtitle()
 //    {

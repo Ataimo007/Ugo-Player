@@ -9,7 +9,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -27,6 +29,8 @@ import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.PlayerView;
 
+import static android.app.Activity.RESULT_OK;
+
 public class VideoController extends Fragment {
 
     private View controlView;
@@ -37,46 +41,54 @@ public class VideoController extends Fragment {
     private boolean expanded = false;
     private PlayerView control;
 
+    private final PlayerManager.VideoManager videoManager;
+    private ControlListener controlListener;
+
+    public VideoController(PlayerManager.VideoManager videoManager) {
+        this.videoManager = videoManager;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         controlView = inflater.inflate(R.layout.fragment_video, container, false);
+        initView();
         return controlView;
     }
 
-    private void init() {
-        new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getLivePlayerManager().observe(this, manager -> {
-            if ( manager != null )
-            {
-                ControlListener controlListener = new ControlListener(manager);
-                manager.addListener(controlListener);
-            }
-        });
-    }
-
-    private void initView(PlayerManager playerManager)
+    private void initView()
     {
         Log.w("Video_Fragment", "Setting up player" );
 
         control = controlView.findViewById(R.id.video_control_view);
 //        control.setControllerShowTimeoutMs( -1 );
-        PlayerManager.VideoManager player = playerManager.getVideoManager();
 //        playerManager = player.getPlayerManager();
-        playerManager.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
-        playerManager.setView( control );
-        player.continuePlay();
+        videoManager.getPlayerManager().setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING);
+        videoManager.getPlayerManager().setView( control );
+
+        Log.w("Video_Controller", "Continue Playing" );
+        videoManager.continuePlay();
         control.showController();
 
-        prepareTouch( control, player );
-        prepareStop(player);
+        prepareTouch( control, videoManager );
+        prepareStop(videoManager);
+
+        controlListener = new ControlListener(videoManager);
+        videoManager.addListener(controlListener);
     }
 
     private void prepareStop(PlayerManager.VideoManager player) {
         ImageView stop = controlView.findViewById(R.id.exo_stop);
         stop.setOnClickListener( v -> {
-            player.stop();
+            stop();
         });
+    }
+
+    private void stop() {
+        videoManager.stop();
+        new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).removeVideoController(requireActivity().getSupportFragmentManager());
+        videoManager.removeListener(controlListener);
     }
 
     private void prepareTouch(PlayerView control, PlayerManager.VideoManager player ) {
@@ -85,21 +97,31 @@ public class VideoController extends Fragment {
                     @Override
                     public void onClick() {
                         expanded = true;
-                        player.saveState();
                         if  ( player.getCurrentType() == PlayerManager.VideoSourceType.VIDEOS )
                             showVideoPlayer();
                         if  ( player.getCurrentType() == PlayerManager.VideoSourceType.SERIES )
                             showSeriesFragment();
+//                        detach();
                     }
                 }
         );
         control.setOnTouchListener( gesture );
     }
 
+    private void detach() {
+        FragmentTransaction fragmentTransaction = requireActivity().getSupportFragmentManager().beginTransaction();
+        fragmentTransaction.remove(this);
+        fragmentTransaction.commitNow();
+    }
+
     private void showSeriesFragment() {
         NavController navController = Navigation.findNavController(requireActivity(), R.id.video_session);
-        Bundle bundle = new Bundle();
-        navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment, bundle );
+//        Bundle bundle = new Bundle();
+//        bundle.putBoolean("from_controller", true);
+//        videoManager.saveTo(bundle);
+//        navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment, bundle );
+        navController.navigate( R.id.action_videoFragment_to_seriesPlayerFragment );
+        detach();
     }
 
 //    @Override
@@ -134,10 +156,21 @@ public class VideoController extends Fragment {
 //        VideoPlayer.play(this);
 
         Intent intent = new Intent( getContext(), VideoPlayerActivity.class );
-        intent.putExtra( "data_type", "controller" );
+        videoManager.saveTo(intent);
+//        intent.putExtra( "data_type", "controller" );
 //        activity.startActivity(intent);
 //        fragment.startActivityForResult( intent, VideoPlayer.REQUEST_PLAYER );
-        startActivity( intent );
+        startActivityForResult( intent, PlayerManager.REQUEST_VIDEO_PLAYER );
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER && resultCode == RESULT_OK )
+        {
+            Log.d("Video_Controller", "Rendering Video Controller");
+            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(requireActivity().getSupportFragmentManager());
+        }
     }
 
     public void consumeVideo(Video video) {
@@ -149,47 +182,25 @@ public class VideoController extends Fragment {
         }
     }
 
-    private void showMusicController()
-    {
-        controlView.findViewById(R.id.controller_host).setVisibility(View.VISIBLE);
-    }
-
-    private void hideMusicController()
-    {
-        controlView.findViewById(R.id.controller_host).setVisibility(View.GONE);
-    }
-
-    private void prepare()
-    {
-        PlayerManager.VideoManager videoManager = new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).getVideoManager();
-    }
-
     private class ControlListener implements Player.EventListener {
 
-        private PlayerManager manager;
+        private PlayerManager.VideoManager manager;
 
-        public ControlListener(PlayerManager manager) {
+        public ControlListener(PlayerManager.VideoManager manager) {
             this.manager = manager;
-            initView(manager);
         }
 
         @Override
         public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-            int index = manager.getPlayer().getCurrentPeriodIndex();
-            Video video = manager.getVideoManager().getVideo(index);
+            int index = manager.getPlayerManager().getCurrentIndex();
+            Video video = manager.getVideo(index);
             consumeVideo(video);
         }
 
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-//                if ( playing == MediaType.MUSIC && isMusicPlayer() )
-            if ( manager.isVideoPlaying() )
-            {
-                if ( playWhenReady )
-                    showMusicController();
-                else
-                    hideMusicController();
-            }
+            if (!playWhenReady && manager.getPlayerManager().getPlayer().getDuration() == manager.getPlayerManager().getPlayer().getCurrentPosition())
+                stop();
         }
     }
 }

@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
+import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.VideoFragment;
@@ -28,6 +30,7 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.loader.content.CursorLoader;
@@ -35,6 +38,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import static android.app.Activity.RESULT_OK;
 import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 
 public class FolderFragment extends Fragment implements VideoFragment.SectionsPagerAdapter.PageTitle, MainActivity.BackAction
@@ -165,6 +169,16 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
 //    }
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER && resultCode == RESULT_OK )
+        {
+            Log.d("Video_Controller", "Rendering Video Controller");
+            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(requireActivity().getSupportFragmentManager());
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.item_list, container, false);
@@ -281,7 +295,8 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
             holder.itemView.setOnClickListener(v -> {
                 new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource(vids);
                 Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
-                startActivity(intent);
+                PlayerManager.setTo(intent, position);
+                startActivityForResult(intent, PlayerManager.REQUEST_VIDEO_PLAYER);
             });
         }
 

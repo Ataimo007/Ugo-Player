@@ -10,25 +10,38 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Base64;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.player.MusicController;
+import com.gcodes.iplayer.music.player.MusicPlayerActivity;
 import com.gcodes.iplayer.player.PlayerService;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.video.player.VideoController;
+import com.google.android.exoplayer2.Player;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.Supplier;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
@@ -37,13 +50,28 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager.widget.ViewPager;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import static com.gcodes.iplayer.music.player.MusicPlayerActivity.PLAY_KARAOKE;
+
+//import okhttp3.Cookie;
+//import okhttp3.CookieJar;
+//import okhttp3.HttpUrl;
+//import okhttp3.OkHttpClient;
+//import okhttp3.Request;
+//import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity
 {
@@ -60,12 +88,170 @@ public class MainActivity extends AppCompatActivity
 
     private BackAction[] backActions;
     private MusicBroadCastReceiver musicReceiver;
+    private ControllerListener controllerListener;
+    private MusicConnection musicConnection;
+    private PlayerService.PlayerBinder binder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d("Player_Model", "Creating a new Activity " + savedInstanceState );
+//        Log.d("Handling_Karaoke", "Handling Karaoke Event");
         begin();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d("Handling_Karaoke", "Handling Karaoke Event " + intent.getExtras());
+        if (intent.getAction() != null && intent.getAction().equals(PLAY_KARAOKE))
+            handleKaraoke(intent);
+    }
+
+    private void handleKaraoke(Intent result)
+    {
+        Intent intent = new Intent( this, MusicPlayerActivity.class );
+        intent.putExtra("music", result.getStringExtra("music"));
+        intent.putExtra("output", result.getStringExtra("output"));
+        intent.setAction(result.getAction());
+        startActivity( intent );
+    }
+
+    //    private void testSubtitle()
+//    {
+//        new Thread(() -> {
+//            URL serverUrl = null;
+//            try {
+//                OkHttpClient client = CFMobile.createOkHttp3Client();
+////                OkHttpClient.Builder builder = new OkHttpClient.Builder()
+////                        .addInterceptor(new HttpLoggingInterceptor())
+////                        .cache(new Cache(cacheDir, cacheSize));
+////                OkHttpClient client = CFMobile.createOkHttp3Client(builder);
+//
+//                Request request = new Request.Builder()
+//                        .url("https://api.opensubtitles.org/xml-rpc")
+//                        .build();
+//
+//                WebView webView = getWebView();
+//                webView.loadDataWithBaseURL();
+//
+//                try (Response response = client.newCall(request).execute()) {
+//                    String html = Base64.encodeToString(response.body().string().getBytes(), Base64.NO_PADDING);
+//
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//
+//        }).start();
+//    }
+
+//    private WebView getWebView()
+//    {
+//        WebView webView = new WebView(this);
+//        webView.getSettings().setJavaScriptEnabled(true);
+//        WebViewClient client = new WebViewClient() {
+//            @Override
+//            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+//                super.onPageStarted(view, url, favicon);
+//            }
+//
+//            @Override
+//            public void onPageFinished(WebView view, String url) {
+//                super.onPageFinished(view, url);
+//            }
+//
+//            @Override
+//            public void onLoadResource(WebView view, String url) {
+//                super.onLoadResource(view, url);
+//            }
+//
+//            @Nullable
+//            @Override
+//            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+//                return super.shouldInterceptRequest(view, request);
+//            }
+//        };
+//
+//        webView.setWebViewClient(client);
+//        return webView;
+//    }
+
+//    private void testSubtitle()
+//    {
+//        new Thread(() -> {
+//            URL serverUrl = null;
+//            try {
+//                serverUrl = new URL("https", "api.opensubtitles.org", 443, "/xml-rpc");
+//                OpenSubtitlesClient osClient = new OpenSubtitlesClientImpl(serverUrl);
+//
+//                Log.d("Player_Subtitle", "Subtitle Status " + osClient.serverInfo());
+//
+//                // logging in
+//                Response response = osClient.login("username", "password", "en", "TemporaryUserAgent");
+//
+//                // checking login status
+//                Log.d("Player_Subtitle", "Subtitle Login " + response.getStatus());
+//                Log.d("Player_Subtitle", "Subtitle Login " + osClient.isLoggedIn());
+//
+//                // searching by string query + season/episode
+//                ListResponse<SubtitleInfo> resp = osClient.searchSubtitles("eng", "Friends", "1", "1");
+//                List<SubtitleInfo> subtitles = resp.getData();
+//                Log.d("Player_Subtitle", "Subtitle Search " + subtitles);
+//
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//
+//        }).start();
+//    }
+
+//    private void testSubtitle()
+//    {
+//        new Thread(() -> {
+//            OkHttpClient client = new OkHttpClient.Builder()
+//                    .cookieJar(new CookieJar() {
+//                        private final HashMap<HttpUrl, List<Cookie>> cookieStore = new HashMap<>();
+//
+//                        @Override
+//                        public void saveFromResponse(@NonNull HttpUrl url, @NonNull List<Cookie> cookies) {
+//                            cookieStore.put(url, cookies);
+//                        }
+//
+//                        @NonNull
+//                        @Override
+//                        public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
+//                            List<Cookie> cookies = cookieStore.get(url);
+//                            return cookies != null ? cookies : new ArrayList<Cookie>();
+//                        }
+//                    }).followRedirects(true).followSslRedirects(true)
+//                    .build();
+//
+////            OkHttpClient client = new OkHttpClient();
+//
+//            Request request = new Request.Builder()
+//                    .url("https://api.opensubtitles.org/xml-rpc")
+//                    .build();
+//
+//            try (Response response = client.newCall(request).execute()) {
+//                Log.d( "Player_Subtitle", response.body().string() );
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }).start();
+//    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
+        playerModel.getPlayerManager().removeListener(controllerListener);
+        playerModel.setPlayerManager(null);
+        releasePlayerManager();
+
     }
 
     private void processIntent() {
@@ -82,8 +268,13 @@ public class MainActivity extends AppCompatActivity
     private void obtainPlayerManager() {
         Log.d("Player_Model", "Obtaining Player Manager from Player Service" );
         Intent intent = new Intent(this, PlayerService.class);
-        MusicConnection musicConnection = new MusicConnection();
+        musicConnection = new MusicConnection();
         bindService(intent, musicConnection, BIND_IMPORTANT);
+    }
+
+    private void releasePlayerManager() {
+        Log.d("Player_Model", "release Player Manager from Player Service" );
+        unbindService(musicConnection);
     }
 
 //    @Override
@@ -114,10 +305,12 @@ public class MainActivity extends AppCompatActivity
     private void back()
     {
         boolean popped = NavHostFragment.findNavController(adapter.getItem(currentPage)).popBackStack();
+        new ViewModelProvider(this).get(BackStackModel.class).onStackPopped.setValue(popped);
         if ( !popped )
         {
             super.onBackPressed();
         }
+        new ViewModelProvider(this).get(BackStackModel.class).onStackPopped.setValue(false);
     }
 
     private void begin()
@@ -133,6 +326,7 @@ public class MainActivity extends AppCompatActivity
             getPermission();
 
         registerReceivers();
+//        obtainPlayerManager();
     }
 
     private void registerReceivers() {
@@ -270,20 +464,31 @@ public class MainActivity extends AppCompatActivity
     {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d("Player_Model", "Connected to player manager, manager " + service );
             Log.d("Player_Model", "Connected to player manager, Initializing PlayerModel" );
-            PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
-            PlayerService.PlayerBinder binder = (PlayerService.PlayerBinder) service;
+            binder = (PlayerService.PlayerBinder) service;
             PlayerManager playerManager = binder.getPlayerManager();
             if (playerManager != null)
-                playerModel.setPlayerManager(playerManager);
-            unRegisterReceiver();
+                consumePlayer(playerManager);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
+            Log.d("Player_Model", "Disconnected to Player Manager" );
             PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
             playerModel.setPlayerManager(null);
         }
+    }
+
+    private void consumePlayer(PlayerManager playerManager) {
+        PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
+        playerModel.setPlayerManager(playerManager);
+        prepareController(playerManager);
+    }
+
+    private void prepareController(PlayerManager playerManager) {
+        controllerListener = new ControllerListener();
+        playerManager.addListener(controllerListener);
     }
 
     public class MusicBroadCastReceiver extends BroadcastReceiver
@@ -291,12 +496,120 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d("Player_Model", "Broadcast for Player Model as been received " + intent );
+//            PlayerManager playerManager = binder.getPlayerManager();
+//            consumePlayer(playerManager);
             processIntent(intent);
+            unRegisterReceiver();
         }
+    }
+
+    private class ControllerListener implements Player.EventListener {
+
+        public ControllerListener() {
+            Log.d("Player_Controllers", "Constructing Controller Listener");
+            new ViewModelProvider(MainActivity.this).get(PlayerModel.class).renderController(getSupportFragmentManager());
+        }
+
+        @Override
+        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+//                if ( playing == MediaType.MUSIC && isMusicPlayer() )
+            if ( playWhenReady )
+            {
+                new ViewModelProvider(MainActivity.this).get(PlayerModel.class).renderMusicController(getSupportFragmentManager());
+            }
+        }
+    }
+
+    public static class BackStackModel extends ViewModel
+    {
+        public MutableLiveData<Boolean> onStackPopped = new MutableLiveData<>(false);
     }
 
     public static class PlayerModel extends AndroidViewModel
     {
+        private Fragment controller;
+        private final static String MUSIC_TAG = "MUSIC_CONTROLLER";
+        private final static String VIDEO_TAG = "VIDEO_CONTROLLER";
+
+        private void renderController(FragmentManager fragmentManager) {
+            PlayerManager manager = playerManager.getValue();
+            Log.d("Player_Controllers", "Rendering Controller Listener");
+            Log.d("Player_Controllers", String.format("Render Music Controller playing %b rendered %b", manager.isMusicPlaying(), isMusicRender() ));
+            if ( manager.isMusicPlaying() && !isMusicRender() ) {
+                showMusicController(fragmentManager);
+            }
+            if ( manager.isVideoPlaying() && !isVideoRender() ) {
+                showVideoController(fragmentManager);
+            }
+        }
+
+        private void renderMusicController(FragmentManager fragmentManager) {
+            PlayerManager manager = playerManager.getValue();
+            Log.d("Player_Controllers", "Rendering Controller Listener");
+            Log.d("Player_Controllers", String.format("Render Music Controller playing %b rendered %b", manager.isMusicPlaying(), isMusicRender() ));
+            if ( manager.isMusicPlaying() && !isMusicRender() ) {
+                showMusicController(fragmentManager);
+            }
+        }
+
+        public void showVideoController(FragmentManager fragmentManager) {
+            VideoController videoController = new VideoController(playerManager.getValue().getVideoManager());
+            render(videoController, fragmentManager, VIDEO_TAG);
+        }
+
+        public void removeVideoController(FragmentManager fragmentManager) {
+            Fragment videoController = fragmentManager.findFragmentByTag(VIDEO_TAG);
+            detach(videoController, fragmentManager);
+        }
+
+        public void removeMusicController(FragmentManager fragmentManager) {
+            Fragment videoController = fragmentManager.findFragmentByTag(VIDEO_TAG);
+            detach(videoController, fragmentManager);
+        }
+
+        public void removeController(FragmentManager fragmentManager) {
+            if ( controller != null)
+                detach(controller, fragmentManager);
+        }
+
+        private boolean isMusicRender()
+        {
+            return controller != null && controller instanceof MusicController;
+        }
+
+        private boolean isVideoRender()
+        {
+            return controller != null && controller instanceof VideoController;
+        }
+
+        private void detach( Fragment fragment, FragmentManager fragmentManager )
+        {
+            fragmentManager.beginTransaction().remove(fragment).commit();
+            controller = null;
+        }
+
+        private void render(Fragment fragment, FragmentManager fragmentManager, String tag)
+        {
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.replace(R.id.controller_host, fragment, tag );
+            fragmentTransaction.commit();
+            controller = fragment;
+        }
+
+        private void detach(FragmentManager fragmentManager)
+        {
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.remove(controller);
+            fragmentTransaction.commit();
+            controller = null;
+        }
+
+        public void showMusicController(FragmentManager fragmentManager) {
+            Log.d("Player_Controllers", "Show Music Controller");
+            MusicController musicController = new MusicController(playerManager.getValue().getMusicManager());
+            render(musicController, fragmentManager, MUSIC_TAG);
+        }
+
         public synchronized PlayerManager getPlayerManager() {
             return getLivePlayerManager().getValue();
         }
@@ -320,9 +633,9 @@ public class MainActivity extends AppCompatActivity
         }
 
         public synchronized PlayerManager.VideoManager getOrListenForVideoManager(LifecycleOwner owner, @NonNull Observer<PlayerManager> observer) {
-            PlayerManager.VideoManager videoManager = getLivePlayerManager().getValue().getVideoManager();
-            if (videoManager != null)
-                return videoManager;
+            PlayerManager playerManager = getLivePlayerManager().getValue();
+            if (playerManager != null && playerManager.getVideoManager() != null)
+                return playerManager.getVideoManager();
             getLivePlayerManager().observe(owner, observer);
             return null;
         }
@@ -362,6 +675,7 @@ public class MainActivity extends AppCompatActivity
                 String[] gsonVideos = Video.toGson(videos);
                 intent.putExtra( "video", gsonVideos );
                 intent.putExtra( "media_type", "video" );
+                intent.putExtra("broadcast", true );
                 getApplication().getBaseContext().startService( intent );
             }
         }
@@ -376,6 +690,7 @@ public class MainActivity extends AppCompatActivity
                 String[] gsonVideos = Video.toGson(videos);
                 intent.putExtra( "video", gsonVideos );
                 intent.putExtra( "begin", begin );
+                intent.putExtra("broadcast", true );
                 getApplication().getBaseContext().startService( intent );
             }
         }
@@ -389,6 +704,7 @@ public class MainActivity extends AppCompatActivity
                 Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
                 String series = aSeries.toGson();
                 intent.putExtra( "series", series );
+                intent.putExtra("broadcast", true );
                 getApplication().getBaseContext().startService( intent );
             }
         }
