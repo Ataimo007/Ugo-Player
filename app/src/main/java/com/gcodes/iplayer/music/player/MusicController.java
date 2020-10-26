@@ -10,12 +10,11 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
@@ -23,7 +22,6 @@ import com.google.android.exoplayer2.ui.PlayerControlView;
 
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
@@ -129,13 +127,28 @@ public class MusicController extends Fragment {
 
         public ControlListener(PlayerManager.MusicManager manager) {
             this.manager = manager;
+            consume();
+            sync();
         }
 
         @Override
         public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+            consume();
+        }
+
+        private void consume()
+        {
             int index = manager.getPlayerManager().getCurrentPeriodIndex();
             Music music = manager.getMusic(index);
             consumeTrack(music);
+        }
+
+        private void sync()
+        {
+            if ( manager.getPlayerManager().getPlayWhenReady() && manager.getPlayerManager().getPlaybackState() == Player.STATE_READY )
+                startAnimation();
+            else
+                pauseAnimation();
         }
 
         @Override

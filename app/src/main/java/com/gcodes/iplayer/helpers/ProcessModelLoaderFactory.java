@@ -6,11 +6,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.util.Size;
 
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.DataSource;
@@ -20,16 +18,13 @@ import com.bumptech.glide.load.model.ModelLoader;
 import com.bumptech.glide.load.model.ModelLoaderFactory;
 import com.bumptech.glide.load.model.MultiModelLoaderFactory;
 import com.bumptech.glide.signature.ObjectKey;
-import com.gcodes.iplayer.music.Music;
-import com.gcodes.iplayer.music.genre.GenreFragment;
+import com.gcodes.iplayer.music.models.Music;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.loader.content.CursorLoader;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Locale;
 
 import static com.gcodes.iplayer.helpers.ProcessModelLoaderFactory.*;
@@ -145,23 +140,6 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
             if ( picture != null )
                 return BitmapFactory.decodeByteArray(picture, 0, picture.length);
             return null;
-
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//                try {
-//                    Log.d("Content_Resolver", "load: content resolver thumbnail");
-//                    return context.getContentResolver().loadThumbnail( music.toUri(), new Size( 640, 480), null );
-//                } catch (IOException e) {
-//                    return null;
-//                }
-//            }
-//            else
-//            {
-//                Log.d("Content_Resolver", "load: old content resolver thumbnail");
-//                byte[] picture = retriever.getEmbeddedPicture();
-//                if ( picture != null )
-//                    return BitmapFactory.decodeByteArray(picture, 0, picture.length);
-//                return null;
-//            }
         }
     }
 

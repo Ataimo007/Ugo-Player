@@ -4,13 +4,16 @@ import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.music.player.MusicPlayerActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.video.Series;
@@ -30,6 +33,16 @@ public class PlayerService extends Service {
     private PlayerManager manager;
 
     public final static String ON_START_PLAYER_MANAGER = "com.gcodes.broadcast.player_manager_start";
+    public final static String ON_CHECK_PLAYER_MANAGER = "com.gcodes.broadcast.player_manager_check";
+    private PlayerBroadCastReceiver checkPlayer;
+
+    private class PlayerBroadCastReceiver extends BroadcastReceiver
+    {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            broadcast();
+        }
+    }
 
     @Nullable
     @Override
@@ -53,6 +66,7 @@ public class PlayerService extends Service {
     public void onDestroy()
     {
         notificationManager.setPlayer( null );
+        unregisterReceiver(checkPlayer);
 //        MusicPlayer.destroy();
         super.onDestroy();
     }
@@ -63,7 +77,17 @@ public class PlayerService extends Service {
         processRequest( intent );
         if ( notificationManager == null )
             initNotification();
+        registerCheckReceiver();
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void registerCheckReceiver() {
+        Log.d("Player_Model", "Registering BroadCast for Player Model" );
+        checkPlayer = new PlayerBroadCastReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(PlayerService.ON_CHECK_PLAYER_MANAGER);
+        registerReceiver(checkPlayer, filter);
+//        LocalBroadcastManager.getInstance(this).registerReceiver(musicReceiver, filter);
     }
 
     private void processRequest(Intent intent) {
@@ -161,7 +185,7 @@ public class PlayerService extends Service {
                     @Override
                     public Bitmap getCurrentLargeIcon(Player player, PlayerNotificationManager.BitmapCallback callback) {
                         return manager.getMusicManager().getMusic( player.getCurrentWindowIndex() ).
-                                getArtBitmap( PlayerService.this );
+                                getThumbnail( PlayerService.this );
 //                        return null;
                     }
                 }, new PlayerNotificationManager.NotificationListener() {
@@ -181,7 +205,7 @@ public class PlayerService extends Service {
                     }
                 });
 
-//        notificationManager.setPlayer(manager.getPlayer());
+        notificationManager.setPlayer(manager.getPlayer());
     }
 
     public class PlayerBinder extends Binder

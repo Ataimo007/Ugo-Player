@@ -69,6 +69,36 @@ public class UIConstance {
         }
     }
 
+    public static class HorizontalSpanDecorator extends RecyclerView.ItemDecoration
+    {
+        private final int span;
+        private final int offset;
+
+        public HorizontalSpanDecorator()
+        {
+            this.span = 20;
+            this.offset = 30;
+        }
+
+        public HorizontalSpanDecorator(int span, int offset )
+        {
+            this.span = span;
+            this.offset = offset;
+        }
+
+        @Override
+        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            outRect.left = 0;
+            outRect.right = span;
+            outRect.top = span;
+
+            if (parent.getChildAdapterPosition(view) == 0 )
+                outRect.left = offset;
+            if (parent.getChildAdapterPosition(view) == parent.getAdapter().getItemCount() -1)
+                outRect.right = offset;
+        }
+    }
+
     public static class AlternateItemDecorator extends RecyclerView.ItemDecoration{
         private int index = 0;
         @Override

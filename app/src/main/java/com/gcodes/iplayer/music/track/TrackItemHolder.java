@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 

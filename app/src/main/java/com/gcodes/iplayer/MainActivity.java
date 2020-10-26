@@ -2,7 +2,6 @@ package com.gcodes.iplayer;
 
 import android.Manifest;
 import android.app.Application;
-import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -10,22 +9,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
-import android.util.Base64;
+import android.os.Looper;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
 import android.view.MenuItem;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.music.player.MusicController;
-import com.gcodes.iplayer.music.player.MusicPlayerActivity;
 import com.gcodes.iplayer.player.PlayerService;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.video.Series;
@@ -33,20 +26,22 @@ import com.gcodes.iplayer.video.Video;
 import com.gcodes.iplayer.video.player.VideoController;
 import com.google.android.exoplayer2.Player;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.os.HandlerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -60,11 +55,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager.widget.ViewPager;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-
-import static com.gcodes.iplayer.music.player.MusicPlayerActivity.PLAY_KARAOKE;
+import static com.gcodes.iplayer.player.PlayerService.ON_CHECK_PLAYER_MANAGER;
 
 //import okhttp3.Cookie;
 //import okhttp3.CookieJar;
@@ -81,7 +72,6 @@ public class MainActivity extends AppCompatActivity
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = this::doSelection;
-    private Menu menu;
     private NavigationPager pager;
     private AppPagerAdapter adapter;
     private int currentPage;
@@ -91,9 +81,11 @@ public class MainActivity extends AppCompatActivity
     private ControllerListener controllerListener;
     private MusicConnection musicConnection;
     private PlayerService.PlayerBinder binder;
+    private PlayerManager playerManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d("Handling_Intent", "On Create " + (getIntent().hasExtra("music") ? getIntent().getStringExtra("music") : "no music") );
         super.onCreate(savedInstanceState);
         Log.d("Player_Model", "Creating a new Activity " + savedInstanceState );
 //        Log.d("Handling_Karaoke", "Handling Karaoke Event");
@@ -101,21 +93,28 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        Log.d("Handling_Karaoke", "Handling Karaoke Event " + intent.getExtras());
-        if (intent.getAction() != null && intent.getAction().equals(PLAY_KARAOKE))
-            handleKaraoke(intent);
+    protected void onStop() {
+        super.onStop();
     }
 
-    private void handleKaraoke(Intent result)
-    {
-        Intent intent = new Intent( this, MusicPlayerActivity.class );
-        intent.putExtra("music", result.getStringExtra("music"));
-        intent.putExtra("output", result.getStringExtra("output"));
-        intent.setAction(result.getAction());
-        startActivity( intent );
-    }
+//    @Override
+//    protected void onNewIntent(Intent intent) {
+//        Log.d("Handling_Intent", "On New Intent" );
+//        super.onNewIntent(intent);
+//        Log.d("Handling_Karaoke", "Handling Karaoke Event " + intent.getExtras());
+//        if (intent.getAction() != null && intent.getAction().equals(PLAY_KARAOKE))
+//            handleKaraoke(intent);
+//    }
+
+//    private void handleKaraoke(Intent result)
+//    {
+//        Intent intent = new Intent( this, MusicPlayerActivity.class );
+//        intent.putExtra("music", result.getStringExtra("music"));
+//        intent.putExtra("output", result.getStringExtra("output"));
+//        Log.d("Play_Karaoke", String.format("Play Karaoke music %s file %s", result.getStringExtra("music"), result.getStringExtra("output")));
+//        intent.setAction(result.getAction());
+//        startActivity( intent );
+//    }
 
     //    private void testSubtitle()
 //    {
@@ -246,18 +245,15 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-        PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
-        playerModel.getPlayerManager().removeListener(controllerListener);
-        playerModel.setPlayerManager(null);
+        Log.d("Handling_Intent", "On Destroy" );
         releasePlayerManager();
-
+        super.onDestroy();
     }
 
-    private void processIntent() {
-        Intent intent = getIntent();
-        processIntent(intent);
-    }
+//    private void processIntent() {
+//        Intent intent = getIntent();
+//        processIntent(intent);
+//    }
 
     private void processIntent(Intent intent) {
         Log.d("Player_Model", "Processing Broadcast from Player Service" );
@@ -274,6 +270,7 @@ public class MainActivity extends AppCompatActivity
 
     private void releasePlayerManager() {
         Log.d("Player_Model", "release Player Manager from Player Service" );
+        playerManager.removeListener(controllerListener);
         unbindService(musicConnection);
     }
 
@@ -326,7 +323,18 @@ public class MainActivity extends AppCompatActivity
             getPermission();
 
         registerReceivers();
+        checkPlayer();
 //        obtainPlayerManager();
+    }
+
+    private void checkPlayer() {
+        Intent broadcast = new Intent();
+        broadcast.setAction(ON_CHECK_PLAYER_MANAGER);
+        sendBroadcast(broadcast);
+    }
+
+    private void broadcast() {
+
     }
 
     private void registerReceivers() {
@@ -384,19 +392,19 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void prepareSearchMenu() {
-        MenuItem searchItem = menu.findItem(R.id.action_search);
-
-        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-
-        SearchView searchView = null;
-        if (searchItem != null) {
-            searchView = (SearchView) searchItem.getActionView();
-        }
-        if (searchView != null) {
-            searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
-        }
-    }
+//    private void prepareSearchMenu() {
+//        MenuItem searchItem = menu.findItem(R.id.action_search);
+//
+//        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+//
+//        SearchView searchView = null;
+//        if (searchItem != null) {
+//            searchView = (SearchView) searchItem.getActionView();
+//        }
+//        if (searchView != null) {
+//            searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+//        }
+//    }
 
     private boolean checkPermissions()
     {
@@ -475,12 +483,11 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onServiceDisconnected(ComponentName name) {
             Log.d("Player_Model", "Disconnected to Player Manager" );
-            PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
-            playerModel.setPlayerManager(null);
         }
     }
 
     private void consumePlayer(PlayerManager playerManager) {
+        this.playerManager = playerManager;
         PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
         playerModel.setPlayerManager(playerManager);
         prepareController(playerManager);
@@ -524,6 +531,27 @@ public class MainActivity extends AppCompatActivity
     {
         public MutableLiveData<Boolean> onStackPopped = new MutableLiveData<>(false);
     }
+
+//    public static class ConcurrentModel extends ViewModel
+//    {
+//        private final ListeningExecutorService executorService = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+//        private final Handler mainThreadHandler = HandlerCompat.createAsync(Looper.getMainLooper());
+//
+//        public <T> ListenableFuture<T> runInBackground(Callable<T> task)
+//        {
+//            return executorService.submit(task);
+//        }
+//
+//        public void runInUI(Runnable task)
+//        {
+//            mainThreadHandler.post(task);
+//        }
+//
+//        public ListeningExecutorService getExecutorService()
+//        {
+//            return executorService;
+//        }
+//    }
 
     public static class PlayerModel extends AndroidViewModel
     {
@@ -629,6 +657,8 @@ public class MainActivity extends AppCompatActivity
         }
 
         public synchronized void setPlayerManager(PlayerManager playerManager) {
+            if (this.playerManager == null)
+                this.playerManager = new MutableLiveData<>();
             this.playerManager.setValue(playerManager);
         }
 

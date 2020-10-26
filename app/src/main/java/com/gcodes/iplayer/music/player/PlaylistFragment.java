@@ -7,7 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;

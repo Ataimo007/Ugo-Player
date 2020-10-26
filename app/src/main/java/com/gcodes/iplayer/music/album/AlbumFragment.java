@@ -10,56 +10,37 @@ import android.view.ViewGroup;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
+import com.gcodes.iplayer.music.models.Album;
+import com.gcodes.iplayer.music.models.Music;
+import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.gcodes.iplayer.ui.UIConstance;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import androidx.navigation.NavHostController;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
+
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
-//import android.support.annotation.NonNull;
-//import androidx.core.app.Fragment;
-//import androidx.core.content.CursorLoader;
-//import androidx.core.widget.SimpleCursorAdapter;
-//
-//import android.support.v7.widget.RecyclerView;
-
-public class AlbumFragment extends Fragment {
-    private String selection = null;
-
-//    private String sort = MediaStore.Audio.Albums.DEFAULT_SORT_ORDER + " asc";
-    private String sort = MediaStore.Audio.Albums._ID + " asc";
-
-    private String[] projection = {
-            MediaStore.Audio.Albums._ID,
-            MediaStore.Audio.Albums.ALBUM_KEY,
-            MediaStore.Audio.Albums.ALBUM,
-            MediaStore.Audio.Albums.ARTIST,
-            MediaStore.Audio.Albums.ALBUM_ART
-    };
-
-    private static Cursor cursor;
+public class AlbumFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>
+{
+    private ArrayList<Album> albums = new ArrayList<>();
+    private CustomAdapter adapter;
 
     // try joining audio column to media column
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        load();
-    }
-
-    public void load()
-    {
-        if ( cursor == null )
-        {
-            CursorLoader loader = new CursorLoader( this.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    projection, selection, null, sort );
-            cursor = loader.loadInBackground();
-        }
+        LoaderManager.getInstance(this).initLoader(0, null, this);
     }
 
     private int getSpan()
@@ -71,7 +52,7 @@ public class AlbumFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.item_list, container, false);
-        CustomAdapter adapter = new CustomAdapter();
+        adapter = new CustomAdapter();
         RecyclerView listView = (RecyclerView) view;
         GridLayoutManager layout = new GridLayoutManager(getContext(), getSpan() );
         listView.setLayoutManager( layout );
@@ -82,14 +63,38 @@ public class AlbumFragment extends Fragment {
         return view;
     }
 
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new CursorLoader( this.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                Album.projection, null, null, Album.sort );
+    }
 
-    public class CustomAdapter extends CursorRecyclerViewAdapter<AlbumItemHolder>
-    {
-        public CustomAdapter()
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        if ( albums == null )
+            albums = new ArrayList<>();
+        if  ( cursor.getCount() > 0 )
         {
-            super( AlbumFragment.this.getContext(), cursor );
+            cursor.moveToFirst();
+            do
+            {
+                albums.add( Album.getInstance(cursor));
+            } while ( cursor.moveToNext() );
         }
+        adapter.notifyDataSetChanged();
+    }
 
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        albums.clear();
+        adapter.notifyDataSetChanged();
+    }
+
+
+    public class CustomAdapter extends RecyclerView.Adapter<AlbumItemHolder>
+    {
+        @NonNull
         @Override
         public AlbumItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
@@ -98,41 +103,26 @@ public class AlbumFragment extends Fragment {
         }
 
         @Override
-        public void onBindViewHolder(final AlbumItemHolder holder, Cursor cursor)
-        {
-            String albumName = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM));
-            String albumKey = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_KEY));
-            String albumId = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums._ID));
-            String albumArt = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
-
-            holder.setTitle(albumName);
-            holder.setSubtitle( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Albums.ARTIST)));
-//            holder.setImage(albumArt);
-            holder.setImage(AlbumFragment.this, albumId);
+        public void onBindViewHolder(@NonNull AlbumItemHolder holder, int position) {
+            Album album = albums.get(position);
+            holder.setTitle(album.getAlbum());
+            holder.setSubtitle( album.getArtist() );
+            holder.setImage(AlbumFragment.this, String.valueOf(album.getAlbumId()));
 
             holder.itemView.setOnClickListener(v -> {
-//                AlbumSession album = new AlbumSession();
-//                Bundle args = new Bundle();
-
                 Bundle bundle = new Bundle();
                 bundle.putString( "from", "album" );
-                bundle.putString( "album_key", albumKey );
-                bundle.putString( "album_name", albumName );
-                bundle.putString( "album_art", albumArt );
+                bundle.putString( "album_key", album.getAlbumKey() );
+                bundle.putString( "album_name", album.getAlbum() );
 
                 Navigation.findNavController( getView() ).navigate( R.id.action_musicFragment_to_mainAlbumFragment, bundle );
-
-//                args.putString( "from", "album" );
-//                args.putString( "album_key", albumKey );
-//                args.putString( "album_name", albumName );
-//                args.putString( "album_art", albumArt );
-
-//                album.setArguments( args );
-
-//                AlbumFragment.this.startActivity( intent );
-
-//                MainActivity.renderSession( album );
             });
+        }
+
+
+        @Override
+        public int getItemCount() {
+            return albums.size();
         }
     }
 }

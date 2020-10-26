@@ -8,12 +8,10 @@ import android.util.Log;
 import com.acrcloud.utils.ACRCloudRecognizer;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.helpers.Helper;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import org.joda.time.Duration;
 

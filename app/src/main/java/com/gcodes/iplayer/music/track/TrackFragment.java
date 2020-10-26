@@ -10,22 +10,31 @@ import android.view.ViewGroup;
 
 import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.centerCropTransform;
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
+import static com.gcodes.iplayer.music.models.Music.projection;
+import static com.gcodes.iplayer.music.models.Music.sort;
 
 //import android.support.annotation.NonNull;
 //import androidx.core.app.Fragment;
@@ -34,26 +43,12 @@ import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 //
 //import android.support.v7.widget.RecyclerView;
 
-public class TrackFragment extends Fragment
+public class TrackFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>
 {
     private String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
 
-    private String sort = MediaStore.Audio.Media.DEFAULT_SORT_ORDER + " asc";
-//    private String sort = MediaStore.Audio.Media.ALBUM_ID + " asc";
-
-    private String[] projection = {
-            MediaStore.Audio.Media._ID,
-            MediaStore.Audio.Media.ALBUM,
-            MediaStore.Audio.Media.DATA,
-            MediaStore.Audio.Media.ALBUM_KEY,
-            MediaStore.Audio.Media.ARTIST,
-            MediaStore.Audio.Media.TITLE,
-            MediaStore.Audio.Media.ALBUM_ID,
-    };
-
-    private static Cursor cursor;
     private static ArrayList< Music > musics;
-    private CursorLoader artLoader;
+    private CustomAdapter adapter;
 
     public TrackFragment() {
     }
@@ -63,7 +58,7 @@ public class TrackFragment extends Fragment
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        load();
+        LoaderManager.getInstance(this).initLoader(0, null, this);
 //        initFloatingAction();
     }
 
@@ -85,39 +80,11 @@ public class TrackFragment extends Fragment
         });
     }
 
-    public void load()
-    {
-        if ( cursor == null )
-        {
-            CursorLoader loader = new CursorLoader( this.getContext(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    projection, selection, null, sort );
-            cursor = loader.loadInBackground();
-            artLoader = new CursorLoader( getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
-                    MediaStore.Audio.Albums._ID + "=?", null,
-                    null);
-            loadMusic();
-        }
-    }
-
-    private void loadMusic()
-    {
-        musics = new ArrayList<>();
-        if  ( cursor.getCount() > 0 )
-        {
-            cursor.moveToFirst();
-            do
-            {
-                musics.add( Music.getInstance(cursor, artLoader) );
-            } while ( cursor.moveToNext() );
-        }
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.item_list, container, false);
-        CustomAdapter adapter = new CustomAdapter();
+        adapter = new CustomAdapter();
         RecyclerView listView = (RecyclerView) view;
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
@@ -125,6 +92,63 @@ public class TrackFragment extends Fragment
         listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
 
         return view;
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new CursorLoader( this.getContext(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection, selection, null, sort );
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        if ( musics == null )
+            musics = new ArrayList<>();
+        if  ( cursor.getCount() > 0 )
+        {
+            cursor.moveToFirst();
+            do
+            {
+                musics.add( Music.getInstance(cursor));
+            } while ( cursor.moveToNext() );
+        }
+        adapter.notifyDataSetChanged();
+    }
+
+//    @Override
+//    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+//        MainActivity.ConcurrentModel concurrentModel = new ViewModelProvider(requireActivity()).get(MainActivity.ConcurrentModel.class);
+//        ListenableFuture<ArrayList<Music>> loadMusic = concurrentModel.runInBackground(() -> {
+//            ArrayList<Music> music = new ArrayList<>();
+//            if (cursor.getCount() > 0) {
+//                cursor.moveToFirst();
+//                do {
+//                    music.add(Music.getInstance(cursor));
+//                } while (cursor.moveToNext());
+//            }
+//            return music;
+//        });
+//        Futures.addCallback(loadMusic, new FutureCallback<ArrayList<Music>>() {
+//            @Override
+//            public void onSuccess(@org.checkerframework.checker.nullness.qual.Nullable ArrayList<Music> result) {
+//                musics = result;
+//                concurrentModel.runInUI(() -> {
+//                    adapter.notifyDataSetChanged();
+//                });
+//            }
+//
+//            @Override
+//            public void onFailure(Throwable t) {
+//
+//            }
+//        }, concurrentModel.getExecutorService());
+//    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        musics.clear();
+        adapter.notifyDataSetChanged();
     }
 
 
@@ -143,7 +167,6 @@ public class TrackFragment extends Fragment
             holder.setTitle( music.getName() );
             holder.setSubtitle( music.getArtist() );
             holder.setImage( TrackFragment.this, music );
-            Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
 
             holder.itemView.setOnClickListener(v -> {
                 Log.d("Player_Manager", "playing " + music);
@@ -153,10 +176,9 @@ public class TrackFragment extends Fragment
 
         @Override
         public int getItemCount() {
+            if (musics == null)
+                return 0;
             return musics.size();
         }
     }
-
-
-
 }

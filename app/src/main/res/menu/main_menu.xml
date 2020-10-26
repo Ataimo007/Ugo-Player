@@ -3,21 +3,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/main_action_search"
-        android:icon="@drawable/ic_search_black_24dp"
-        android:iconTint="@android:color/black"
+        android:icon="@drawable/app_search"
+        android:iconTint="@color/colorAccent"
         app:showAsAction="always"
-        app:actionViewClass="androidx.appcompat.widget.SearchView"
         android:title="Search"/>
-    <item
-        android:id="@+id/main_action_play"
-        android:checkable="true"
-        android:icon="@drawable/ic_play_arrow_black_24dp"
-        android:iconTint="@android:color/black"
-        android:title="Play Last"
-        app:showAsAction="always" />
-    <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:title="@string/action_settings"
-        app:showAsAction="never"/>
+<!--    <item-->
+<!--        android:id="@+id/main_action_play"-->
+<!--        android:checkable="true"-->
+<!--        android:icon="@drawable/ic_play_arrow_black_24dp"-->
+<!--        android:iconTint="@android:color/black"-->
+<!--        android:title="Play Last"-->
+<!--        app:showAsAction="always" />-->
+<!--    <item-->
+<!--        android:id="@+id/action_settings"-->
+<!--        android:orderInCategory="100"-->
+<!--        android:title="@string/action_settings"-->
+<!--        app:showAsAction="never"/>-->
 </menu>

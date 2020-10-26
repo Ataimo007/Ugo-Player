@@ -22,6 +22,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager.widget.ViewPager;
 
 public class MusicFragment extends Fragment
@@ -54,7 +56,7 @@ public class MusicFragment extends Fragment
         View content = inflater.inflate(R.layout.music_fragment, container, false);
         ViewPager mViewPager = content.findViewById(R.id.main_content);
         TabLayout tabLayout = content.findViewById(R.id.music_tabs);
-        Toolbar appbar = content.findViewById(R.id.app_toolbar);
+        Toolbar appbar = content.findViewById(R.id.music_toolbar);
 
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
@@ -72,6 +74,15 @@ public class MusicFragment extends Fragment
                 else
                     app.unRegisterBack();
             }
+        });
+
+        appbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.main_action_search)
+            {
+                NavHostFragment.findNavController(this).navigate(R.id.action_musicFragment_to_searchFragment);
+                return true;
+            }
+            return false;
         });
 
         // current Title

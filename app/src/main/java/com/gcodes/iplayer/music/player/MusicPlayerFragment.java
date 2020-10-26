@@ -35,7 +35,7 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.services.karaoke.KaraokeService;
 import static com.gcodes.iplayer.services.karaoke.KaraokeService.*;
@@ -104,9 +104,11 @@ public class MusicPlayerFragment extends Fragment
             handler.postDelayed(syncer, LYRICSYNCER);
         }
     };
+    private CompoundButton.OnCheckedChangeListener checkedListener;
 
     public MusicPlayerFragment(PlayerManager.MusicManager manager) {
         this.manager = manager;
+        backupSource();
     }
 
     private void syncPost()
@@ -140,13 +142,14 @@ public class MusicPlayerFragment extends Fragment
     public void onDestroy() {
         super.onDestroy();
         deSync();
+        maker.detachView();
 //        releaseKaraoke();
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        maker.dettach();
+//        maker.dettach();
     }
 
     private void sync()
@@ -208,7 +211,7 @@ public class MusicPlayerFragment extends Fragment
 
         initRecycleView( content );
         initButton();
-        initKaraoke(content);
+        initKaraoke();
         initRotateAnim();
 
 //        musicName = content.findViewById( R.id.song_name );
@@ -217,9 +220,10 @@ public class MusicPlayerFragment extends Fragment
         return content;
     }
 
-    private void initKaraoke(View content) {
+    private void initKaraoke() {
         maker = KaraokeMaker.getInstance();
         karaokePlayerHandler = new KaraokePlayerHandler();
+        maker.attachView(this, karaokePlayerHandler);
 //        maker.prepare(getContext(), karaokePlayerHandler);
 
     }
@@ -240,19 +244,26 @@ public class MusicPlayerFragment extends Fragment
 
 //        if ( false ) // condition for no voice
 
-        karaokeButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if ( isChecked )
-            {
+        checkedListener = (buttonView, isChecked) -> {
+            if (isChecked) {
                 File karaoke = maker.getKaraoke(currentMusic, getContext());
-                if ( karaoke != null && karaoke.exists() )
+                if (karaoke != null && karaoke.exists())
                     playKaraoke(karaoke, currentMusic);
                 else
-                    maker.createKaraoke(currentMusic, manager, karaokePlayerHandler, this);
-            }
-            else
+                    maker.createKaraoke(currentMusic, manager);
+            } else
                 restore();
-        });
+        };
+        karaokeButton.setOnCheckedChangeListener(checkedListener);
         progressBar.setMax(100);
+    }
+
+    public void prepareKaraoke(File file, Music music)
+    {
+        karaokeButton.setOnCheckedChangeListener(null);
+        karaokeButton.setChecked(true);
+        karaokeButton.setOnCheckedChangeListener(checkedListener);
+        playKaraoke(file, music);
     }
 
     private void initView()
@@ -444,10 +455,16 @@ public class MusicPlayerFragment extends Fragment
         }
 
         @Override
+        public void cancel() {
+            Log.d("Player_Karaoke", "Handling Cancel Karaoke in Player Fragment");
+            finishProgress();
+        }
+
+        @Override
         public void success(File file, Music music) {
             uiHandler.post(() -> {
                 finishProgress();
-                if ( manager.inPlayList(music) )
+                if ( manager.isMusicPlaying(music) )
                     playKaraoke(file, music);
             });
         }
@@ -476,6 +493,50 @@ public class MusicPlayerFragment extends Fragment
         progressBar.setVisibility(View.GONE);
     }
 
+//    public void playKaraoke(File file, Music music)
+//    {
+//        Player.EventListener updateKaraoke = new Player.EventListener() {
+//            @Override
+//            public void onLoadingChanged(boolean isLoading) {
+//                if (!isLoading) {
+//                    Log.d("Play_Karaoke", String.format("Loading changed %b the source is %s", isLoading, manager.getMediaSource()) );
+//                    ProgressiveMediaSource musicSource = manager.getMusicSource(file);
+//                    int index = manager.getIndex(music);
+//
+//                    Pair<ConcatenatingMediaSource, MediaSource> sourcePair = manager.buildNewSource(musicSource, index);
+//                    ConcatenatingMediaSource newSource = sourcePair.first;
+//                    manager.switchSources(newSource);
+//
+//                    if (manager.getCurrentTrack() != index)
+//                        manager.play(index);
+//
+//                    manager.getPlayerManager().removeListener(this);
+//                }
+//            }
+//        };
+//
+//        Log.d("Play_Karaoke", "Applying Karaoke " + music);
+//        Log.d("Play_Karaoke", "The source before is " + manager.getMediaSource() );
+//
+//        ProgressiveMediaSource musicSource = manager.getMusicSource(file);
+//        int index = manager.getIndex(music);
+//
+//        if ( index < 0 )
+//        {
+//            manager.getPlayerManager().addListener(updateKaraoke);
+//            manager.addToPlaylist(music);
+//            return;
+//        }
+//
+//        Pair<ConcatenatingMediaSource, MediaSource> sourcePair = manager.buildNewSource(musicSource, index);
+//        ConcatenatingMediaSource newSource = sourcePair.first;
+//        manager.switchSources(newSource);
+//
+//        int newIndex = manager.getIndex(music);
+//        if (manager.getCurrentTrack() != newIndex)
+//            manager.play(newIndex);
+//    }
+
     public void playKaraoke(File file, Music music)
     {
         Log.d("Play_Karaoke", "Applying Karaoke " + music);
@@ -483,18 +544,31 @@ public class MusicPlayerFragment extends Fragment
         int index = manager.getIndex(music);
         if ( index < 0 )
         {
-            manager.addToPlaylist(music);
+            ConcatenatingMediaSource newMusicSource = manager.buildNewSource(music);
+            backupSource(newMusicSource);
+            manager.addToPlaylist(music, musicSource);
             index = manager.getIndex(music);
+            Log.d("Play_Karaoke", String.format("Karaoke for index %d, sourceIndex %d music %s", index, manager.getMediaSource().getSize(), manager.getMusic(index)));
+            Log.d("Play_Karaoke", String.format("Karaoke for index %d, sourceIndex %d music %s", index, backupSource.getSize(), manager.getMusic(index)));
+            manager.play(index);
         }
-        Pair<ConcatenatingMediaSource, MediaSource> sourcePair = manager.buildNewSource(musicSource, index);
-        ConcatenatingMediaSource newSource = sourcePair.first;
-        backupSource();
-        manager.switchSources(newSource);
+        else
+        {
+            Pair<ConcatenatingMediaSource, MediaSource> sourcePair = manager.buildNewSource(musicSource, index);
+            ConcatenatingMediaSource newSource = sourcePair.first;
+            Log.d("Play_Karaoke", String.format("Karaoke for index %d, sourceIndex %d music %s", index, manager.getMediaSource().getSize(), manager.getMusic(index)));
+            Log.d("Play_Karaoke", String.format("Karaoke for index %d, sourceIndex %d music %s", index, newSource.getSize(), manager.getMusic(index)));
+            manager.switchSources(newSource);
+        }
     }
 
     private void backupSource()
     {
         backupSource = manager.getMediaSource();
+    }
+
+    private void backupSource(ConcatenatingMediaSource newMusicSource) {
+        backupSource = newMusicSource;
     }
 
     public void restore() {

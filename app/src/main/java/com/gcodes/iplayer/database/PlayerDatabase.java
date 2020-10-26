@@ -3,7 +3,7 @@ package com.gcodes.iplayer.database;
 import android.content.Context;
 import android.util.Log;
 
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.services.ACRService;
 import com.gcodes.iplayer.services.LyricsOVH;
 import com.gcodes.iplayer.services.MusixMatchLyricsService;

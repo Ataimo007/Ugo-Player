@@ -13,7 +13,7 @@
 //import com.gcodes.iplayer.R;
 //import com.gcodes.iplayer.database.PlayerDatabase;
 //import com.gcodes.iplayer.helpers.Helper;
-//import com.gcodes.iplayer.music.Music;
+//import com.gcodes.iplayer.music.models.Music;
 //import com.gcodes.iplayer.services.MusixMatchLyricsService;
 //
 //import org.jmusixmatch.MusixMatch;

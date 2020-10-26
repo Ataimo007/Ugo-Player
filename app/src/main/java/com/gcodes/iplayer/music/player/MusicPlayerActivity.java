@@ -20,7 +20,7 @@ import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.player.PlayerService;
 import com.google.android.exoplayer2.Player;
@@ -151,11 +151,11 @@ public class MusicPlayerActivity extends AppCompatActivity
         bindService(intent, musicConnection, BIND_IMPORTANT);
     }
 
-//    @Override
-//    protected void onNewIntent(Intent intent) {
-//        super.onNewIntent(intent);
-//        processAction(intent);
-//    }
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        processAction(intent);
+    }
 
     private void processAction(Intent intent) {
         Log.d("Play_Karaoke", "Processing New Intent");
@@ -167,8 +167,8 @@ public class MusicPlayerActivity extends AppCompatActivity
 
     private void playKaraoke(Intent intent) {
 
-        TabLayout tabs = getTabs();
-        tabs.getTabAt( pagerAdapter.getDefaultTabPos() ).select();
+//        TabLayout tabs = getTabs();
+//        tabs.getTabAt( pagerAdapter.getDefaultTabPos() ).select();
 
         Music music = Music.fromGson(intent.getStringExtra("music"));
         File file = new File(intent.getStringExtra("output"));
@@ -696,7 +696,7 @@ public class MusicPlayerActivity extends AppCompatActivity
         private void playKaraoke(File file, Music music)
         {
             Log.d("Play_Karaoke", "Applying Karaoke " + music);
-            player.playKaraoke(file, music);
+            player.prepareKaraoke(file, music);
         }
 
         private void updateMusicVideos( List<Video> videos )

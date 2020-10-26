@@ -6,9 +6,11 @@ import android.app.NotificationChannelGroup;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Binder;
 import android.os.Build;
@@ -21,11 +23,11 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 
 import com.arthenica.mobileffmpeg.ExecuteCallback;
+import com.arthenica.mobileffmpeg.FFmpegExecution;
 import com.arthenica.mobileffmpeg.Statistics;
 import com.arthenica.mobileffmpeg.StatisticsCallback;
-import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 
 import com.arthenica.mobileffmpeg.Config;
 import com.arthenica.mobileffmpeg.FFmpeg;
@@ -38,6 +40,7 @@ import org.joda.time.Period;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.arthenica.mobileffmpeg.Config.RETURN_CODE_CANCEL;
 import static com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS;
@@ -49,15 +52,17 @@ public class KaraokeService extends Service
     public static final String CANCEL_KARAOKE = "CANCEL_KARAOKE";
     public static final String CREATE_KARAOKE = "CREATE_KARAOKE";
     private PlayerManager.MusicManager manager;
+//    public static final String ON_START_KARAOKE = "com.gcodes.iplayer.services.karaoke.ON_START_KARAOKE";
+    public static final String STOP_KARAOKE = "com.gcodes.iplayer.services.karaoke.STOP_KARAOKE";
 
-    public static class KaraokeMaker
+    public static class KaraokeMaker extends BroadcastReceiver
     {
         private static KaraokeMaker maker;
         private Music producing;
 
         private Context context;
         private KaraokeHandler handler;
-        private boolean attached = false;
+        private boolean making = false;
         private PlayerManager.MusicManager manager;
         private KaraokeConnection connection;
 
@@ -69,45 +74,93 @@ public class KaraokeService extends Service
             return maker;
         }
 
-        public void createKaraoke(Music music, PlayerManager.MusicManager manager, KaraokeHandler handler, Fragment fragment)
+        public void createKaraoke(Music music, PlayerManager.MusicManager manager)
         {
-            Log.d("FFmpag_Service", "The Service attach state " + attached);
-            if ( !attached)
-                karaoke(music, manager, handler, fragment);
-        }
-
-        private synchronized void attach(Fragment fragment, KaraokeHandler handler, PlayerManager.MusicManager manager)
-        {
-            if ( !fragment.isDetached() )
+            Log.d("FFmpag_Service", "The Service attach state " + making);
+            if ( !making)
             {
-                this.context = fragment.getContext();
-                this.handler = handler;
-                this.manager = manager;
-                attached = true;
+                karaoke(music, manager);
+                registerCanceler();
             }
         }
 
-        public synchronized void dettach()
+        private void registerCanceler() {
+            KaraokeCancelReceiver canceler = new KaraokeCancelReceiver();
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(STOP_KARAOKE);
+            context.registerReceiver(canceler, filter);
+        }
+
+        public void cancelCreation()
         {
-            context = null;
+            Log.d("Player_Karaoke", "Handling Cancel Karaoke in Player Fragment");
+            finish();
+        }
+
+//        private synchronized void attach(Fragment fragment, KaraokeHandler handler, PlayerManager.MusicManager manager)
+//        {
+//            if ( !fragment.isDetached() )
+//            {
+//                this.context = fragment.getContext();
+//                this.handler = handler;
+//                this.manager = manager;
+//                attached = true;
+//            }
+//        }
+
+        private synchronized void init(PlayerManager.MusicManager manager)
+        {
+            this.manager = manager;
+            making = true;
+        }
+
+        private synchronized void release()
+        {
+            this.manager = null;
+            making = false;
+        }
+
+        public synchronized void attachView(Fragment fragment, KaraokeHandler handler)
+        {
+            this.context = fragment.getContext();
+            this.handler = handler;
+            if ( isMaking() )
+                bindToService();
+//            if (connection != null)
+//                connection.registerHandler(this.handler);
+        }
+
+//        public synchronized void dettach()
+//        {
+//            context = null;
+//            handler = null;
+//            manager = null;
+//            attached = false;
+//        }
+
+        public synchronized void detachView()
+        {
             handler = null;
-            manager = null;
-            attached = false;
+            if ( making )
+                unbindToService();
+//            if (connection != null)
+//                connection.unregisterHandler();
         }
 
-        private synchronized boolean isAttached()
+        private synchronized boolean isMaking()
         {
-            return attached;
+            return making;
         }
 
-        public void karaoke(Music music, PlayerManager.MusicManager manager, KaraokeHandler handler, Fragment fragment)
+        public void karaoke(Music music, PlayerManager.MusicManager manager)
         {
             Log.d("FFmpag_Service", String.format("Creating karaoke for %s", music));
-            Context context = fragment.getContext();
+//            Context context = fragment.getContext();
             String karaokePath = getKaraokePath(music, context);
             execute(music, karaokePath, context);
             Log.d("FFmpag_Service", String.format("Attaching session for %s path %s", music, karaokePath));
-            attach(fragment, handler, manager);
+            init(manager);
+//            attach(fragment, handler, manager);
 //            return karaokePath;
         }
 
@@ -127,8 +180,7 @@ public class KaraokeService extends Service
 
         public File getKaraoke(Music music, Context context) {
             String karaokePath = getKaraokePath(music, context);
-            File file = new File(karaokePath);
-            return file;
+            return new File(karaokePath);
         }
 
         public String getKaraokePath(Music music, Context context)
@@ -154,8 +206,8 @@ public class KaraokeService extends Service
             return handler;
         }
 
-        public void bindToService() {
-            if (attached)
+        public synchronized void bindToService() {
+            if (making)
             {
                 Intent intent = new Intent(getContext(), KaraokeService.class);
                 connection = new KaraokeConnection(handler, manager);
@@ -163,13 +215,36 @@ public class KaraokeService extends Service
             }
         }
 
-        public void finish() {
-            if (attached)
+        public void unbindToService() {
+            if (making)
             {
-//                Intent intent = new Intent(getContext(), KaraokeService.class);
-//                context.stopService(intent);
-                context.unbindService(connection);
-                dettach();
+                if (connection != null)
+                    context.unbindService(connection);
+            }
+        }
+
+        public synchronized void finish() {
+            if (making)
+            {
+                if (connection != null)
+                    context.unbindService(connection);
+
+                release();
+                Intent intent = new Intent(getContext(), KaraokeService.class);
+                context.stopService(intent);
+            }
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+        }
+
+        private class KaraokeCancelReceiver extends BroadcastReceiver
+        {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                cancelCreation();
             }
         }
     }
@@ -178,7 +253,7 @@ public class KaraokeService extends Service
     {
         private final PlayerManager.MusicManager manager;
         private KaraokeService.KaraokeBinder binder;
-        private final KaraokeHandler karaokePlayerHandler;
+        private KaraokeHandler karaokePlayerHandler;
 
         private KaraokeConnection(KaraokeHandler karaokePlayerHandler, PlayerManager.MusicManager manager) {
             this.karaokePlayerHandler = karaokePlayerHandler;
@@ -194,6 +269,18 @@ public class KaraokeService extends Service
             }
 
         }
+
+//        public void registerHandler(KaraokeHandler handler)
+//        {
+//            karaokePlayerHandler = handler;
+//            binder.register(handler);
+//        }
+//
+//        public void unregisterHandler()
+//        {
+//            karaokePlayerHandler = null;
+//            binder.release();
+//        }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
@@ -222,7 +309,21 @@ public class KaraokeService extends Service
         public void update(int percentage) {
             updateNotificationProgress(percentage);
         }
+
+        @Override
+        public void cancel() {
+            removeNotification();
+        }
     }
+
+//    private class KaraokeCheckReceiver extends BroadcastReceiver
+//    {
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+//            Intent message = intent.getParcelableExtra("message");
+//            sendBroadcast(message);
+//        }
+//    }
 
     private final String karaokeCmd = "-i \"%s\" -af pan=stereo|c0=c0|c1=-1*c1 -ac 1 \"%s\"";
     private final String[] karaokeCmds = { "-i", "", "-af", "pan=stereo|c0=c0|c1=-1*c1", "-ac", "1", "" };
@@ -245,15 +346,24 @@ public class KaraokeService extends Service
 
         public void prepare(KaraokeHandler handler, PlayerManager.MusicManager manager)
         {
-            playerHandler = handler;
-            addKaraokeHandler(handler);
+            if (handler != null)
+            {
+                playerHandler = handler;
+                addKaraokeHandler(handler);
+            }
             setManager(manager);
         }
 
         public synchronized void release()
         {
             removeKaraokeHandler(playerHandler);
+            playerHandler = null;
         }
+
+//        public void register(KaraokeHandler handler) {
+//            playerHandler = handler;
+//            addKaraokeHandler(handler);
+//        }
     }
 
     private void setManager(PlayerManager.MusicManager manager) {
@@ -273,30 +383,53 @@ public class KaraokeService extends Service
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         processAction(intent);
-        return super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
+//        return super.onStartCommand(intent, flags, startId);
     }
+
+    @Override
+    public void onDestroy() {
+        releaseCreator();
+        super.onDestroy();
+    }
+
+//    private void processAction(Intent intent) {
+//        Log.d("Player_Karaoke", "Handling intent for " + intent.getAction());
+//        switch (intent.getAction())
+//        {
+//            case CREATE_KARAOKE:
+//                createKaraoke(intent);
+//                registerCheckReceiver();
+//                break;
+//
+//            case CANCEL_KARAOKE:
+//                cancelKaraoke();
+//        }
+//    }
 
     private void processAction(Intent intent) {
-        switch (intent.getAction())
-        {
-            case CREATE_KARAOKE:
-                createKaraoke(intent);
-                break;
-
-            case CANCEL_KARAOKE:
-                cancelKaraoke();
-        }
+        Log.d("Player_Karaoke", "Handling intent for " + intent.getAction());
+        createKaraoke(intent);
+//        registerCheckReceiver();
     }
 
+//    private void registerCheckReceiver() {
+//        KaraokeCheckReceiver receiver = new KaraokeCheckReceiver();
+//        IntentFilter filter = new IntentFilter();
+//        filter.addAction(ON_START_KARAOKE);
+//        registerReceiver(receiver, filter);
+//    }
+
     private void cancelKaraoke() {
-        stopService();
-        KaraokeMaker maker = KaraokeMaker.getInstance();
-        maker.finish();
+        Log.d("Player_Karaoke", "Handling Cancel Karaoke in Player Fragment");
+        handleCancel();
+        stopForeground();
     }
 
     private void createKaraoke(Intent intent)
     {
         initialize(intent);
+        prepareNotification();
         initNotification();
         initNotificationHandler();
         beginForeground();
@@ -351,17 +484,17 @@ public class KaraokeService extends Service
     }
 
     public synchronized void handleSuccess(File file, Music music) {
-        stopService();
+        stopForeground();
         if (karaokeHandlers != null && !karaokeHandlers.isEmpty())
         {
             for (KaraokeHandler handler : karaokeHandlers )
                 handler.success(file, music);
         }
         karaokeHandlers.clear();
-        stopSelf();
+//        stopSelf();
     }
 
-    public void stopService()
+    public void stopForeground()
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
             stopForeground(STOP_FOREGROUND_DETACH);
@@ -385,10 +518,23 @@ public class KaraokeService extends Service
         }
     }
 
+    public synchronized void handleCancel() {
+        int i = 1;
+        if (karaokeHandlers != null && !karaokeHandlers.isEmpty())
+        {
+            for (KaraokeHandler handler : karaokeHandlers )
+            {
+                Log.d("Player_Karaoke", "Handling Cancel Karaoke handler " + i++ );
+                handler.cancel();
+            }
+            karaokeHandlers.clear();
+        }
+    }
+
     @Override
     public void onCreate() {
         createChannel();
-        prepareNotification();
+//        prepareNotification();
 //        loadLibrary();
     }
 
@@ -430,25 +576,41 @@ public class KaraokeService extends Service
         NOTIFICATION_ID = getResources().getInteger( R.integer.karaoke_id );
         builder = new NotificationCompat.Builder(this, getString(R.string.headsup_karaoke_id) );
         notificationManager = NotificationManagerCompat.from(this);
-    }
 
-    private void initNotification()
-    {
-        Intent cancel = new Intent(this, KaraokeService.class);
-        cancel.setAction(CANCEL_KARAOKE);
-        PendingIntent cancelKaraoke = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
-            cancelKaraoke = PendingIntent.getForegroundService(this, 0, cancel, 0);
-        else
-            cancelKaraoke = PendingIntent.getService(this, 0, cancel, 0);
+        Intent cancel = new Intent();
+        cancel.setAction(STOP_KARAOKE);
+        PendingIntent cancelKaraoke = PendingIntent.getBroadcast(this, music.uniqueCode(STOP_KARAOKE), cancel, PendingIntent.FLAG_UPDATE_CURRENT);
 
-
-        builder.setContentTitle("Karaoke : " + music.getName())
-                .setContentText("0%")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+        builder.setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setChannelId(getString(R.string.headsup_karaoke_id))
                 .addAction( 0, "Cancel", cancelKaraoke);
+    }
+
+//    private void prepareNotification()
+//    {
+//        NOTIFICATION_ID = getResources().getInteger( R.integer.karaoke_id );
+//        builder = new NotificationCompat.Builder(this, getString(R.string.headsup_karaoke_id) );
+//        notificationManager = NotificationManagerCompat.from(this);
+//
+//        Intent cancel = new Intent(this, KaraokeService.class);
+//        cancel.setAction(CANCEL_KARAOKE);
+//        PendingIntent cancelKaraoke = null;
+//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+//            cancelKaraoke = PendingIntent.getForegroundService(this, 0, cancel, 0);
+//        else
+//            cancelKaraoke = PendingIntent.getService(this, 0, cancel, 0);
+//
+//        builder.setSmallIcon(R.drawable.ic_launcher_foreground)
+//                .setPriority(NotificationCompat.PRIORITY_HIGH)
+//                .setChannelId(getString(R.string.headsup_karaoke_id))
+//                .addAction( 0, "Cancel", cancelKaraoke);
+//    }
+
+    private void initNotification()
+    {
+        builder.setContentTitle("Karaoke : " + music.getName())
+                .setContentText("0%");
     }
 
     private void processOutput(File file, Music music) {
@@ -466,22 +628,42 @@ public class KaraokeService extends Service
     public void finishNotification()
     {
 //        Intent karaoke = new Intent(this, MusicPlayerActivity.class);
-        Intent karaoke = new Intent(this, MainActivity.class);
-//        karaoke.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        Intent karaoke = new Intent(this, MusicPlayerActivity.class);
+        Log.d("Handling_Intent", "Saving Karaoke for " + music);
+        Log.d("Handling_Intent", "Saving Karaoke for " + music.toGson());
+        Log.d("Handling_Intent", "Saving Karaoke for " + output);
+        Log.d("Handling_Intent", "Saving Karaoke for " + music.hashCode());
+
         karaoke.putExtra("music", music.toGson());
         karaoke.putExtra("output", output);
         karaoke.setAction(PLAY_KARAOKE);
-        PendingIntent playKaraoke = PendingIntent.getActivity(this, 0, karaoke, 0);
+//        karaoke.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        karaoke.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent playKaraoke = PendingIntent.getActivity(this, music.hashCode(), karaoke, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        NotificationCompat.Builder finishBuilder = new NotificationCompat.Builder(this, getString(R.string.karaoke_id));
+        NotificationCompat.Builder finishBuilder = new NotificationCompat.Builder(this, getString(R.string.headsup_karaoke_id));
         finishBuilder.setContentTitle("Finish Creating Karaoke")
-                .setContentText(music.getName())
+                .setContentText(this.music.getName())
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(playKaraoke);
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(playKaraoke)
+                .setAutoCancel(true);
 
         Notification notification = finishBuilder.build();
         notificationManager.notify(NOTIFICATION_ID, notification);
+    }
+
+    private void releaseCreator()
+    {
+        List<FFmpegExecution> executions = FFmpeg.listExecutions();
+        if (!executions.isEmpty())
+        {
+            cancelKaraoke();
+            FFmpeg.cancel();
+            File file = new File(output);
+            if ( file.exists() )
+                file.delete();
+        }
     }
 
     private void execute(Music music, String output)
@@ -506,6 +688,7 @@ public class KaraokeService extends Service
         void success(File file, Music music);
         void failure(Music music);
         void update( int percentage );
+        void cancel();
     }
 
     private class KaraokeExecutor implements ExecuteCallback, StatisticsCallback

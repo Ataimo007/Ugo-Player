@@ -26,18 +26,20 @@ import androidx.recyclerview.widget.RecyclerView;
  
 public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
 
-    private Context mContext;
-
     private Cursor mCursor;
 
     private boolean mDataValid;
 
     private int mRowIdColumn;
 
-    private DataSetObserver mDataSetObserver;
+    private final DataSetObserver mDataSetObserver;
 
-    public CursorRecyclerViewAdapter(Context context, Cursor cursor) {
-        mContext = context;
+    public CursorRecyclerViewAdapter()
+    {
+        this(null);
+    }
+
+    public CursorRecyclerViewAdapter(Cursor cursor) {
         mCursor = cursor;
         mDataValid = cursor != null;
         mRowIdColumn = mDataValid ? mCursor.getColumnIndex("_id") : -1;
@@ -73,6 +75,7 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
     }
 
     public abstract void onBindViewHolder(VH viewHolder, Cursor cursor);
+    public void onBindViewHolder(VH viewHolder, Cursor cursor, int pos) {}
 
     @Override
     public void onBindViewHolder(VH viewHolder, int position) {
@@ -83,6 +86,7 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
             throw new IllegalStateException("couldn't move cursor to position " + position);
         }
         onBindViewHolder(viewHolder, mCursor);
+//        onBindViewHolder(viewHolder, mCursor, position);
     }
 
     /**

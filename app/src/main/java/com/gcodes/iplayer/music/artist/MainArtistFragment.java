@@ -4,7 +4,6 @@ import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,7 +14,7 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.music.album.AlbumItemHolder;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.gcodes.iplayer.ui.UIConstance;
@@ -66,7 +65,7 @@ public class MainArtistFragment extends Fragment
 
     private String albumSort = MediaStore.Audio.Artists.Albums.ALBUM_KEY + " asc";
 
-    private static CursorLoader artLoader;
+//    private static CursorLoader artLoader;
 
     private String artistKey;
     private long artistId;
@@ -125,7 +124,7 @@ public class MainArtistFragment extends Fragment
 
     private void init() {
         initArgs();
-        initArtLoader();
+//        initArtLoader();
         tracks = getTracks();
         albums = getAlbums();
     }
@@ -134,16 +133,16 @@ public class MainArtistFragment extends Fragment
         artistKey = getArguments().getString( "artist_key" );
         artist = getArguments().getString("artist");
         artistId = getArguments().getLong("artist_id");
-        albumArt = getArguments().getString("album_art");
+//        albumArt = getArguments().getString("album_art");
     }
 
-    private void initArtLoader()
-    {
-        artLoader = new CursorLoader( this.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
-                MediaStore.Audio.Albums._ID + "=?", null,
-                null);
-    }
+//    private void initArtLoader()
+//    {
+//        artLoader = new CursorLoader( this.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+//                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
+//                MediaStore.Audio.Albums._ID + "=?", null,
+//                null);
+//    }
 
     public ArrayList<Music> getTracks()
     {
@@ -156,7 +155,7 @@ public class MainArtistFragment extends Fragment
         cursor.moveToFirst();
         do
         {
-            musics.add( Music.getInstance(cursor, artLoader) );
+            musics.add( Music.getInstance(cursor) );
         } while ( cursor.moveToNext() );
         return musics;
     }
@@ -278,7 +277,7 @@ public class MainArtistFragment extends Fragment
                 holder.setSubtitle( music.getArtist() );
                 holder.setImage( getContext(), music );
 //            holder.setImage( music.toUri() );
-                Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
+//                Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
 //            holder.setImage( cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)));
 
                 holder.itemView.setOnClickListener(v -> {
@@ -324,7 +323,7 @@ public class MainArtistFragment extends Fragment
         public class CustomAdapter extends CursorRecyclerViewAdapter< AlbumItemHolder >
         {
             public CustomAdapter() {
-                super(ArtistAlbumFragment.this.getContext(), albums);
+                super(albums);
             }
 
             @Override

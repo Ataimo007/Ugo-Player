@@ -119,7 +119,7 @@ public class AllFragment extends Fragment implements VideoFragment.SectionsPager
     {
         public CustomAdapter()
         {
-            super(AllFragment.this.getContext(), cursor);
+            super(cursor);
         }
 
         @Override

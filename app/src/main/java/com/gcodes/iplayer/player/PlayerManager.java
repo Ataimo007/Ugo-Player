@@ -10,7 +10,7 @@ import android.widget.Toast;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.services.ACRService;
 import com.gcodes.iplayer.video.Series;
 import com.gcodes.iplayer.video.Video;
@@ -465,6 +465,7 @@ public class PlayerManager
     public void playTrack( int position )
     {
         player.seekTo( position, 0 );
+//        player.seekTo( position );
     }
 
     public void seekTo(long position )
@@ -730,10 +731,46 @@ public class PlayerManager
             return sourcePair;
         }
 
+        @NonNull
+        public ConcatenatingMediaSource buildNewSource(MediaSource childSource)
+        {
+            MediaSource[] sources = new MediaSource[ source.getSize() + 1 ];
+            for ( int i = 0; i < source.getSize(); ++i )
+            {
+                MediaSource mediaSource = source.getMediaSource(i);
+                sources[ i ] = mediaSource;
+            }
+            sources[ sources.length - 1 ] = childSource;
+            ConcatenatingMediaSource newSource = new ConcatenatingMediaSource(sources);
+            return newSource;
+        }
+
+        @NonNull
+        public ConcatenatingMediaSource buildNewSource(Music music)
+        {
+            ProgressiveMediaSource source = getMusicSource(music);
+            return buildNewSource(source);
+        }
+
+//        public void addToPlaylist(Music music) {
+//            ProgressiveMediaSource newMusic = getMusicSource(music);
+//            musics.add(music);
+//            ConcatenatingMediaSource newSource = buildNewSource(newMusic);
+//            prepare( newSource, true, true, PlayerManager.MediaType.MUSIC );
+//            source = newSource;
+//        }
+
         public void addToPlaylist(Music music) {
             ProgressiveMediaSource newMusic = getMusicSource(music);
             musics.add(music);
             source.addMediaSource(newMusic);
+            prepare( source, true, true, PlayerManager.MediaType.MUSIC );
+        }
+
+        public void addToPlaylist(Music music, MediaSource newMusic) {
+            musics.add(music);
+            source.addMediaSource(newMusic);
+            prepare( source, true, true, PlayerManager.MediaType.MUSIC );
         }
 
         public void switchSources(ConcatenatingMediaSource source)

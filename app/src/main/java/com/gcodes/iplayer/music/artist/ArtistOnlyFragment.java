@@ -3,7 +3,6 @@ package com.gcodes.iplayer.music.artist;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +12,7 @@ import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.gcodes.iplayer.ui.UIConstance;
 
@@ -58,12 +57,12 @@ public class ArtistOnlyFragment extends Fragment
 
     private String trackSort = MediaStore.Audio.Genres.Members.TITLE + " COLLATE LOCALIZED ASC";
 
-    private static CursorLoader artLoader;
+//    private static CursorLoader artLoader;
 
     private String artistKey;
     private long artistId;
     private String artist;
-    private String albumArt;
+//    private String albumArt;
 
 
     private Toolbar toolbar;
@@ -86,7 +85,7 @@ public class ArtistOnlyFragment extends Fragment
 
     private void init() {
         initArgs();
-        initArtLoader();
+//        initArtLoader();
         initTracks();
     }
 
@@ -100,7 +99,7 @@ public class ArtistOnlyFragment extends Fragment
                 artistKey = getArguments().getString( "artist_key" );
                 artist = getArguments().getString("artist");
                 artistId = getArguments().getLong("artist_id", 0 );
-                albumArt = getArguments().getString("album_art");
+//                albumArt = getArguments().getString("album_art");
                 break;
 
             case "genre":
@@ -108,19 +107,19 @@ public class ArtistOnlyFragment extends Fragment
                 artist = getArguments().getString("artist");
                 genreId = getArguments().getLong("genre_id", 0 );
                 artistId = getArguments().getLong("artist_id", 0 );
-                albumArt = getArguments().getString("album_art");
+//                albumArt = getArguments().getString("album_art");
                 break;
 
         }
     }
 
-    private void initArtLoader()
-    {
-        artLoader = new CursorLoader( this.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
-                MediaStore.Audio.Albums._ID + "=?", null,
-                null);
-    }
+//    private void initArtLoader()
+//    {
+//        artLoader = new CursorLoader( this.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+//                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
+//                MediaStore.Audio.Albums._ID + "=?", null,
+//                null);
+//    }
 
     public void initTracks()
     {
@@ -145,7 +144,7 @@ public class ArtistOnlyFragment extends Fragment
         cursor.moveToFirst();
         do
         {
-            musics.add( Music.getInstance(cursor, artLoader) );
+            musics.add( Music.getInstance(cursor) );
         } while ( cursor.moveToNext() );
     }
 
@@ -161,7 +160,7 @@ public class ArtistOnlyFragment extends Fragment
         cursor.moveToFirst();
         do
         {
-            musics.add( Music.getInstance(cursor, artLoader) );
+            musics.add( Music.getInstance(cursor) );
         } while ( cursor.moveToNext() );
     }
 
@@ -210,7 +209,7 @@ public class ArtistOnlyFragment extends Fragment
             holder.setTitle( music.getName() );
             holder.setSubtitle( music.getArtist() );
             holder.setImage( ArtistOnlyFragment.this, music );
-            Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
+//            Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
 
             holder.itemView.setOnClickListener(v -> {
                 new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(music);

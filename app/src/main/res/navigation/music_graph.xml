@@ -18,6 +18,9 @@
         <action
             android:id="@+id/action_musicFragment_to_mainGenreFragment"
             app:destination="@id/mainGenreFragment" />
+        <action
+            android:id="@+id/action_musicFragment_to_searchFragment"
+            app:destination="@id/searchFragment" />
     </fragment>
     <fragment
         android:id="@+id/mainAlbumFragment"
@@ -50,4 +53,20 @@
         android:name="com.gcodes.iplayer.music.artist.ArtistOnlyFragment"
         android:label="activity_artist_only_full"
         tools:layout="@layout/activity_artist_only_full" />
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="com.gcodes.iplayer.SearchFragment"
+        android:label="SearchFragment"
+        tools:layout="@layout/app_search"
+        >
+        <action
+            android:id="@+id/action_searchFragment_to_mainAlbumFragment"
+            app:destination="@id/mainAlbumFragment" />
+        <action
+            android:id="@+id/action_searchFragment_to_mainArtistFragment"
+            app:destination="@id/mainArtistFragment" />
+        <action
+            android:id="@+id/action_searchFragment_to_mainGenreFragment"
+            app:destination="@id/mainGenreFragment" />
+    </fragment>
 </navigation>

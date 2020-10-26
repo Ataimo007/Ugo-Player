@@ -1,6 +1,5 @@
 package com.gcodes.iplayer.music.folder;
 
-import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -16,22 +15,25 @@ import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.ui.UIConstance;
 
 import java.io.File;
 import java.util.TreeMap;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
-public class FolderFragment extends Fragment implements MainActivity.BackAction
+public class FolderFragment extends Fragment implements MainActivity.BackAction, LoaderManager.LoaderCallbacks<Cursor>
 {
     private String selection = String.format( "%s != 0 and %s like ?", MediaStore.Audio.Media.IS_MUSIC,
         MediaStore.Audio.Media.DATA );
@@ -64,12 +66,13 @@ public class FolderFragment extends Fragment implements MainActivity.BackAction
             MediaStore.Audio.Media.ALBUM_ID
     };
 
-    private static Cursor cursor;
+//    private static Cursor cursor;
     private CustomAdapter adapter;
     private String[] entryFiles;
-    private CursorLoader artLoader;
-    private MainActivity backActivity;
+//    private CursorLoader artLoader;
+//    private MainActivity backActivity;
     private TextView folderPath;
+    private LoaderManager loader;
 
 //    public FolderFragment( int tab ) {
 //        this.tab = tab;
@@ -81,36 +84,37 @@ public class FolderFragment extends Fragment implements MainActivity.BackAction
     {
         super.onCreate(savedInstanceState);
         setPath("");
-        load( false );
+        loader = LoaderManager.getInstance(this);
+        loader.initLoader(0, null, this);
     }
 
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if ( context instanceof MainActivity )
-            backActivity = (MainActivity) context;
-    }
+//    @Override
+//    public void onAttach(@NonNull Context context) {
+//        super.onAttach(context);
+//        if ( context instanceof MainActivity )
+//            backActivity = (MainActivity) context;
+//    }
 
-    public void load(boolean notify)
-    {
-        CursorLoader loader = new CursorLoader( this.getContext(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection, selection, selectionArgs, sort );
-        cursor = loader.loadInBackground();
-        artLoader = new CursorLoader( getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
-                MediaStore.Audio.Albums._ID + "=?", null,
-                null);
-        initialize();
-        if ( notify )
-            adapter.notifyDataSetChanged();
-    }
+//    public void load(boolean notify)
+//    {
+//        CursorLoader loader = new CursorLoader( this.getContext(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+//                projection, selection, selectionArgs, sort );
+//        cursor = loader.loadInBackground();
+//        artLoader = new CursorLoader( getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+//                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
+//                MediaStore.Audio.Albums._ID + "=?", null,
+//                null);
+//        initialize();
+//        if ( notify )
+//            adapter.notifyDataSetChanged();
+//    }
 
     public void setPath( String path )
     {
         selectionArgs = new String[]{ path + "%" };
     }
 
-    public void initialize()
+    public void initialize(Cursor cursor)
     {
         entry.clear();
         entryMusic.clear();
@@ -123,7 +127,7 @@ public class FolderFragment extends Fragment implements MainActivity.BackAction
                 if ( ( fPaths.length - 1 ) == level )
                 {
                     entry.put( "-" + fName, cursor.getString( cursor.getColumnIndex( MediaStore.Audio.Media.ARTIST ) ) );
-                    entryMusic.put( "-" + fName, Music.getInstance( cursor, artLoader ) );
+                    entryMusic.put( "-" + fName, Music.getInstance( cursor ) );
                 }
                 else
                 {
@@ -158,7 +162,7 @@ public class FolderFragment extends Fragment implements MainActivity.BackAction
         parent = new File( parent, name );
         setPath( parent.getAbsolutePath() );
         ++level;
-        load( true );
+        loader.restartLoader(0, null, this);
         updatePath( parent );
 
         Log.w("Folder_Path", String.format("entered %s %s %s", parent != null ? parent.getAbsolutePath() : null, name, parent.getParent() ) );
@@ -233,9 +237,30 @@ public class FolderFragment extends Fragment implements MainActivity.BackAction
         }
 
         --level;
-        load( true );
+        loader.restartLoader(0, null, this);
         Log.d("Folder_Fragment", "The level is " + level );
         return true;
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new CursorLoader( this.getContext(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection, selection, selectionArgs, sort );
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+        initialize(data);
+        adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        entry.clear();
+        entryFiles = null;
+        entryMusic.clear();
+        adapter.notifyDataSetChanged();
     }
 
 //    public int getTab() {
@@ -299,6 +324,8 @@ public class FolderFragment extends Fragment implements MainActivity.BackAction
 
         @Override
         public int getItemCount() {
+            if (entryFiles == null )
+                return 0;
             return entryFiles.length;
         }
     }

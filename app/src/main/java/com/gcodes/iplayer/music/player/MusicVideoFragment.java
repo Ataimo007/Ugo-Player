@@ -20,7 +20,7 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.Helper;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.player.PlayerDownloadService;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.services.YouTubeService;

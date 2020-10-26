@@ -19,8 +19,11 @@ import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.ui.UIConstance;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -35,7 +38,7 @@ import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 //
 //import android.support.v7.widget.RecyclerView;
 
-public class GenreFragment extends Fragment
+public class GenreFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>
 {
     private String selection = null;
 
@@ -59,7 +62,8 @@ public class GenreFragment extends Fragment
 //            MediaStore.Audio.Media.ALBUM_ID
 //    };
 
-    private static Cursor cursor;
+    private CustomAdapter adapter;
+    private LoaderManager loader;
 
     public GenreFragment() {
     }
@@ -69,24 +73,15 @@ public class GenreFragment extends Fragment
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        load();
-    }
-
-    public void load()
-    {
-        if ( cursor == null )
-        {
-            CursorLoader loader = new CursorLoader( this.getContext(), MediaStore.Audio.Genres.EXTERNAL_CONTENT_URI,
-                    genreProjection, selection, null, sort );
-            cursor = loader.loadInBackground();
-        }
+        loader = LoaderManager.getInstance(this);
+        loader.initLoader(0, null, this);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.item_list, container, false);
-        CustomAdapter adapter = new CustomAdapter();
+        adapter = new CustomAdapter();
         RecyclerView listView = (RecyclerView) view;
         GridLayoutManager layout = new GridLayoutManager(getContext(), getSpan() );
         listView.setLayoutManager( layout );
@@ -101,14 +96,26 @@ public class GenreFragment extends Fragment
         return 2;
     }
 
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new CursorLoader( this.getContext(), MediaStore.Audio.Genres.EXTERNAL_CONTENT_URI,
+                genreProjection, selection, null, sort );
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+        adapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        adapter.swapCursor(null);
+    }
+
 
     public class CustomAdapter extends CursorRecyclerViewAdapter< ItemHolder >
     {
-        public CustomAdapter()
-        {
-            super(GenreFragment.this.getContext(), cursor);
-        }
-
         @Override
         public ItemHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
@@ -122,7 +129,9 @@ public class GenreFragment extends Fragment
             String genre = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.NAME));
             long genreId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Genres._ID));
             holder.setTitle(genre);
+            holder.setImage( genreId );
             bindHolder(genreId, holder);
+//            bindHolder(genreId, holder);
 
 //            String artistKey = genreCursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ARTIST_KEY));
 
@@ -141,44 +150,44 @@ public class GenreFragment extends Fragment
             });
         }
 
-        public String getArtPath( long id )
-        {
-            CursorLoader loader = new CursorLoader( GenreFragment.this.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                    new String[]{ MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART },
-                    MediaStore.Audio.Albums._ID + "=?",
-                    new String[]{ String.valueOf( id ) },
-                    null);
-            Cursor cursor = loader.loadInBackground();
-            String path = null;
+//        public void bindHolder(long id, ItemHolder holder )
+//        {
+//            CursorLoader loader = new CursorLoader( GenreFragment.this.getContext(),
+//                    MediaStore.Audio.Genres.Members.getContentUri("external", id ), mediaProjection,
+//                    null, null, null );
+//            Cursor cursor = loader.loadInBackground();
+//            int count = cursor.getCount();
+//            holder.setSubtitle( String.format( "%d %s", count, count > 1 ? "Tracks" : "Track" ) );
+//
+//            // set album art
+//            holder.setImage( id );
+//        }
 
-            if ( cursor != null )
-            {
-                if ( cursor.moveToFirst()) {
-                    path = cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART) );
-                    cursor.close();
+        public void bindHolder(long genreId, ItemHolder holder)
+        {
+            loader.initLoader((int) genreId, null, new LoaderManager.LoaderCallbacks<Cursor>() {
+                @NonNull
+                @Override
+                public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+                    return new CursorLoader( GenreFragment.this.getContext(),
+                            MediaStore.Audio.Genres.Members.getContentUri("external", genreId ), mediaProjection,
+                            null, null, null );
                 }
-            }
 
-            return path;
-        }
+                @Override
+                public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+                    int count = data.getCount();
+                    holder.setSubtitle( String.format( "%d %s", count, count > 1 ? "Tracks" : "Track" ) );
+                }
 
-        public void bindHolder(long id, ItemHolder holder )
-        {
-            CursorLoader loader = new CursorLoader( GenreFragment.this.getContext(),
-                    MediaStore.Audio.Genres.Members.getContentUri("external", id ), mediaProjection,
-                    null, null, null );
-            Cursor cursor = loader.loadInBackground();
-            int count = cursor.getCount();
-            holder.setSubtitle( String.format( "%d %s", count, count > 1 ? "Tracks" : "Track" ) );
-
-            // set album art
-            holder.setImage( id );
+                @Override
+                public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
+            });
         }
     }
 
     public class ItemHolder extends RecyclerView.ViewHolder
     {
-
         private TextView title;
         private TextView subtitle;
         private ImageView image;

@@ -13,7 +13,9 @@ import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Album;
+import com.gcodes.iplayer.music.models.Artist;
+import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.music.album.AlbumItemHolder;
 import com.gcodes.iplayer.music.artist.ArtistItemHolder;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
@@ -39,7 +41,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.centerCropTransform;
-import static com.gcodes.iplayer.music.Music.*;
 
 public class MainGenreFragment extends Fragment
 {
@@ -53,16 +54,6 @@ public class MainGenreFragment extends Fragment
             MediaStore.Audio.Genres.Members.ALBUM,
             MediaStore.Audio.Genres.Members.DATA,
             MediaStore.Audio.Genres.Members.ALBUM_KEY,
-            MediaStore.Audio.Genres.Members.ARTIST,
-            MediaStore.Audio.Genres.Members.TITLE,
-            MediaStore.Audio.Genres.Members.ALBUM_ID,
-    };
-
-    private final String[] albumProjection = {
-            MediaStore.Audio.Genres.Members.ALBUM_KEY,
-            MediaStore.Audio.Genres.Members._ID,
-            MediaStore.Audio.Genres.Members.DATA,
-            MediaStore.Audio.Genres.Members.ALBUM,
             MediaStore.Audio.Genres.Members.ARTIST,
             MediaStore.Audio.Genres.Members.TITLE,
             MediaStore.Audio.Genres.Members.ALBUM_ID,
@@ -84,7 +75,7 @@ public class MainGenreFragment extends Fragment
 
 //    private String albumSort = MediaStore.Audio.Artists.Albums.ALBUM_KEY + " asc";
 
-    private static CursorLoader artLoader;
+//    private static CursorLoader artLoader;
 
 //    private String artistKey;
     private long genreId;
@@ -122,7 +113,7 @@ public class MainGenreFragment extends Fragment
 
     private void init() {
         initArgs();
-        initArtLoader();
+//        initArtLoader();
         tracks = getTracks();
         albums = getAlbums();
         artist = getArtist();
@@ -135,13 +126,13 @@ public class MainGenreFragment extends Fragment
         albumArt = getArguments().getString("album_art");
     }
 
-    private void initArtLoader()
-    {
-        artLoader = new CursorLoader( this.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
-                MediaStore.Audio.Albums._ID + "=?", null,
-                null);
-    }
+//    private void initArtLoader()
+//    {
+//        artLoader = new CursorLoader( this.getContext(), MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+//                new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART},
+//                MediaStore.Audio.Albums._ID + "=?", null,
+//                null);
+//    }
 
     public ArrayList<Music> getTracks()
     {
@@ -158,7 +149,7 @@ public class MainGenreFragment extends Fragment
             do
             {
 //                Log.d("Genre_Activity", "Genre " + cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM)));
-                musics.add( Music.getInstance(cursor, artLoader) );
+                musics.add( Music.getInstance(cursor) );
             } while ( cursor.moveToNext() );
         }
         return musics;
@@ -178,7 +169,7 @@ public class MainGenreFragment extends Fragment
             do
             {
 //                Log.d("Genre_Activity", "Genre " + cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM)));
-                albums.add( Artist.getInstance( cursor ) );
+                albums.add( Artist.getGenreInstance( cursor ) );
             } while ( cursor.moveToNext() );
         }
 
@@ -191,7 +182,7 @@ public class MainGenreFragment extends Fragment
 //        TreeSet<Album> albums = new TreeSet<>();
         HashSet<Album> albums = new HashSet<>();
         CursorLoader loader = new CursorLoader( this.getContext(),
-                MediaStore.Audio.Genres.Members.getContentUri( "external", genreId ), albumProjection,
+                MediaStore.Audio.Genres.Members.getContentUri( "external", genreId ), Album.genreProjection,
                 null, null, MediaStore.Audio.Genres.Members.ALBUM_KEY );
         Cursor cursor = loader.loadInBackground();
 
@@ -199,8 +190,7 @@ public class MainGenreFragment extends Fragment
         {
             do
             {
-//                Log.d("Genre_Activity", "Genre " + cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Genres.Members.ALBUM)));
-                albums.add( Album.getInstance( cursor ) );
+                albums.add( Album.getGenreInstance( cursor ) );
             } while ( cursor.moveToNext() );
         }
 
@@ -320,7 +310,7 @@ public class MainGenreFragment extends Fragment
                 holder.setTitle( music.getName() );
                 holder.setSubtitle( music.getArtist() );
                 holder.setImage( getContext(), music );
-                Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
+//                Log.d( "Track_Fragment", "the art path " + music.getArtPath() );
 
                 holder.itemView.setOnClickListener(v -> {
                     new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(music);
@@ -376,7 +366,7 @@ public class MainGenreFragment extends Fragment
             public void onBindViewHolder(@NonNull AlbumItemHolder holder, int position) {
                 Album album = albums[position];
                 holder.setSubtitle( album.getArtist() );
-                String albumArt = Music.getArtPath(album.getAlbumId(), artLoader);
+//                String albumArt = Music.getArtPath(album.getAlbumId(), artLoader);
 
                 holder.setTitle(album.getAlbum());
                 holder.setImage(GenreAlbumFragment.this, String.valueOf(album.getAlbumId()));
@@ -388,7 +378,7 @@ public class MainGenreFragment extends Fragment
                     args.putLong( "genre_id", genreId );
                     args.putString( "album_key", album.getAlbumKey() );
                     args.putString( "album_name", album.getAlbum() );
-                    args.putString( "album_art", albumArt );
+//                    args.putString( "album_art", albumArt );
                     NavHostFragment.findNavController(GenreAlbumFragment.this.getParentFragment()).navigate( R.id.action_mainGenreFragment_to_mainAlbumFragment, args);
                 });
             }
@@ -441,7 +431,7 @@ public class MainGenreFragment extends Fragment
             public void onBindViewHolder(@NonNull ArtistItemHolder holder, int position) {
                 Artist artist = artists[position];
                 holder.setSubtitle( artist.getAlbum() );
-                String albumArt = Music.getArtPath(artist.getAlbumId(), artLoader);
+//                String albumArt = Music.getArtPath(artist.getAlbumId(), artLoader);
 
                 holder.setTitle(artist.getArtist());
                 holder.setImageFromGenre( GenreArtistFragment.this, genreId, MediaStore.Audio.Genres.Members.ARTIST_KEY, artist.getArtistKey() );
@@ -453,7 +443,7 @@ public class MainGenreFragment extends Fragment
                     args.putString( "artist", artist.getArtist() );
                     args.putLong( "artist_id", artist.getArtistId() );
                     args.putString( "artist_key", artist.getArtistKey() );
-                    args.putString( "album_art", albumArt );
+//                    args.putString( "album_art", albumArt );
                     NavHostFragment.findNavController(GenreArtistFragment.this.getParentFragment()).navigate(R.id.action_mainGenreFragment_to_artistOnlyFragment, args);
                 });
             }

@@ -3,7 +3,7 @@ package com.gcodes.iplayer.services;
 import android.util.Log;
 
 import com.gcodes.iplayer.database.PlayerDatabase;
-import com.gcodes.iplayer.music.Music;
+import com.gcodes.iplayer.music.models.Music;
 
 import org.jmusixmatch.MusixMatch;
 import org.jmusixmatch.MusixMatchException;

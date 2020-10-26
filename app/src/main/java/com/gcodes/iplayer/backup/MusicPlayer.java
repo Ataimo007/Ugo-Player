@@ -9,7 +9,7 @@
 //import androidx.fragment.app.FragmentActivity;
 //
 //import com.gcodes.iplayer.R;
-//import com.gcodes.iplayer.music.Music;
+//import com.gcodes.iplayer.music.models.Music;
 //import com.gcodes.iplayer.player.PlayerManager;
 //import com.google.android.exoplayer2.Player;
 //import com.google.android.exoplayer2.SimpleExoPlayer;

@@ -7,7 +7,7 @@
 //import com.gcodes.iplayer.R;
 //import com.gcodes.iplayer.player.PlayerManager;
 //
-//import com.gcodes.iplayer.music.Music;
+//import com.gcodes.iplayer.music.models.Music;
 ////import com.google.android.exoplayer2.Player;
 //import com.google.android.exoplayer2.Player;
 //import com.google.android.exoplayer2.SimpleExoPlayer;

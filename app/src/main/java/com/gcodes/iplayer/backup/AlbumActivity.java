@@ -13,7 +13,7 @@
 //import android.widget.TextView;
 //
 //import com.gcodes.iplayer.R;
-//import com.gcodes.iplayer.music.Music;
+//import com.gcodes.iplayer.music.models.Music;
 //import com.gcodes.iplayer.music.player.MusicPlayer;
 //
 //import java.util.ArrayList;

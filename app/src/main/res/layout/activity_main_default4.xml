@@ -37,6 +37,7 @@
         android:clickable="true"
         android:focusable="true"
         android:tint="@color/colorPrimary"
+        app:backgroundTint="@color/colorAccent"
         app:elevation="10dp"
         app:fabSize="auto"
         app:hideMotionSpec="@android:anim/fade_out"
