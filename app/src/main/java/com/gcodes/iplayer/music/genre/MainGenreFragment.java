@@ -20,6 +20,7 @@ import com.gcodes.iplayer.music.album.AlbumItemHolder;
 import com.gcodes.iplayer.music.artist.ArtistItemHolder;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.gcodes.iplayer.ui.UIConstance;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
@@ -97,8 +98,18 @@ public class MainGenreFragment extends Fragment
 
         init();
         initView(view);
+        initPlay(view);
 
         return view;
+    }
+
+    private void initPlay(View view) {
+        FloatingActionButton play = view.findViewById(R.id.fragment_play);
+        play.setOnClickListener(v -> {
+            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(pagerAdapter.getTracks());
+        });
+        FloatingActionButton appButton = requireActivity().findViewById(R.id.action_floating);
+        appButton.hide();
     }
 
     private void initPager(View view)
@@ -226,15 +237,21 @@ public class MainGenreFragment extends Fragment
         private final Album[] albums;
         private final Artist[] artist;
         private final FragmentActivity activity;
+        private GenreTrackFragment genreTracks;
 
         public SectionsPagerAdapter(FragmentManager fm, ArrayList<Music> tracks, Album[] albums, Artist[] artist, long genreId, MainGenreFragment genreActivity)
         {
-            super(fm);
+            super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
             this.tracks = tracks;
             this.albums = albums;
             this.genreId = genreId;
             this.artist = artist;
             activity = genreActivity.getActivity();
+        }
+
+        public ArrayList<Music> getTracks()
+        {
+            return genreTracks.getMusics();
         }
 
         @Override
@@ -243,7 +260,7 @@ public class MainGenreFragment extends Fragment
             switch ( position )
             {
                 case 0:
-                    GenreTrackFragment genreTracks = new GenreTrackFragment();
+                    genreTracks = new GenreTrackFragment();
                     genreTracks.setMusics( tracks );
                     genreTracks.setActivity( activity );
                     return genreTracks;
@@ -289,6 +306,10 @@ public class MainGenreFragment extends Fragment
             listView.setAdapter(adapter);
             listView.addItemDecoration(new UIConstance.AppItemDecorator( 1 ));
             return listView;
+        }
+
+        public ArrayList<Music> getMusics() {
+            return musics;
         }
 
         public void setActivity(FragmentActivity activity) {

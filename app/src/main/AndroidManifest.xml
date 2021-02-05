@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.gcodes.iplayer">
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -25,12 +26,26 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".SearchFragment"></activity>
+
+        <!-- Sentry Analytics -->
+        <meta-data
+            android:name="io.sentry.dsn"
+            android:value="https://dbb5964a2e3f4d65a7803b7d58805ae1@o499105.ingest.sentry.io/5577288" />
+
+
+        <activity android:name=".music.player.YoutubePlayer" />
         <activity
             android:name=".music.player.MusicPlayerActivity"
-            android:label="@string/title_activity_music_player"
+            android:label="@string/app_name"
             android:launchMode="singleTask"
             android:parentActivityName=".MainActivity">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" android:scheme="content" />
+            </intent-filter>
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
@@ -55,15 +70,25 @@
         </activity>
         <activity
             android:name=".video.player.VideoPlayerActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize|layoutDirection"
+            android:supportsPictureInPicture="true"
+            android:configChanges="keyboardHidden|orientation|screenSize|layoutDirection|smallestScreenSize|screenLayout"
             android:launchMode="singleTask"
             android:parentActivityName=".MainActivity"
             android:screenOrientation="sensor"
-            android:theme="@style/FullscreenTheme">
+            android:theme="@style/FullscreenTheme"
+            tools:targetApi="n">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
-        </activity> <!-- <activity -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" android:scheme="content" />
+            </intent-filter>
+        </activity>
+
+        <!-- <activity -->
         <!-- android:name=".backup.ExoPlayerActivity" -->
         <!-- android:configChanges="keyboardHidden|orientation|screenSize|layoutDirection" -->
         <!-- android:parentActivityName=".MainActivity" -->

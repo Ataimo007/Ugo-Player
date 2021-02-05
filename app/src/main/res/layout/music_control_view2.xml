@@ -102,7 +102,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/exo_next"
         app:layout_constraintStart_toEndOf="@+id/exo_next"
         app:layout_constraintTop_toTopOf="@+id/exo_next"
-        app:srcCompat="@drawable/exo_controls_shuffle"
+        app:srcCompat="@drawable/ic_media_shuffle"
         app:tint="@color/colorAccent" />
 
     <ImageView
@@ -159,7 +159,7 @@
             android:layout_width="24dp"
             android:layout_height="30dp"
             android:background="@android:color/transparent"
-            android:button="@drawable/u_speaker"
+            android:button="@drawable/u_karaoke_selector"
             android:buttonTint="@drawable/player_selector"
             android:foregroundGravity="center"
             android:gravity="center"

@@ -1,21 +1,22 @@
 package com.gcodes.iplayer.music.player;
 
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.helpers.GlideApp;
@@ -25,9 +26,10 @@ import com.gcodes.iplayer.player.PlayerDownloadService;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.services.YouTubeService;
 import com.gcodes.iplayer.ui.UIConstance;
-import com.gcodes.iplayer.video.player.VideoPlayerActivity;
-import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.offline.Download;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.youtube.player.YouTubeIntents;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.model.Video;
 
 import org.joda.time.DateTime;
@@ -36,19 +38,27 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContract;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.SparseArrayCompat;
+import androidx.core.util.Pair;
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import at.huber.youtubeExtractor.YtFile;
+import kotlin.Triple;
 
+import static android.app.Activity.RESULT_OK;
 import static android.view.View.GONE;
 import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
@@ -73,10 +83,13 @@ public class MusicVideoFragment extends Fragment
     private PlayerDatabase.MusicInfo musicInfo;
 
     private Handler updateProgress;
-    private Player.EventListener trackListener;
+//    private Player.EventListener trackListener;
     private View musicVideoTab;
     private boolean loading = false;
     private MusicPlayerActivity player;
+//    private ActivityResultLauncher<Intent> youtubeVideoContract;
+    private ActivityResultLauncher<Video> youtubePlayerContract;
+    private ActivityResultLauncher<Intent> youtubePlayerExternalContract;
 
     public MusicVideoFragment(PlayerManager.MusicManager manager) {
         this.manager = manager;
@@ -84,6 +97,8 @@ public class MusicVideoFragment extends Fragment
 
     public void updateMusic(Music music) {
         this.music = music;
+        videos.clear();
+        adapter.notifyDataSetChanged();
     }
 
 //    @Override
@@ -109,17 +124,56 @@ public class MusicVideoFragment extends Fragment
     {
         super.onCreate(savedInstanceState);
         updateProgress = new Handler( getContext().getMainLooper() );
+//        youtubeVideoContract = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+//            manager.restoreCurrentState();
+//            this.player.notLoading();
+//        });
+        youtubePlayerContract = registerForActivityResult(new ActivityResultContract<Video, Triple<Integer, String, Video>>(){
+            private Video video;
+
+            @NonNull
+            @Override
+            public Intent createIntent(@NonNull Context context, Video video) {
+                this.video = video;
+                JacksonFactory jsonFactory = YouTubeService.getInstance().jsonFactory;
+                Intent intent = new Intent(getContext(), YoutubePlayer.class);
+                try {
+                    String jsonVideo = jsonFactory.toString(video);
+                    intent.putExtra("video", jsonVideo);
+                } catch (IOException e) {
+                    Helper.toast(getContext(), "Can't play this Video");
+                }
+                return intent;
+            }
+
+            @Override
+            public Triple<Integer, String, Video> parseResult(int resultCode, @Nullable Intent intent) {
+                if (intent == null)
+                    return null;
+                return new Triple<>(resultCode, Objects.requireNonNull(intent).getStringExtra("state"), video);
+            }
+        }, result -> {
+            if (result != null && result.getFirst() != RESULT_OK && result.getSecond() != null && result.getSecond().equals("restricted") )
+            {
+                manager.play();
+                this.player.notLoading();
+                showExternalDialog(result.getThird());
+            }
+            else
+            {
+                manager.play();
+                this.player.notLoading();
+            }
+        });
+        youtubePlayerExternalContract = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            manager.play();
+            this.player.notLoading();
+        });
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        Log.w("Video_Player", String.format("Video Controller state handling result" ) );
-        super.onActivityResult(requestCode, resultCode, data);
-        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER )
-        {
-            manager.restoreCurrentState();
-            this.player.notLoading();
-        }
+
     }
 
     @Override
@@ -243,6 +297,102 @@ public class MusicVideoFragment extends Fragment
 //        return musicInfo;
 //    }
 
+    private void showExternalDialog(Video video) {
+        YoutubeExternalDialog externalDialog = new YoutubeExternalDialog();
+        externalDialog.setVideo(video);
+        externalDialog.show(getChildFragmentManager(), "external_dialog");
+    }
+
+    public void playExternally(Video video) {
+
+        Activity activity = getActivity();
+        Intent intent;
+
+        if  ( YouTubeIntents.canResolvePlayVideoIntentWithOptions(activity) )
+            intent = YouTubeIntents.createPlayVideoIntentWithOptions(activity, video.getId(), false, true);
+        else if  ( YouTubeIntents.canResolvePlayVideoIntent(activity) )
+            intent = YouTubeIntents.createPlayVideoIntent(activity, video.getId());
+        else
+            intent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + video.getId()));
+
+        player.loading();
+        manager.pause();
+
+        youtubePlayerExternalContract.launch(intent);
+//        startActivity(intent);
+//        activity.finish();
+    }
+
+    public static class YoutubeExternalDialog extends DialogFragment
+    {
+        private Video video;
+
+        public Video getVideo() {
+            return video;
+        }
+
+        public void setVideo(Video video) {
+            this.video = video;
+        }
+
+
+//        @Nullable
+//        @Override
+//        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+//            View view = inflater.inflate(R.layout.external_youtube_player, container, false);
+//            loadVideo();
+//            initView(view);
+//            return view;
+//        }
+
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getActivity());
+            LayoutInflater layoutInflater = requireActivity().getLayoutInflater();
+            View view = layoutInflater.inflate(R.layout.external_youtube_player, null);
+//            loadVideo();
+            initView(view);
+            builder.setView(view);
+            return builder.create();
+        }
+
+        private void initView(View view) {
+            setImage(video.getSnippet().getThumbnails().getHigh().getUrl(), view);
+            Button playButton = view.findViewById(R.id.external_play);
+            playButton.setOnClickListener(v -> {
+                Fragment parentFragment = getParentFragment();
+                if  ( parentFragment instanceof MusicVideoFragment )
+                {
+                    MusicVideoFragment musicVideo = (MusicVideoFragment) parentFragment;
+                    musicVideo.playExternally(video);
+                    dismiss();
+                }
+            });
+        }
+
+        public void setImage(String url, View container) {
+            ImageView image = container.findViewById(R.id.video_image);
+            Uri uri = Uri.parse(url);
+            GlideApp.with( YoutubeExternalDialog.this ).load( uri  )
+                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( image );
+        }
+
+
+
+//        private void loadVideo() {
+//            jsonFactory = YouTubeService.getInstance().jsonFactory;
+//            String videoRaw = getArguments().getString("video");
+//            try {
+//                video = jsonFactory.fromString(videoRaw, Video.class);
+//            } catch (IOException e) {
+//                Helper.toast(getActivity(), "Can't play this Video");
+//            }
+//        }
+
+
+    }
+
     public class CustomAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     {
         private SparseArrayCompat< Runnable > progresses = new SparseArrayCompat<>();
@@ -322,24 +472,31 @@ public class MusicVideoFragment extends Fragment
             continueProgress( holder );
 
             holder.itemView.setOnClickListener(v -> {
-                YouTubeService.consumeYoutubeVideo( video.getId(), ytFile -> {
-//                    MusicPlayer musicPlayer = MusicPlayer.getInstance();
-//                    musicPlayer.playVideo( ytFile.getUrl(), music );
-//                    showVideo.accept(null);
-                    player.loading();
-                    manager.saveCurrentState();
-
-                    new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource(ytFile.getUrl());
-                    Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
-                    startActivityForResult(intent, PlayerManager.REQUEST_VIDEO_PLAYER);
-                }, getContext() );
+//                YouTubeService.consumeYoutubeVideo( video, this::loadVideoPlayer, this::loadYoutubePlayer, getContext() );
+                loadYoutubePlayer(video);
             });
 
             holder.download.setOnClickListener(v -> {
-                YouTubeService.consumeYoutubeVideo( video.getId(), ytFile -> {
-                    download( video, ytFile, holder );
-                }, getContext() );
+                YouTubeService.consumeYoutubeVideo( video, ytFile -> download( video, ytFile, holder ),
+                        youtubeVideo -> Helper.toast(getContext(), String.format("Can't obtain media for %s", youtubeVideo.getSnippet().getTitle())), getContext() );
             });
+        }
+
+//        private void loadVideoPlayer(YtFile ytFile)
+//        {
+//            player.loading();
+//            manager.saveCurrentState();
+//
+//            manager.getMainPlayerManager().getVideoManager().initOnlineSources(ytFile.getUrl());
+//            Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
+////            youtubeVideoContract.launch(intent);
+//        }
+
+        private void loadYoutubePlayer(Video video)
+        {
+            manager.pause();
+            player.loading();
+            youtubePlayerContract.launch(video);
         }
 
         private void continueProgress(ItemHolder holder) {
@@ -470,7 +627,7 @@ public class MusicVideoFragment extends Fragment
         public void setImage(String url) {
             Uri uri = Uri.parse(url);
             GlideApp.with( MusicVideoFragment.this ).load( uri  )
-                    .placeholder( R.drawable.u_song_art_padded ).apply( centerCropTransform() ).into( image );
+                    .placeholder( R.drawable.u_video2 ).apply( centerCropTransform() ).into( image );
         }
 
 

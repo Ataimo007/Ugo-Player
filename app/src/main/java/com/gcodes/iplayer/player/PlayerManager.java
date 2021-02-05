@@ -12,8 +12,8 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.services.ACRService;
-import com.gcodes.iplayer.video.Series;
-import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.video.model.Series;
+import com.gcodes.iplayer.video.model.Video;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerFactory;
@@ -701,6 +701,38 @@ public class PlayerManager
             initError();
         }
 
+        private boolean initSourceAndPlay(Uri data)
+        {
+            ProgressiveMediaSource musicSource = getMusicSource(data);
+            Music music = Music.getInstance(getContext(), data);
+
+            if (isMusicPlaying())
+            {
+                int index = getIndex(music);
+                if (index >= 0)
+                    play(index);
+                else
+                {
+                    addToPlaylist(music, musicSource);
+                    play(getIndex(music));
+                }
+                return true;
+            }
+            else
+            {
+                source = new ConcatenatingMediaSource(musicSource);
+                ArrayList<Music> musics = new ArrayList<>();
+                musics.add(music);
+                this.musics = musics;
+                prepare( source, true, true, PlayerManager.MediaType.MUSIC );
+                shuffle();
+                repeatAll();
+                initError();
+            }
+
+            return false;
+        }
+
         private void initSource(ArrayList<Music> musics, MediaSource source )
         {
             this.musics = musics;
@@ -803,8 +835,24 @@ public class PlayerManager
         {
             initSource( musics );
             Log.d( "Music_Player", "Id is " + musics);
-//        musicPlayer.beginService();
             play();
+        }
+
+        public void stop() {
+            PlayerManager.this.stop();
+            clearSource();
+        }
+
+        private void clearSource()
+        {
+            musics = null;
+            source = null;
+        }
+
+        public void play(Uri data)
+        {
+            if  ( !initSourceAndPlay( data ) )
+                play();
         }
 
         public void playAll( ArrayList<Music> musics, MediaSource source )
@@ -820,6 +868,10 @@ public class PlayerManager
             playMusic();
         }
 
+        public void pause() {
+            PlayerManager.this.pause();
+        }
+
         public ProgressiveMediaSource getMusicSource( Music music )
         {
             Uri media = music.toUri();
@@ -833,6 +885,11 @@ public class PlayerManager
             Uri media = Uri.fromFile(file);
             ProgressiveMediaSource source = new ProgressiveMediaSource.Factory(getFactory()).createMediaSource(media);
             return source;
+        }
+
+        public ProgressiveMediaSource getMusicSource(Uri data)
+        {
+            return new ProgressiveMediaSource.Factory(getFactory()).createMediaSource(data);
         }
 
         public ConcatenatingMediaSource getMediaSource()
@@ -859,6 +916,7 @@ public class PlayerManager
         public boolean isMusicPlaying(Music music) {
             return getMusic(getCurrentTrack()).equals(music);
         }
+
     }
 
     public class VideoManager {
@@ -959,7 +1017,7 @@ public class PlayerManager
 //            PlayerManager.this.tryHideVideoPlayer();
 //        }
 
-        public ProgressiveMediaSource getMediaSource(String url )
+        public ProgressiveMediaSource getMediaSource(String url)
         {
             Uri media = Uri.parse( url );
             ProgressiveMediaSource source = new ProgressiveMediaSource.Factory( getOfflineFactory() ).createMediaSource(media);
@@ -1028,6 +1086,21 @@ public class PlayerManager
             prepare( mediaSource, PlayerManager.MediaType.VIDEO );
         }
 
+        public ProgressiveMediaSource getMusicSource(Uri data)
+        {
+            return new ProgressiveMediaSource.Factory(getFactory()).createMediaSource(data);
+        }
+
+        public void initVideoSource(Uri data)
+        {
+            ProgressiveMediaSource musicSource = getMusicSource(data);
+            Video video = Video.getInstance(getContext(), data);
+            this.currentVideos = new Video[]{video};
+            currentType = VideoSourceType.VIDEOS;
+            mediaSource = new ConcatenatingMediaSource(musicSource);
+            prepare( mediaSource, true, true, MediaType.VIDEO );
+        }
+
         public void initVideoSources(Series series)
         {
             MediaSource sources[] = new MediaSource[ series.getCount() ];
@@ -1043,7 +1116,7 @@ public class PlayerManager
 //            beginAt = 0;
         }
 
-        public void initOnlineSources(String[] vids, int start) {
+        public void initOnlineSources(String[] vids) {
             MediaSource sources[] = new MediaSource[ vids.length ];
             for ( int i = 0; i < vids.length; ++i )
             {
@@ -1057,9 +1130,12 @@ public class PlayerManager
 
 
         public void initOnlineSources(String url) {
-            this.mediaSource = new ConcatenatingMediaSource( mediaSource );
-            currentType = VideoSourceType.URL;
-            prepare(this.mediaSource, PlayerManager.MediaType.VIDEO );
+            String[] vids = {url};
+            initOnlineSources(vids);
+
+//            this.mediaSource = new ConcatenatingMediaSource( mediaSource );
+//            currentType = VideoSourceType.URL;
+//            prepare(this.mediaSource, PlayerManager.MediaType.VIDEO );
         }
 
 
@@ -1153,7 +1229,17 @@ public class PlayerManager
 
         public Video getCurrentVideo()
         {
+            if (currentVideos == null)
+                return null;
             return currentVideos[ getCurrentIndex() ];
+        }
+
+        public boolean isPlayingExternalSource()
+        {
+            Video currentVideo = getCurrentVideo();
+            if (currentVideo == null)
+                return false;
+            return !currentVideo.isFromStore();
         }
 
         public int getCurrentIndex()

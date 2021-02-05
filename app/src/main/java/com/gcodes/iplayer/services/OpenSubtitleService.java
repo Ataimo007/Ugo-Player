@@ -20,7 +20,7 @@ import android.widget.TextView;
 
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.ui.UIConstance;
-import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.video.model.Video;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;

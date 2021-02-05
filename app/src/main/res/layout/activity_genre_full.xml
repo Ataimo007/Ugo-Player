@@ -21,7 +21,7 @@
             android:fitsSystemWindows="true"
             app:collapsedTitleTextAppearance="@style/BottomNav3"
             app:contentScrim="?attr/colorPrimary"
-            app:expandedTitleGravity="bottom|right"
+            app:expandedTitleGravity="bottom|left"
             app:expandedTitleMarginBottom="18dp"
             app:expandedTitleMarginEnd="20dp"
             app:expandedTitleTextAppearance="@style/BottomNav2"
@@ -55,52 +55,12 @@
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
 
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/genre_tabs"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            app:layout_collapseMode="pin"
-            app:layout_scrollFlags="scroll|enterAlways"
-            app:tabBackground="@color/colorAccent"
-            app:tabGravity="fill"
-            app:tabIconTint="@drawable/tab_icon_selector"
-            app:tabIndicatorColor="@color/colorAccent"
-            app:tabIndicatorFullWidth="true"
-            app:tabIndicatorHeight="1dp"
-            app:tabInlineLabel="true"
-            app:tabMode="fixed"
-            app:tabRippleColor="@color/colorAccent"
-            app:tabSelectedTextColor="@color/colorAccent"
-            app:tabTextColor="@color/colorAccent2"
-
-            app:tabUnboundedRipple="true">
-
-            <com.google.android.material.tabs.TabItem
-                android:id="@+id/music_tracks"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:icon="@drawable/u_song_selector" />
-
-            <com.google.android.material.tabs.TabItem
-                android:id="@+id/music_artists"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:icon="@drawable/u_artist_selector" />
-
-            <com.google.android.material.tabs.TabItem
-                android:id="@+id/music_albums"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:icon="@drawable/u_album_selector" />
-
-        </com.google.android.material.tabs.TabLayout>
-
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="48dp"
         android:clipToPadding="true"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
@@ -110,6 +70,64 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
     </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/genre_tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:layout_anchor="@+id/appbar"
+        app:layout_anchorGravity="bottom"
+        app:tabBackground="@color/colorAccent"
+        app:tabGravity="fill"
+        app:tabIconTint="@drawable/tab_icon_selector"
+        app:tabIndicatorColor="@color/colorAccent"
+        app:tabIndicatorFullWidth="true"
+        app:tabIndicatorHeight="1dp"
+        app:tabInlineLabel="true"
+        app:tabMode="fixed"
+        app:tabRippleColor="@color/colorAccent"
+        app:tabSelectedTextColor="@color/colorAccent"
+        app:tabTextColor="@color/colorAccent2"
+
+        app:tabUnboundedRipple="true">
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/music_tracks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/u_song_selector" />
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/music_artists"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/u_artist_selector" />
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/music_albums"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/u_album_selector" />
+
+    </com.google.android.material.tabs.TabLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fragment_play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:contentDescription="Play All"
+        android:elevation="2dp"
+        android:focusable="true"
+        android:src="@drawable/u_play"
+        app:backgroundTint="@color/colorAccent"
+        app:fabSize="auto"
+        app:layout_anchor="@+id/appbar"
+        app:layout_anchorGravity="bottom|right"
+        app:rippleColor="@color/colorPrimary"
+        app:tint="@color/colorPrimary"
+        app:useCompatPadding="true" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

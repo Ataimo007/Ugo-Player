@@ -24,7 +24,7 @@
 //import com.gcodes.iplayer.helpers.GlideApp;
 //import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 //import com.gcodes.iplayer.ui.UIConstance;
-//import com.gcodes.iplayer.video.Video;
+//import com.gcodes.iplayer.video.model.Video;
 //import com.gcodes.iplayer.video.player.VideoPlayer;
 //
 //import org.joda.time.Period;

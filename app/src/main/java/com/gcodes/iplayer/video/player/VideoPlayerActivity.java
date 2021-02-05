@@ -5,14 +5,19 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.util.Consumer;
 import androidx.core.util.Pair;
 import androidx.core.util.Supplier;
+import androidx.lifecycle.Lifecycle;
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,12 +33,14 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.gcodes.iplayer.MainActivity;
+import com.gcodes.iplayer.music.player.MusicPlayerActivity;
 import com.gcodes.iplayer.player.PlayerService;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.CustomVideoGesture;
 import com.gcodes.iplayer.services.OpenSubtitleService;
-import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.video.model.Video;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
@@ -61,6 +68,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private PlayerManager.VideoManager player;
     private OpenSubtitleService openSubtitleService;
     private ArrayList<Supplier<Boolean>> touchables;
+    private PlayerService.PlayerBinder serviceBinder;
 //    private DefaultDataSourceFactory factory;
 
     private class PlayerConnection implements ServiceConnection
@@ -77,15 +85,55 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
     }
 
+    public class VideoBroadCastReceiver extends BroadcastReceiver
+    {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("player_info", "Player Service as Started" );
+            if (intent.getBooleanExtra("has_player", false))
+            {
+                Log.d("player_info", "Attaching to Player Service" );
+                attachPlayer();
+            }
+            unregisterReceiver(this);
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        attachPlayer();
+        processIntent();
 
         setContentView(R.layout.video_player);
 
         initPlayer();
         initPopup();
+    }
+
+    private void processIntent()
+    {
+        Intent current = getIntent();
+        if ( current.getAction() != null && current.getAction().equals(Intent.ACTION_VIEW) )
+        {
+            registerReceivers();
+            externalPlayRequest();
+        }
+        else
+            attachPlayer();
+    }
+
+    private void registerReceivers() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(PlayerService.ON_START_PLAYER_MANAGER);
+        registerReceiver(new VideoBroadCastReceiver(), filter);
+    }
+
+    private void externalPlayRequest()
+    {
+        Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+        intent.putExtra( "type", "video" );
+        intent.putExtra("broadcast", true );
+        getApplication().getBaseContext().startService( intent );
     }
 
     @Override
@@ -98,10 +146,28 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
         else
         {
-            Intent intent = new Intent();
-            player.saveTo(intent);
-            setResult(RESULT_OK, intent);
-            finish();
+            if (isTaskRoot())
+            {
+                Log.d("Video_Controller", "Root Activity initiating App Result Code " + RESULT_OK);
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.putExtra("controller_check", true );
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            }
+            else
+            {
+                Log.d("Video_Controller", "Initiating normal back press Result Code " + RESULT_OK);
+                Intent intent = new Intent();
+                if ( getIntent().getAction() != null && getIntent().getAction().equals(Intent.ACTION_VIEW) )
+                {
+                    Log.d("Video_Controller", "Controller Checker for Action View");
+                    intent.putExtra("controller_check", true );
+                }
+                player.saveTo(intent);
+                setResult(RESULT_OK, intent);
+                finish();
+            }
 //            Log.w("Video_Player", String.format("Video Controller state setting back result" ) );
 //            setResult( VideoPlayer.RESULT_PLAYING );
         }
@@ -110,6 +176,37 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     private boolean isUrlSource() {
         return getIntent().hasExtra("data_type") && getIntent().getStringExtra("data_type").equals("url");
+    }
+
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            enterPictureInPictureMode();
+        }
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode);
+        Log.d("Picture_In_Picture", "Picture in Picture Change State PIP Mode " + isInPictureInPictureMode);
+        Log.d("Picture_In_Picture", "Picture in Picture Change Window View " + getWindow().getDecorView().getRootView().isShown());
+
+        if ( !isInPictureInPictureMode && !getWindow().getDecorView().getRootView().isShown())
+        {
+            Log.d("Picture_In_Picture", "Activity Dismiss");
+            player.stop();
+            serviceBinder.stopService();
+        }
+
+        if  ( isInPictureInPictureMode )
+        {
+            findViewById(R.id.video_player_controller).setVisibility(View.GONE);
+        }
+        else
+        {
+            findViewById(R.id.video_player_controller).setVisibility(View.VISIBLE);
+        }
     }
 
     private void initPopup()
@@ -191,8 +288,28 @@ public class VideoPlayerActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if (player != null)
+        {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                if ( isInPictureInPictureMode() )
+                    return;
+            }
             player.pause();
+        }
     }
+
+//    @Override
+//    protected void onStop() {
+//        super.onStop();
+//        Log.d("Picture_In_Picture", "When Activity on Stop" );
+////        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+////        Log.d("Picture_In_Picture", "When Activity on Stop " +  isInPictureInPictureMode() );
+////            if (isInPictureInPictureMode())
+////            {
+////                player.stop();
+////                serviceBinder.stopService();
+////            }
+////        }
+//    }
 
     private void initPlayer()
     {
@@ -201,11 +318,31 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     private void preparePlayer(IBinder service)
     {
+        serviceBinder = (PlayerService.PlayerBinder) service;
         player = ((PlayerService.PlayerBinder) service).getVideoManager();
+        processIntent(getIntent());
         playerManager = player.getPlayerManager();
         initView();
         initSubtitle();
         begin();
+    }
+
+    private void processIntent(Intent intent) {
+        Log.d("player_info", "Processing the Intent" );
+        if (intent.hasExtra("video"))
+        {
+            String[] gsonVideos = intent.getStringArrayExtra("video");
+            Video[] videos = Video.fromGson(gsonVideos);
+            if  ( intent.hasExtra("begin") )
+            {
+                int begin = intent.getIntExtra("begin", -1);
+                player.initVideoSources(videos, begin);
+            }
+            else
+                player.initVideoSources(videos);
+        }
+        if (intent.getAction() != null && intent.getAction().equals(Intent.ACTION_VIEW))
+            player.initVideoSource(intent.getData());
     }
 
     private void releasePlayer()
@@ -230,6 +367,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
         super.onDestroy();
         openSubtitleService.destroy();
         openSubtitleService = null;
+
 //        if ( playerManager.hasState() )
 //            playerManager.restoreState();
     }
@@ -320,6 +458,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
     {
         playerView = findViewById(R.id.video_player);
         playerManager.setView( playerView );
+        Log.d("Player_View", "current state " + playerManager.getPlayer().getPlaybackState());
 
         playerManager.setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT);
 

@@ -9,12 +9,13 @@ import com.google.common.base.Objects;
 
 public class Album implements Comparable<Album>
 {
-    public static final String sort = MediaStore.Audio.Albums._ID + " asc";
+    public static final String sort = MediaStore.Audio.Albums.DEFAULT_SORT_ORDER + " asc";
     public static final String[] projection = {
             MediaStore.Audio.Albums.ALBUM_KEY,
             MediaStore.Audio.Albums.ALBUM,
             MediaStore.Audio.Albums.ARTIST,
-            MediaStore.Audio.Albums.ALBUM_ID,
+            MediaStore.Audio.Albums._ID
+//            MediaStore.Audio.Albums.ALBUM_ID,
     };
 
     public static final String[] genreProjection = {
@@ -33,7 +34,7 @@ public class Album implements Comparable<Album>
     public static Album getInstance(Cursor cursor) {
         return new Album( cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM)),
                 cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_KEY)),
-                cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ID)),
+                cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Albums._ID)),
                 cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Albums.ARTIST)));
     }
 

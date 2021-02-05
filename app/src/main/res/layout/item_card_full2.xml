@@ -10,7 +10,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView"
         android:layout_width="140dp"
-        android:layout_height="140dp"
+        android:layout_height="180dp"
         app:cardCornerRadius="4dp"
         app:cardPreventCornerOverlap="true"
         app:cardUseCompatPadding="true"
@@ -24,6 +24,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
             android:adjustViewBounds="true"
             android:cropToPadding="true"
             android:scaleType="fitCenter"

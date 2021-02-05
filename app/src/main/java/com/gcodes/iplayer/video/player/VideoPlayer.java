@@ -13,8 +13,8 @@
 //
 //import com.gcodes.iplayer.R;
 //import com.gcodes.iplayer.player.PlayerManager;
-//import com.gcodes.iplayer.video.Series;
-//import com.gcodes.iplayer.video.Video;
+//import com.gcodes.iplayer.video.model.Series;
+//import com.gcodes.iplayer.video.model.Video;
 //import com.gcodes.iplayer.video.series.SeriesPlayerFragment;
 //import com.google.android.exoplayer2.C;
 //import com.google.android.exoplayer2.Format;

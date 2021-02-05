@@ -30,6 +30,7 @@ import androidx.room.Database;
 import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.PrimaryKey;
 import androidx.room.Query;
 import androidx.room.Room;
@@ -69,7 +70,7 @@ public abstract class PlayerDatabase extends RoomDatabase
 
     public List<Video> getMusicVideo(Music music)
     {
-        YouTubeService youtube = YouTubeService.getIntance();
+        YouTubeService youtube = YouTubeService.getInstance();
         String query = String.format( "%s %s", music.getName(), music.getArtist() ) ;
 
         List<Video> videos;
@@ -91,7 +92,7 @@ public abstract class PlayerDatabase extends RoomDatabase
 
     public List<Video> getMusicVideo( MusicInfo music )
     {
-        YouTubeService youtube = YouTubeService.getIntance();
+        YouTubeService youtube = YouTubeService.getInstance();
         String query = String.format( "%s %s", music.getTitle(), music.getAllArtists() ) ;
 
         List<Video> videos;
@@ -138,22 +139,24 @@ public abstract class PlayerDatabase extends RoomDatabase
     public MusicLyrics getLyrics(MusicInfo info)
     {
         MusicLyrics musicLyrics = playerDao().getDatabaseLyrics(info);
-        Log.d("ACR_Service", "from database musicLyrics is " + musicLyrics);
+        Log.d("Lyrics_Service", "from database musicLyrics is " + musicLyrics);
         if ( musicLyrics == null )
         {
             MusixMatchLyricsService service = MusixMatchLyricsService.getInstance();
             TrackData track = service.getTrack(info);
+            Log.d("Lyrics_Service", "MusicMatch Track " + track);
             if ( track != null )
             {
                 LyricsOVH.Lyrics lyric = LyricsOVH.getLyrics(info.getAllArtists(), info.getTitle());
-                Log.d("ACR_Service", "from database Lyrics is " + lyric);
-                if ( lyric != null )
+                Log.d("Lyrics_Service", "Backup Lyrics API " + lyric);
+                if ( lyric != null && !lyric.getLyrics().isEmpty() )
                 {
                     musicLyrics = new MusicLyrics(info, track, lyric);
                     playerDao().addLyrics( musicLyrics );
                 }
                 else {
                     Lyrics lyrics = service.getLyrics(track);
+                    Log.d("Lyrics_Service", "Backup Lyrics API " + lyrics);
                     if (lyrics != null) {
                         musicLyrics = new MusicLyrics(info, track, lyrics);
                         playerDao().addLyrics(musicLyrics);
@@ -655,7 +658,10 @@ public abstract class PlayerDatabase extends RoomDatabase
     @Dao
     public static abstract class PlayerDao
     {
-        @Insert
+//        @Insert
+//        public abstract void addInfo(MusicInfo... musicInfo );
+
+        @Insert(onConflict = OnConflictStrategy.IGNORE)
         public abstract void addInfo(MusicInfo... musicInfo );
 
         @Insert

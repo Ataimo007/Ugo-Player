@@ -6,6 +6,24 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@android:color/white</item>
+<!--        <item name="android:fontFamily">@font/app_font</item>-->
+
+        <item name="android:windowActionBarOverlay">true</item>
+        <!-- Support library compatibility -->
+        <item name="actionBarStyle">@style/SearchActionBar2</item>
+        <item name="windowActionBarOverlay">true</item>
+    </style>
+
+    <style name="SearchTheme" parent="AppTheme">
+        <item name="android:windowNoTitle">true</item>
+
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowIsFloating">false</item>
+
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="windowActionBarOverlay">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
     <!-- Base application theme. -->
@@ -58,6 +76,21 @@
     <style name="SubtitleAppearance" parent="Widget.Design.TextInputLayout">
         <item name="colorControlActivated">@color/colorPrimary</item>
         <item name="colorControlNormal">@color/colorPrimary</item>
+    </style>
+
+    <style name="SearchActionBar" parent="Widget.AppCompat.Light.ActionBar.Solid">
+        <item name="android:background">@android:color/transparent</item>
+        <!-- Support library compatibility -->
+        <item name="background">@android:color/transparent</item>
+    </style>
+
+    <style name="SearchActionBar2" parent="ThemeOverlay.MaterialComponents.ActionBar">
+        <item name="android:background">@null</item>
+        <item name="elevation">0dp</item>
+        <item name="elevationOverlayColor">@android:color/transparent</item>
+        <item name="elevationOverlayEnabled">true</item>
+        <!-- Support library compatibility -->
+        <item name="background">@null</item>
     </style>
 
     <!--<style name="FullscreenActionBarStyle" parent="android:Widget.Holo.ActionBar">-->

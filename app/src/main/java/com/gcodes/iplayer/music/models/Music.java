@@ -8,6 +8,7 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 
 import com.google.common.base.Objects;
 
@@ -16,7 +17,7 @@ import com.gcodes.iplayer.R;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import androidx.annotation.Nullable;
+import androidx.loader.content.CursorLoader;
 
 import org.joda.time.Period;
 
@@ -34,6 +35,7 @@ public class Music implements Comparable<Music>, Serializable
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.ALBUM_ID,
     };
+    public static final Music EmptyMusic = new Music(null, -1, null, -1, null, null);
 
     private final String name;
     private final String data;
@@ -41,16 +43,80 @@ public class Music implements Comparable<Music>, Serializable
     private final long albumId;
     private final String artist;
     private final String album;
+    private final boolean fromMediaStore;
+//    private boolean selected = false;
 
 //    private Duration duration;
 
-    public Music(String name, long mediaId, String data, long albumId, String artist, String album) {
+    public Music(String name, long mediaId, String data, long albumId, String artist, String album, boolean fromStore) {
         this.name = name;
         this.mediaId = mediaId;
         this.data = data;
         this.albumId = albumId;
         this.artist = artist;
         this.album = album;
+        fromMediaStore = fromStore;
+    }
+
+    public Music(String name, long mediaId, String data, long albumId, String artist, String album) {
+        this(name, mediaId, data, albumId, artist, album, true);
+    }
+
+    private static Cursor findMedia(Context context, Uri data, String title, String artist, String album)
+    {
+        Log.d("music_info", String.format("Try to find music store, %s, %s, %s, %s", data.toString(), title, artist, album));
+
+        String query = String.format("%s == '%s'", MediaStore.Audio.Media.DATA, data.getPath());
+        CursorLoader loader = new CursorLoader(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection, query, null, sort);
+        Cursor cursor = loader.loadInBackground();
+
+        if (cursor != null && cursor.getCount() >= 1)
+        {
+            Log.d("music_info", "Found in path " + cursor.getCount());
+            cursor.moveToFirst();
+            return cursor;
+        }
+        else
+        {
+            query = String.format("%s like '%%%s%%' and %s like '%%%s%%' and %s like '%%%s%%'", MediaStore.Audio.Media.TITLE, title,
+                    MediaStore.Audio.Media.ARTIST, artist, MediaStore.Audio.Media.ALBUM, album);
+            loader = new CursorLoader(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    projection, query, null, sort);
+            cursor = loader.loadInBackground();
+        }
+
+        if (cursor != null && cursor.getCount() >= 1)
+        {
+            Log.d("music_info", "Found in details " + cursor.getCount());
+            cursor.moveToFirst();
+            return cursor;
+        }
+        else
+            return null;
+    }
+
+    public static Music getInstance(Context context, Uri data) {
+
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        retriever.setDataSource(context, data);
+
+        String title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+        String artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+        String album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+
+        Cursor cursor = findMedia(context, data, title, artist, album);
+
+        if (cursor != null)
+        {
+            return getInstance(cursor);
+        }
+        else
+        {
+            long mediaId = Objects.hashCode(title);
+            long albumId = Objects.hashCode(album);
+            return new Music(title, mediaId, data.toString(), albumId, artist, album);
+        }
     }
 
     public static Music getInstance(Bundle bundle )
@@ -67,6 +133,11 @@ public class Music implements Comparable<Music>, Serializable
                 cursor.getLong( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)),
                 cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST)),
                 cursor.getString( cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM)));
+    }
+
+    private void init(Cursor cursor)
+    {
+
     }
 
     public static Music getGenreInstance(Cursor cursor)
@@ -118,38 +189,74 @@ public class Music implements Comparable<Music>, Serializable
     }
 
     @Override
-    public int compareTo(Music o) {
-        return getName().compareTo( o.getName() );
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Music)) return false;
         Music music = (Music) o;
-        return mediaId == music.mediaId &&
-                albumId == music.albumId &&
-                Objects.equal(name, music.name) &&
-                Objects.equal(data, music.data) &&
-                Objects.equal(artist, music.artist) &&
-                Objects.equal(album, music.album);
+        return getMediaId() == music.getMediaId() &&
+                getAlbumId() == music.getAlbumId() &&
+//                isSelected() == music.isSelected() &&
+                Objects.equal(getName(), music.getName()) &&
+                Objects.equal(getData(), music.getData()) &&
+                Objects.equal(getArtist(), music.getArtist()) &&
+                Objects.equal(getAlbum(), music.getAlbum());
+    }
+
+    public boolean equalsInstance(Object o) {
+        if (!(o instanceof Music)) return false;
+        Music music = (Music) o;
+        return getMediaId() == music.getMediaId() &&
+                getAlbumId() == music.getAlbumId() &&
+//                isSelected() == music.isSelected() &&
+                Objects.equal(getName(), music.getName()) &&
+                Objects.equal(getData(), music.getData()) &&
+                Objects.equal(getArtist(), music.getArtist()) &&
+                Objects.equal(getAlbum(), music.getAlbum());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(name, data, mediaId, albumId, artist, album);
+//        return Objects.hashCode(getName(), getData(), getMediaId(), getAlbumId(), getArtist(), getAlbum(), isSelected());
+        return Objects.hashCode(getName(), getData(), getMediaId(), getAlbumId(), getArtist(), getAlbum());
+    }
+
+    @Override
+    public int compareTo(Music o) {
+        return getName().compareTo( o.getName() );
     }
 
     public int uniqueCode(String purpose) {
         return Objects.hashCode(purpose, name, data, mediaId, albumId, artist, album);
     }
 
+//    @Override
+//    public String toString() {
+//        return "Music{" +
+//                "name='" + name + '\'' +
+//                '}';
+//    }
+
+
     @Override
     public String toString() {
         return "Music{" +
                 "name='" + name + '\'' +
+                ", data='" + data + '\'' +
+                ", mediaId=" + mediaId +
+                ", albumId=" + albumId +
+                ", artist='" + artist + '\'' +
+                ", album='" + album + '\'' +
+//                ", selected=" + selected +
                 '}';
     }
+
+//    @Override
+//    public String toString() {
+//        return "Music{" +
+//                "name='" + name + '\'' +
+//                ", selected=" + selected +
+//                '}';
+//    }
 
     public Bundle toBundle()
     {
@@ -170,7 +277,10 @@ public class Music implements Comparable<Music>, Serializable
 
     public Uri toUri()
     {
-        return Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf( getMediaId() ) );
+        if (fromMediaStore)
+            return Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf( getMediaId() ) );
+        else
+            return Uri.parse(data);
     }
 
     public String getData()
@@ -199,4 +309,23 @@ public class Music implements Comparable<Music>, Serializable
         return musics;
     }
 
+    public boolean isEmpty() {
+        return equals(EmptyMusic);
+    }
+
+//    public boolean isSelected() {
+//        return selected;
+//    }
+//
+//    public void setSelected(boolean selected) {
+//        this.selected = selected;
+//    }
+
+//    public void select() {
+//        setSelected(true);
+//    }
+//
+//    public void unSelect() {
+//        setSelected(false);
+//    }
 }

@@ -1,20 +1,28 @@
 package com.gcodes.iplayer.music.player;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.request.RequestOptions;
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.database.PlayerDatabase;
 import com.gcodes.iplayer.helpers.GlideApp;
@@ -28,6 +36,8 @@ import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.api.services.youtube.model.Video;
 
 import androidx.annotation.NonNull;
@@ -39,14 +49,28 @@ import androidx.viewpager.widget.ViewPager;
 import java.io.File;
 import java.util.List;
 
+import jp.wasabeef.glide.transformations.BlurTransformation;
+import kotlin.Pair;
 import kotlin.Triple;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
+import static com.gcodes.iplayer.player.PlayerService.ON_CHECK_PLAYER_MANAGER;
 
-public class MusicPlayerActivity extends AppCompatActivity
+public class MusicPlayerActivity extends AppCompatActivity implements TextWatcher
 {
 
-    private Music currentMusic;
+//    private Music currentMusic;
+
+//    public synchronized Music getCurrentLoadedMusic() {
+//        return currentLoadedMusic;
+//    }
+//
+//    public synchronized void setCurrentLoadedMusic(Music currentLoadedMusic) {
+//        this.currentLoadedMusic = currentLoadedMusic;
+//    }
+
+    private Music loadedMusic;
+    private Music loadingMusic;
 //    private Player.EventListener trackListener;
     private PlayerDatabase.MusicInfo musicInfo;
     private PlayerControlView control;
@@ -66,6 +90,12 @@ public class MusicPlayerActivity extends AppCompatActivity
     private Handler infoRenderer;
     private Handler infoRetriever;
     private ViewPager pager;
+    private TextView header;
+    private ImageButton search;
+    private TextInputLayout searchLayout;
+    private TextInputEditText searchField;
+    private boolean searching = false;
+    private Message currentMessage;
 
 //    private static class LooperThread extends Thread {
 //        public Handler mHandler;
@@ -82,6 +112,16 @@ public class MusicPlayerActivity extends AppCompatActivity
 //            Looper.loop();
 //        }
 //    }
+
+    public class MusicBroadCastReceiver extends BroadcastReceiver
+    {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getBooleanExtra("has_player", false))
+                obtainMusicManager();
+            unregisterReceiver(this);
+        }
+    }
 
     private class MusicConnection implements ServiceConnection
     {
@@ -105,7 +145,7 @@ public class MusicPlayerActivity extends AppCompatActivity
 
         public PlayerListener(PlayerManager.MusicManager manager) {
             this.manager = manager;
-            consumeTrack();
+//            consumeTrack();
 //            initView(manager);
         }
 
@@ -125,18 +165,35 @@ public class MusicPlayerActivity extends AppCompatActivity
         {
             int index = musicManager.getPlayerManager().getCurrentPeriodIndex();
             Music music = musicManager.getMusic( index );
+
+//            music.select();
+
+//            int previousIndex = musicManager.getPlayerManager().getPreviousWindowIndex();
+//            if (previousIndex != C.INDEX_UNSET)
+//                musicManager.getMusic(previousIndex).unSelect();
+
+//            Log.d("Current_Playlist", "Current Tracks");
+//            for (Music track : musicManager.getMusics())
+//                Log.d("Current_Playlist", "Track " + track);
+
             MusicPlayerActivity.this.consumeTrack(music);
         }
+    }
+
+    private Music getCurrentMusic()
+    {
+        int index = musicManager.getPlayerManager().getCurrentPeriodIndex();
+        return musicManager.getMusic( index );
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_music_player);
-        manager = PlayerDatabase.getInstance();
+        manager = PlayerDatabase.getInstance(this);
         initInfoRenderer();
         initInfoRetriever(manager, this);
-        obtainMusicManager();
+        processIntent();
     }
 
 //    @Override
@@ -145,15 +202,57 @@ public class MusicPlayerActivity extends AppCompatActivity
 //        processAction(intent);
 //    }
 
+    private void processIntent(Intent intent)
+    {
+        if ( intent.getAction() != null && intent.getAction().equals(Intent.ACTION_VIEW) )
+        {
+            musicManager.play(intent.getData());
+        }
+    }
+
+    private void processIntent()
+    {
+        Intent current = getIntent();
+        if ( current.getAction() != null && current.getAction().equals(Intent.ACTION_VIEW) )
+        {
+            registerReceivers();
+            externalPlayRequest(current);
+        }
+        else
+            obtainMusicManager();
+    }
+
+    private void registerReceivers() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(PlayerService.ON_START_PLAYER_MANAGER);
+        registerReceiver(new MusicBroadCastReceiver(), filter);
+    }
+
+    private void externalPlayRequest(Intent current)
+    {
+        Intent intent = new Intent(this, PlayerService.class);
+        intent.putExtra("broadcast", true );
+        intent.putExtra("type", "music_uri" );
+//        intent.setData(current.getData());
+        startService(intent);
+    }
+
     private void obtainMusicManager() {
         Intent intent = new Intent(this, PlayerService.class);
         musicConnection = new MusicConnection();
         bindService(intent, musicConnection, BIND_IMPORTANT);
     }
 
+    private void checkPlayer() {
+        Intent broadcast = new Intent();
+        broadcast.setAction(ON_CHECK_PLAYER_MANAGER);
+        sendBroadcast(broadcast);
+    }
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        processIntent(intent);
         processAction(intent);
     }
 
@@ -237,7 +336,60 @@ public class MusicPlayerActivity extends AppCompatActivity
         });
 
         initPlayer();
+        initPlaylist();
         initLoading();
+    }
+
+    private void initPlaylist() {
+        header = findViewById(R.id.playerlist_header);
+        search = findViewById(R.id.playlist_search);
+        searchLayout = findViewById(R.id.search_layout);
+        searchField = findViewById(R.id.search_field);
+
+        search.setOnClickListener(v -> {
+            showSearch();
+        });
+
+        searchField.addTextChangedListener(this);
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+    }
+
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+    }
+
+    @Override
+    public void afterTextChanged(Editable s) {
+        pagerAdapter.searchPlaylist(s.toString());
+    }
+
+    private void showSearch()
+    {
+        header.setVisibility(View.GONE);
+        search.setVisibility(View.GONE);
+        searchLayout.setVisibility(View.VISIBLE);
+        searching = true;
+
+        searchField.requestFocusFromTouch();
+        searchField.requestFocus();
+        InputMethodManager IManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        IManager.showSoftInput(searchField, 0);
+    }
+
+    private void hideSearch()
+    {
+        searchField.getEditableText().clear();
+        pagerAdapter.updatePlaylist();
+
+        searchLayout.setVisibility(View.GONE);
+        header.setVisibility(View.VISIBLE);
+        search.setVisibility(View.VISIBLE);
+        searching = false;
     }
 
     private void initLoading() {
@@ -261,6 +413,10 @@ public class MusicPlayerActivity extends AppCompatActivity
     }
 
     private void manageMusic() {
+        Intent current = getIntent();
+        if ( current.getAction() != null && current.getAction().equals(Intent.ACTION_VIEW) )
+            musicManager.play(current.getData());
+
         initView();
         listener = new PlayerListener(musicManager);
         beginListening();
@@ -273,6 +429,7 @@ public class MusicPlayerActivity extends AppCompatActivity
         {
             Log.d("Player_List", "begin to listen");
             musicManager.addListener(listener);
+            listener.consumeTrack();
         }
     }
 
@@ -347,7 +504,9 @@ public class MusicPlayerActivity extends AppCompatActivity
 
     private void retrieveInfo(Music music)
     {
-        infoRetriever.obtainMessage(0, music).sendToTarget();
+        currentMessage = infoRetriever.obtainMessage(0, music);
+        infoRetriever.removeMessages(0);
+        currentMessage.sendToTarget();
     }
 
 //    private void retrieveInfo(Music music)
@@ -466,14 +625,18 @@ public class MusicPlayerActivity extends AppCompatActivity
 
     public void consumeTrack( Music music )
     {
-        updatePlayer( music );
-        pagerAdapter.updatePlayer( music );
-        pagerAdapter.updatePlaylist( music );
-        pagerAdapter.updateMusicVideos( music );
-        pagerAdapter.onLoading();
+        if (loadedMusic != music && loadingMusic != music)
+        {
+            loadingMusic = music;
 
-        currentMusic = music;
-        retrieveInfo( music );
+            updatePlayer( music );
+            pagerAdapter.updatePlayer( music );
+            pagerAdapter.updatePlaylist( music );
+            pagerAdapter.updateMusicVideos( music );
+            pagerAdapter.onLoading();
+
+            retrieveInfo( music );
+        }
     }
 
     private void initInfoRenderer() {
@@ -481,27 +644,49 @@ public class MusicPlayerActivity extends AppCompatActivity
             @Override
             public void handleMessage(@NonNull Message msg)
             {
-                Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>> result = (Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>>) msg.obj;
+                Pair<Music, Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>>> fullResult = (Pair<Music, Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>>>) msg.obj;
+                Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>> result = fullResult.getSecond();
                 PlayerDatabase.MusicInfo info = result.getFirst();
                 PlayerDatabase.MusicLyrics finalLyrics = result.getSecond();
                 List<Video> finalMusicVideo = result.getThird();
 
-                if ( info != null )
-                    pagerAdapter.updatePlayer( info, finalLyrics );
-                else
-                    pagerAdapter.updatePlayer(finalLyrics);
-                if (finalMusicVideo != null )
-                    pagerAdapter.updateMusicVideos( finalMusicVideo );
+
+                Music loaded = fullResult.getFirst();
+                if (getCurrentMusic().equals(loaded))
+                {
+                    if ( info != null )
+                        pagerAdapter.updatePlayer( info, finalLyrics );
+                    else
+                        pagerAdapter.updatePlayer(finalLyrics);
+                    if (finalMusicVideo != null )
+                        pagerAdapter.updateMusicVideos( finalMusicVideo );
+
+                    loadedMusic = loaded;
+                }
             }
         };
     }
 
     @Override
     public void onBackPressed() {
-        if (pager.getCurrentItem() != pagerAdapter.getDefaultTabPos())
+        if (searching)
+            hideSearch();
+        else if (pager.getCurrentItem() != pagerAdapter.getDefaultTabPos())
             pager.setCurrentItem(pagerAdapter.getDefaultTabPos(), true);
+        else if (pagerAdapter.isLyricsVisible())
+            pagerAdapter.hideLyrics();
         else
-            super.onBackPressed();
+        {
+            if (isTaskRoot())
+            {
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            }
+            else
+                super.onBackPressed();
+        }
     }
 
     private void initInfoRetriever(PlayerDatabase manager, Context context) {
@@ -537,8 +722,8 @@ public class MusicPlayerActivity extends AppCompatActivity
                 private void retrieve()
                 {
                     PlayerDatabase.MusicInfo info = manager.getInfo(music);
-                    List<Video> musicVideo = null;
-                    PlayerDatabase.MusicLyrics lyrics = null;
+                    List<Video> musicVideo;
+                    PlayerDatabase.MusicLyrics lyrics;
 
                     if ( info != null )
                     {
@@ -552,7 +737,7 @@ public class MusicPlayerActivity extends AppCompatActivity
                         musicVideo = manager.getMusicVideo(music);
                     }
 
-                    Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>> result = new Triple<>(info, lyrics, musicVideo);
+                    Pair<Music, Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>>> result = new Pair<>( music, new Triple<>(info, lyrics, musicVideo) );
                     infoRenderer.obtainMessage(0, result).sendToTarget();
                 }
 
@@ -573,7 +758,7 @@ public class MusicPlayerActivity extends AppCompatActivity
 
                     if (info != null || lyrics != null )
                     {
-                        Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>> result = new Triple<>(info, lyrics, null);
+                        Pair<Music, Triple<PlayerDatabase.MusicInfo, PlayerDatabase.MusicLyrics, List<Video>>> result = new Pair<>(music, new Triple<>(info, lyrics, null));
                         infoRenderer.obtainMessage(0, result).sendToTarget();
                     }
                 }
@@ -587,8 +772,8 @@ public class MusicPlayerActivity extends AppCompatActivity
     private void updatePlayer(Music music) {
         musicName.setText( music.getName() );
         artistName.setText( music.getArtist() );
-        GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( this, music ) )
-                .placeholder( R.drawable.u_song_art_padded ).into( background );
+        GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( this, music ) ).apply(RequestOptions.bitmapTransform(new BlurTransformation(7, 1)))
+                .placeholder( R.drawable.music_background2).into( background );
     }
 
 //    private void getLyrics()
@@ -693,6 +878,21 @@ public class MusicPlayerActivity extends AppCompatActivity
             player.updateLyrics( lyrics );
         }
 
+        private boolean isLyricsVisible()
+        {
+            return player.isLyricsVisible();
+        }
+
+        private void hideLyrics()
+        {
+            player.hideLyrics();
+        }
+
+        private void showLyrics()
+        {
+            player.showLyrics();
+        }
+
         private void playKaraoke(File file, Music music)
         {
             Log.d("Play_Karaoke", "Applying Karaoke " + music);
@@ -707,6 +907,16 @@ public class MusicPlayerActivity extends AppCompatActivity
         private void updatePlaylist( Music music )
         {
             playlist.updateMusic( music );
+        }
+
+        private void updatePlaylist()
+        {
+            playlist.updateMusic();
+        }
+
+        private void searchPlaylist(String query)
+        {
+            playlist.search(query);
         }
 
         public void init()

@@ -2,6 +2,7 @@ package com.gcodes.iplayer.music.player;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.helpers.GlideApp;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.player.PlayerManager;
@@ -22,6 +24,7 @@ import com.google.android.exoplayer2.ui.PlayerControlView;
 
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
@@ -37,6 +40,7 @@ public class MusicController extends Fragment {
     private Music currentMusic;
 
     private final PlayerManager.MusicManager manager;
+    private ControlListener controlListener;
 
     public MusicController(PlayerManager.MusicManager manager) {
         super();
@@ -80,9 +84,30 @@ public class MusicController extends Fragment {
         controlView.setOnClickListener( v -> {
             showMusicPlayer();
         });
+        prepareStop();
 
-        ControlListener controlListener = new ControlListener(manager);
+        controlListener = new ControlListener(manager);
         manager.addListener(controlListener);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        manager.removeListener(controlListener);
+    }
+
+    private void prepareStop() {
+        ImageView stop = controlView.findViewById(R.id.exo_stop);
+        stop.setOnClickListener( v -> {
+            stop();
+        });
+    }
+
+    private void stop() {
+        manager.stop();
+        new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).removeMusicController(requireActivity().getSupportFragmentManager());
+        manager.removeListener(controlListener);
+        Log.d("Video_Controller", "Removed Listener" );
     }
 
     private void showMusicPlayer()

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1005383387391",
+    "project_id": "ugo-player-ab36d",
+    "storage_bucket": "ugo-player-ab36d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1005383387391:android:f3ba9ccfb032e8e2ada4ca",
+        "android_client_info": {
+          "package_name": "com.gcodes.iplayer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1005383387391-iluok0i7g0smapijui2ov7ei0idu35g7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gcodes.iplayer",
+            "certificate_hash": "01957cdc7950a4bc992627cb28b9f410fe31d599"
+          }
+        },
+        {
+          "client_id": "1005383387391-mub09ruqhh85de4dm2u1d0bldlctpe0p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5Rw4p5Dtgr-utOXJy1WF2LUxnAd-Hlmo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1005383387391-mub09ruqhh85de4dm2u1d0bldlctpe0p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

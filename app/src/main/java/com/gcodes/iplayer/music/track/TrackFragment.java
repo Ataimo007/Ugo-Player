@@ -13,12 +13,8 @@ import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.ui.UIConstance;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -58,19 +54,32 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        LoaderManager.getInstance(this).initLoader(0, null, this);
+        LoaderManager.getInstance(requireActivity()).initLoader(MainActivity.AppLoader.TRACK.getId(), null, this);
 //        initFloatingAction();
     }
 
     @Override
     public void onStart() {
         super.onStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
         initFloatingAction();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        FloatingActionButton floating = requireActivity().findViewById(R.id.action_floating);
+        floating.hide();
     }
 
     private void initFloatingAction()
     {
-        FloatingActionButton floating = getActivity().findViewById(R.id.action_floating);
+        FloatingActionButton floating = requireActivity().findViewById(R.id.action_floating);
+        floating.show();
         floating.setOnClickListener( v -> {
             FragmentActivity owner = requireActivity();
             Log.w("Player_Model", "Owner of Player Model " + owner );
@@ -113,7 +122,8 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
                 musics.add( Music.getInstance(cursor));
             } while ( cursor.moveToNext() );
         }
-        adapter.notifyDataSetChanged();
+        if (adapter != null)
+            adapter.notifyDataSetChanged();
     }
 
 //    @Override
@@ -147,7 +157,7 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
 
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-        musics.clear();
+        musics = null;
         adapter.notifyDataSetChanged();
     }
 
@@ -167,10 +177,12 @@ public class TrackFragment extends Fragment implements LoaderManager.LoaderCallb
             holder.setTitle( music.getName() );
             holder.setSubtitle( music.getArtist() );
             holder.setImage( TrackFragment.this, music );
+//            Log.d("music_info", "Data " + music.getData());
 
             holder.itemView.setOnClickListener(v -> {
                 Log.d("Player_Manager", "playing " + music);
                 new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(music);
+//                throw new RuntimeException("Test Crash"); // Force a crash
             });
         }
 

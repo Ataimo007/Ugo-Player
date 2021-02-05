@@ -18,10 +18,15 @@
         android:layout_height="wrap_content">
 
         <androidx.appcompat.widget.Toolbar
-            android:id="@+id/app_toolbar"
+            android:id="@+id/video_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:layout_scrollFlags="scroll|enterAlways"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            app:contentInsetEnd="16dp"
+            app:contentInsetEndWithActions="16dp"
+            app:menu="@menu/main_menu"
             app:title="@string/app_name"
             app:titleTextAppearance="@style/TextAppearance.MaterialComponents.Headline6"
             app:titleTextColor="@android:color/white">

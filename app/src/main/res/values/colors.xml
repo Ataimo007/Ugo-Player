@@ -24,6 +24,9 @@
     <color name="colorAccent16">#D9FFFFFF</color>
     <color name="colorAccent17">#252525</color>
     <color name="colorAccent18">#26000000</color>
+    <color name="colorAccent19">#0CFFFFFF</color>
+    <color name="colorAccent20">#D8CFCFCF</color>
+    <color name="colorAccent21">#171616</color>
 
 
 
@@ -31,7 +34,7 @@
     <color name="videoPrimaryDark">#00000000</color>
     <color name="videoAccent">#00000000</color>
 
-    <color name="colorAccent20">#FFFFFF</color>
+    <color name="colorAccent30">#FFFFFF</color>
     <color name="colorAccent2Fade">#969696</color>
     <color name="no_buffer_color">#00ffffff</color>
     <color name="black_overlay">#00000000</color>

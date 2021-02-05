@@ -272,9 +272,11 @@ public class MusicPlayerFragment extends Fragment
     }
 
 
-    private void showLyrics()
+    public void showLyrics()
     {
         getView().findViewById( R.id.lyrics_view ).setVisibility( View.VISIBLE );
+        art.setVisibility(View.GONE);
+        art.clearAnimation();
     }
 
     public void enableLyrics( boolean enable )
@@ -282,14 +284,17 @@ public class MusicPlayerFragment extends Fragment
         getView().findViewById( R.id.lyrics_view ).setEnabled( enable );
     }
 
-    private boolean isLyricsVisible()
+    public boolean isLyricsVisible()
     {
         return getView().findViewById( R.id.lyrics_view ).getVisibility() == View.VISIBLE;
     }
 
-    private void hideLyrics()
+    public void hideLyrics()
     {
         getView().findViewById( R.id.lyrics_view ).setVisibility( View.GONE );
+        art.setVisibility(View.VISIBLE);
+        if ( manager.getPlayerManager().getPlayWhenReady() && manager.getPlayerManager().getPlaybackState() == Player.STATE_READY )
+            art.startAnimation( rotate );
     }
 
     private void initPlayer()
@@ -322,7 +327,8 @@ public class MusicPlayerFragment extends Fragment
         if ( manager.getPlayerManager().getPlayWhenReady() && manager.getPlayerManager().getPlaybackState() == Player.STATE_READY )
         {
             Log.d("Animation_View", "playing music" );
-            art.startAnimation( rotate );
+            if (!lyricsButton.isChecked())
+                art.startAnimation( rotate );
         }
         else
         {
@@ -334,7 +340,8 @@ public class MusicPlayerFragment extends Fragment
     public void processRotate(boolean playWhenReady, int playbackState) {
         if (playWhenReady && playbackState == Player.STATE_READY) {
             Log.d("Animation_View", "playing music");
-            art.startAnimation(rotate);
+            if (!lyricsButton.isChecked())
+                art.startAnimation(rotate);
         } else {
             Log.d("Animation_View", "music paused");
             art.clearAnimation();
@@ -358,6 +365,7 @@ public class MusicPlayerFragment extends Fragment
             currentMusic = music;
             currentTrack = newTrack;
         }
+
     }
 
     public void updateInfo(PlayerDatabase.MusicInfo info )
@@ -377,6 +385,7 @@ public class MusicPlayerFragment extends Fragment
             this.lyrics = lyricsBody.split("\n");
             adapter.notifyDataSetChanged();
             lyricsButton.setEnabled( true );
+            lyricsButton.setChecked(true);
             initScroll();
         }
     }
@@ -389,7 +398,7 @@ public class MusicPlayerFragment extends Fragment
     public void setImage(Music music)
     {
         GlideApp.with( this ).load( new ProcessModelLoaderFactory.MusicProcessFetcher( this, music ) )
-                .placeholder( R.drawable.u_song_art_padded ).apply( circleCropTransform() ).into( image );
+                .placeholder( R.drawable.track_act ).apply( circleCropTransform() ).into( image );
     }
 
     public void setBackground(Music music)
@@ -405,7 +414,7 @@ public class MusicPlayerFragment extends Fragment
         listView.setLayoutManager( new LinearLayoutManager( getContext() ) );
 //        listView.setLayoutManager( new CustomLinearLayoutManager( getContext() ) );
         listView.setAdapter(adapter);
-        listView.addItemDecoration(UIConstance.AppItemDecorator.AppItemDecoratorToolBarOffset(getContext(), UIConstance.AppItemDecorator.DEFAULT_TOP, 280 + UIConstance.AppItemDecorator.DEFAULT_TOP ));
+        listView.addItemDecoration(UIConstance.AppItemDecorator.AppItemDecoratorToolBarOffset(getContext(), UIConstance.AppItemDecorator.DEFAULT_TOP + 20, 320 + UIConstance.AppItemDecorator.DEFAULT_TOP, 20 ));
 
         listView.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -435,7 +444,11 @@ public class MusicPlayerFragment extends Fragment
     public void onLoading() {
         lyrics = null;
         if ( lyricsButton != null )
+        {
             lyricsButton.setEnabled( false );
+            lyricsButton.setChecked(false );
+        }
+
 //        if ( karaokeButton != null )
 //            karaokeButton.setEnabled( false );
         deSync();

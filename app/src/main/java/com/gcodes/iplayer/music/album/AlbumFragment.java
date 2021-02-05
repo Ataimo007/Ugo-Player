@@ -1,6 +1,5 @@
 package com.gcodes.iplayer.music.album;
 
-import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -8,11 +7,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.music.models.Album;
-import com.gcodes.iplayer.music.models.Music;
-import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.gcodes.iplayer.ui.UIConstance;
 
 import androidx.annotation.NonNull;
@@ -21,13 +18,12 @@ import androidx.fragment.app.Fragment;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
-import androidx.navigation.NavHostController;
 import androidx.navigation.Navigation;
-import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.TreeSet;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
 
@@ -40,7 +36,7 @@ public class AlbumFragment extends Fragment implements LoaderManager.LoaderCallb
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        LoaderManager.getInstance(this).initLoader(0, null, this);
+        LoaderManager.getInstance(requireActivity()).initLoader(MainActivity.AppLoader.ALBUM.getId(), null, this);
     }
 
     private int getSpan()
@@ -72,8 +68,11 @@ public class AlbumFragment extends Fragment implements LoaderManager.LoaderCallb
 
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
-        if ( albums == null )
-            albums = new ArrayList<>();
+        TreeSet<Album> albums = new TreeSet<>((o1, o2) -> {
+            if (o1.getAlbum().equalsIgnoreCase(o2.getAlbum()))
+                return 0;
+            return o1.compareTo(o2);
+        });
         if  ( cursor.getCount() > 0 )
         {
             cursor.moveToFirst();
@@ -82,12 +81,14 @@ public class AlbumFragment extends Fragment implements LoaderManager.LoaderCallb
                 albums.add( Album.getInstance(cursor));
             } while ( cursor.moveToNext() );
         }
-        adapter.notifyDataSetChanged();
+        this.albums = new ArrayList<>(albums);
+        if (adapter != null)
+            adapter.notifyDataSetChanged();
     }
 
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-        albums.clear();
+        albums = null;
         adapter.notifyDataSetChanged();
     }
 
@@ -122,7 +123,9 @@ public class AlbumFragment extends Fragment implements LoaderManager.LoaderCallb
 
         @Override
         public int getItemCount() {
-            return albums.size();
+            if (albums != null)
+                return albums.size();
+            return 0;
         }
     }
 }

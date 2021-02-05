@@ -86,17 +86,17 @@
         android:id="@+id/download_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/item_description"
         app:layout_constraintEnd_toEndOf="@+id/item_title"
-        app:layout_constraintTop_toTopOf="@+id/item_description"
-        >
+        app:layout_constraintTop_toTopOf="@+id/item_description">
 
         <ImageButton
             android:id="@+id/video_download"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="visible"
             android:background="@android:color/transparent"
+            android:visibility="visible"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

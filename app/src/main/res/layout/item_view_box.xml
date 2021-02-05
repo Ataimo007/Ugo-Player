@@ -37,6 +37,7 @@
         android:textAppearance="?attr/textAppearanceListItem"
         android:textColor="@color/colorAccent6"
         android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="@+id/item_image"
         app:layout_constraintEnd_toEndOf="@+id/item_title"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/item_title"
@@ -44,18 +45,19 @@
 
     <ImageView
         android:id="@+id/item_image"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_width="80dp"
+        android:layout_height="60dp"
         android:layout_marginStart="10dp"
         android:adjustViewBounds="true"
         android:cropToPadding="true"
         android:paddingStart="4dp"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
+        android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/u_folder_art" />
+        app:srcCompat="@drawable/u_folder" />
 
 
 <!--    <androidx.cardview.widget.CardView-->

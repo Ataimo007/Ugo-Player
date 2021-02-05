@@ -7,8 +7,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
-import com.gcodes.iplayer.helpers.CursorRecyclerViewAdapter;
 import com.gcodes.iplayer.music.models.Artist;
 import com.gcodes.iplayer.ui.UIConstance;
 
@@ -26,7 +26,6 @@ import java.util.ArrayList;
 
 import static com.gcodes.iplayer.helpers.GlideOptions.centerCropTransform;
 import static com.gcodes.iplayer.helpers.GlideOptions.circleCropTransform;
-import static com.gcodes.iplayer.music.models.Artist.projection;
 
 //import android.support.annotation.NonNull;
 //import androidx.core.app.Fragment;
@@ -45,7 +44,7 @@ public class ArtistFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        LoaderManager.getInstance(this).initLoader(0, null, this);
+        LoaderManager.getInstance(requireActivity()).initLoader(MainActivity.AppLoader.ARTIST.getId(), null, this);
     }
 
     private int getSpan()
@@ -86,12 +85,13 @@ public class ArtistFragment extends Fragment implements LoaderManager.LoaderCall
                 artists.add( Artist.getInstance(cursor));
             } while ( cursor.moveToNext() );
         }
-        adapter.notifyDataSetChanged();
+        if (adapter != null)
+            adapter.notifyDataSetChanged();
     }
 
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-        artists.clear();
+        artists = null;
         adapter.notifyDataSetChanged();
     }
 
@@ -131,7 +131,9 @@ public class ArtistFragment extends Fragment implements LoaderManager.LoaderCall
 
         @Override
         public int getItemCount() {
-            return artists.size();
+            if (artists != null)
+                return artists.size();
+            return 0;
         }
     }
 

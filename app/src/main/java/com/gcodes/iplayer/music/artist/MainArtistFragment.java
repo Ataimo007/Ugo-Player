@@ -18,6 +18,7 @@ import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.music.album.AlbumItemHolder;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.gcodes.iplayer.ui.UIConstance;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
@@ -108,8 +109,18 @@ public class MainArtistFragment extends Fragment
 
         init();
         initView(view);
+        initPlay(view);
 
         return view;
+    }
+
+    private void initPlay(View view) {
+        FloatingActionButton play = view.findViewById(R.id.fragment_play);
+        play.setOnClickListener(v -> {
+            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(pagerAdapter.getTracks());
+        });
+        FloatingActionButton appButton = requireActivity().findViewById(R.id.action_floating);
+        appButton.hide();
     }
 
     private void initPager(View view)
@@ -198,6 +209,7 @@ public class MainArtistFragment extends Fragment
         private final Cursor albums;
         private final String artistKey;
         private final FragmentActivity activity;
+        private ArtistTrackFragment artistTracks;
 
         public SectionsPagerAdapter(FragmentManager fm, ArrayList<Music> tracks, Cursor albums, String artistKey, MainArtistFragment artistActivity)
         {
@@ -208,13 +220,18 @@ public class MainArtistFragment extends Fragment
             activity = artistActivity.getActivity();
         }
 
+        public ArrayList<Music> getTracks()
+        {
+            return artistTracks.getMusics();
+        }
+
         @Override
         public Fragment getItem(int position)
         {
             switch ( position )
             {
                 case 0:
-                    ArtistTrackFragment artistTracks = new ArtistTrackFragment();
+                    artistTracks = new ArtistTrackFragment();
                     artistTracks.setMusics( tracks );
                     artistTracks.setActivity( activity );
                     return artistTracks;
@@ -255,6 +272,10 @@ public class MainArtistFragment extends Fragment
 
             listView.addItemDecoration( new UIConstance.AppItemDecorator( 1 ) );
             return listView;
+        }
+
+        public ArrayList<Music> getMusics() {
+            return musics;
         }
 
         public void setActivity(FragmentActivity activity) {

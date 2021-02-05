@@ -39,6 +39,12 @@ public class UIConstance {
             return new AppItemDecorator( 1, 0, mActionBarSize + topOffset, bottomOffset );
         }
 
+        public static AppItemDecorator AppItemDecoratorToolBarOffset(Context context, int topOffset, int bottomOffset, int offset )
+        {
+            int mActionBarSize = getToolBarOffset( context );
+            return new AppItemDecorator( 1, offset, mActionBarSize + topOffset, bottomOffset );
+        }
+
         public AppItemDecorator(int span)
         {
             this( span, 0 );
@@ -69,18 +75,18 @@ public class UIConstance {
         }
     }
 
-    public static class HorizontalSpanDecorator extends RecyclerView.ItemDecoration
+    public static class NestedHorizontalSpanDecorator extends RecyclerView.ItemDecoration
     {
         private final int span;
         private final int offset;
 
-        public HorizontalSpanDecorator()
+        public NestedHorizontalSpanDecorator()
         {
             this.span = 20;
             this.offset = 30;
         }
 
-        public HorizontalSpanDecorator(int span, int offset )
+        public NestedHorizontalSpanDecorator(int span, int offset )
         {
             this.span = span;
             this.offset = offset;
@@ -96,6 +102,36 @@ public class UIConstance {
                 outRect.left = offset;
             if (parent.getChildAdapterPosition(view) == parent.getAdapter().getItemCount() -1)
                 outRect.right = offset;
+        }
+    }
+
+    public static class NestedVerticalSpanDecorator extends RecyclerView.ItemDecoration
+    {
+        private final int span;
+        private final int offset;
+
+        public NestedVerticalSpanDecorator()
+        {
+            this.span = 20;
+            this.offset = 30;
+        }
+
+        public NestedVerticalSpanDecorator(int span, int offset )
+        {
+            this.span = span;
+            this.offset = offset;
+        }
+
+        @Override
+        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            outRect.top = 0;
+            outRect.bottom = span;
+//            outRect.right = span;
+
+            if (parent.getChildAdapterPosition(view) == 0 )
+                outRect.top = offset;
+            if (parent.getChildAdapterPosition(view) == parent.getAdapter().getItemCount() -1)
+                outRect.bottom = offset;
         }
     }
 

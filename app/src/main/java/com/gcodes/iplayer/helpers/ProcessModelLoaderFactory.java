@@ -133,7 +133,8 @@ public final class ProcessModelLoaderFactory implements ModelLoaderFactory< Proc
         public Bitmap load()
         {
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-            retriever.setDataSource( context, music.toUri());
+            if (!music.isEmpty())
+                retriever.setDataSource( context, music.toUri());
 
             Log.d("Content_Resolver", "load: old content resolver thumbnail");
             byte[] picture = retriever.getEmbeddedPicture();

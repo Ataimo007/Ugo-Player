@@ -55,9 +55,9 @@
         tools:layout="@layout/activity_artist_only_full" />
     <fragment
         android:id="@+id/searchFragment"
-        android:name="com.gcodes.iplayer.SearchFragment"
+        android:name="com.gcodes.iplayer.music.MusicSearchFragment"
         android:label="SearchFragment"
-        tools:layout="@layout/app_search"
+        tools:layout="@layout/music_search"
         >
         <action
             android:id="@+id/action_searchFragment_to_mainAlbumFragment"

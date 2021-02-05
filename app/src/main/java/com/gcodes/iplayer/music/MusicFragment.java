@@ -14,6 +14,7 @@ import com.gcodes.iplayer.music.artist.ArtistFragment;
 import com.gcodes.iplayer.music.folder.FolderFragment;
 import com.gcodes.iplayer.music.genre.GenreFragment;
 import com.gcodes.iplayer.music.track.TrackFragment;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
 import androidx.annotation.NonNull;
@@ -31,6 +32,7 @@ public class MusicFragment extends Fragment
 
 //    private AppBarLayout appBar;
     private SectionsPagerAdapter mSectionsPagerAdapter;
+    public static final int DEFAULT_TAB = 2;
 //    private MainActivity.BackAction backAction = null;
     private MainActivity app;
 
@@ -110,7 +112,7 @@ public class MusicFragment extends Fragment
             views[ 2 ] = new TrackFragment();
             views[ 3 ] = new GenreFragment();
             views[ 4 ] = new FolderFragment();
-            fragmentTitles = new String[]{ "Albums", "Artists", "Songs", "Genres", "Folders" };
+            fragmentTitles = new String[]{ "Albums", "Artists", "Tracks", "Genres", "Folders" };
         }
 
         @Override
@@ -131,7 +133,7 @@ public class MusicFragment extends Fragment
         }
 
         public int getDefaultTabPos() {
-            return 2;
+            return DEFAULT_TAB;
         }
     }
 

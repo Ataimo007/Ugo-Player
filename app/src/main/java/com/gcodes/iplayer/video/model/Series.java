@@ -1,4 +1,4 @@
-package com.gcodes.iplayer.video;
+package com.gcodes.iplayer.video.model;
 
 import android.util.Log;
 
@@ -21,7 +21,7 @@ public final class Series implements Comparable< Series >
         this.videos = videos;
         int dur = 0;
         for ( Video video : videos )
-            dur += video.getDuration();
+            dur += video.getRawDuration();
         duration = dur;
     }
 

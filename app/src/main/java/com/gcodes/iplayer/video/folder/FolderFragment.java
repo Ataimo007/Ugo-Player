@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.media.ThumbnailUtils;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -17,23 +16,25 @@ import android.widget.TextView;
 import com.gcodes.iplayer.MainActivity;
 import com.gcodes.iplayer.R;
 import com.gcodes.iplayer.helpers.GlideApp;
-import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
-import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.video.model.Video;
 import com.gcodes.iplayer.video.VideoFragment;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -41,7 +42,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import static android.app.Activity.RESULT_OK;
 import static com.bumptech.glide.request.RequestOptions.centerCropTransform;
 
-public class FolderFragment extends Fragment implements VideoFragment.SectionsPagerAdapter.PageTitle, MainActivity.BackAction
+public class FolderFragment extends Fragment implements VideoFragment.SectionsPagerAdapter.PageTitle, MainActivity.BackAction, LoaderManager.LoaderCallbacks<Cursor>
 {
     private MainActivity backActivity;
     private String pageTitle = "Folders";
@@ -58,19 +59,10 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
 
     private ArrayList< Video > videos = new ArrayList<>();
 
-    private String[] projection = {
-            MediaStore.Video.Media._ID,
-            MediaStore.Video.Media.DISPLAY_NAME,
-            MediaStore.Video.Media.TITLE,
-            MediaStore.Video.Media.DURATION,
-            MediaStore.Video.Media.DATE_MODIFIED,
-            MediaStore.Video.Media.DATA
-    };
-
-    private static Cursor cursor;
     private String[] entryFiles;
     private CustomAdapter adapter;
     private RecyclerView listView;
+    private ActivityResultLauncher<Intent> player;
 
     public FolderFragment() {
     }
@@ -80,15 +72,18 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        load();
+        LoaderManager.getInstance(requireActivity()).initLoader(MainActivity.AppLoader.VIDEO_FOLDER.getId(), null, this);
+        player = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK) {
+                Log.d("Video_Controller", "Rendering Video Controller");
+                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(requireActivity().getSupportFragmentManager());
+            }
+        });
     }
 
-    public void load()
+    public void load(Cursor cursor)
     {
-        CursorLoader loader = new CursorLoader( this.getContext(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                projection, null, null, null );
-        cursor = loader.loadInBackground();
-        initialize();
+        initialize(cursor);
         inside = false;
     }
 
@@ -101,7 +96,7 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
         }
     }
 
-    public void initialize()
+    public void initialize(Cursor cursor)
     {
         entry.clear();
         if  ( cursor.moveToFirst() )
@@ -113,17 +108,15 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
                 if ( entry.containsKey( fPaths ) )
                 {
                     ArrayList<Video> videos = entry.get(fPaths);
-                    videos.add( Video.getIntance( cursor ) );
+                    videos.add( Video.getInstance( cursor ) );
 //                    entry.put( fPaths, videos );
                 }
                 else
-                    entry.put( fPaths, new ArrayList<>( Arrays.asList( Video.getIntance( cursor ) ) ) );
+                    entry.put( fPaths, new ArrayList<>( Arrays.asList( Video.getInstance( cursor ) ) ) );
 
             } while ( cursor.moveToNext() );
         }
         entryFiles = entry.keySet().toArray(new String[]{});
-//        Log.d("Folder_Fragment", "Entry " + Arrays.toString(entryFiles));
-//        Log.d("Folder_Fragment", "Entry " + entry );
     }
 
     public void enter(String key, String folder)
@@ -168,15 +161,15 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
 //        }
 //    }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER && resultCode == RESULT_OK )
-        {
-            Log.d("Video_Controller", "Rendering Video Controller");
-            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).showVideoController(requireActivity().getSupportFragmentManager());
-        }
-    }
+//    @Override
+//    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//        if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER && resultCode == RESULT_OK )
+//        {
+//            Log.d("Video_Controller", "Rendering Video Controller");
+//
+//        }
+//    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -215,6 +208,28 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
         }
         else
             return false;
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new CursorLoader( requireContext(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                Video.projection, null, null, null );
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+        load(data);
+        if ( adapter != null )
+            adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        videos.clear();
+        entryFiles = null;
+        if ( adapter != null )
+            adapter.notifyDataSetChanged();
     }
 
 
@@ -282,7 +297,7 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
         {
             final Video video = videos.get(position);
             holder.setTitle( video.getName() );
-            holder.setSubtitle( parseDuration( video.getDuration() ) );
+            holder.setSubtitle( video.getDuration() );
             String path = video.getData();
 
             GlideApp.with( FolderFragment.this ).load( path )
@@ -293,10 +308,13 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
 
             Video[] vids = videos.toArray( new Video[]{} );
             holder.itemView.setOnClickListener(v -> {
-                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource(vids);
+                new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).initSource();
                 Intent intent = new Intent(getContext(), VideoPlayerActivity.class);
+                String[] gsonVideos = Video.toGson(vids);
+                intent.putExtra( "video", gsonVideos );
                 PlayerManager.setTo(intent, position);
-                startActivityForResult(intent, PlayerManager.REQUEST_VIDEO_PLAYER);
+                player.launch(intent);
+//                startActivityForResult(intent, PlayerManager.REQUEST_VIDEO_PLAYER);
             });
         }
 
@@ -306,20 +324,23 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
             if ( inside )
                 return videos.size();
             else
+            if (entryFiles == null)
+                return 0;
+            else
                 return entryFiles.length;
         }
 
 
-        public String parseDuration( long dur )
-        {
-            long h = TimeUnit.MILLISECONDS.toHours(dur);
-            long m = TimeUnit.MILLISECONDS.toMinutes(dur) - TimeUnit.HOURS.toMinutes( h );
-            long s = TimeUnit.MILLISECONDS.toSeconds(dur) - TimeUnit.MINUTES.toSeconds( m ) - TimeUnit.HOURS.toSeconds( h );;
-            String hs = h > 0 ? String.format( "%02d:", h ) : "";
-            String ms = m > 0 || h > 0 ? String.format( "%02d:", m ) : "";
-            String ss = h == 0 && m == 0 ? String.format( "%02d secs", s ) : String.format( "%02d", s );
-            return hs + ms + ss;
-        }
+//        public String parseDuration( long dur )
+//        {
+//            long h = TimeUnit.MILLISECONDS.toHours(dur);
+//            long m = TimeUnit.MILLISECONDS.toMinutes(dur) - TimeUnit.HOURS.toMinutes( h );
+//            long s = TimeUnit.MILLISECONDS.toSeconds(dur) - TimeUnit.MINUTES.toSeconds( m ) - TimeUnit.HOURS.toSeconds( h );;
+//            String hs = h > 0 ? String.format( "%02d:", h ) : "";
+//            String ms = m > 0 || h > 0 ? String.format( "%02d:", m ) : "";
+//            String ss = h == 0 && m == 0 ? String.format( "%02d secs", s ) : String.format( "%02d", s );
+//            return hs + ms + ss;
+//        }
     }
 
     public class ItemHolder extends RecyclerView.ViewHolder
@@ -368,24 +389,24 @@ public class FolderFragment extends Fragment implements VideoFragment.SectionsPa
         }
     }
 
-    public class CustomProcessFetcher implements ProcessModelLoaderFactory.ProcessFetcher
-    {
-        private final String path;
-
-        public CustomProcessFetcher( String path )
-        {
-            this.path = path;
-        }
-
-        @Override
-        public Object getKey() {
-            return path;
-        }
-
-        @Override
-        public Bitmap load() {
-            return ThumbnailUtils.createVideoThumbnail(path, MediaStore.Video.Thumbnails.MINI_KIND);
-        }
-    }
+//    public class CustomProcessFetcher implements ProcessModelLoaderFactory.ProcessFetcher
+//    {
+//        private final String path;
+//
+//        public CustomProcessFetcher( String path )
+//        {
+//            this.path = path;
+//        }
+//
+//        @Override
+//        public Object getKey() {
+//            return path;
+//        }
+//
+//        @Override
+//        public Bitmap load() {
+//            return ThumbnailUtils.createVideoThumbnail(path, MediaStore.Video.Thumbnails.MINI_KIND);
+//        }
+//    }
 
 }

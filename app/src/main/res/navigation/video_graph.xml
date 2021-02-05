@@ -12,10 +12,22 @@
         <action
             android:id="@+id/action_videoFragment_to_seriesPlayerFragment"
             app:destination="@id/seriesPlayerFragment" />
+        <action
+            android:id="@+id/action_videoFragment_to_videoSearchFragment"
+            app:destination="@id/videoSearchFragment" />
     </fragment>
     <fragment
         android:id="@+id/seriesPlayerFragment"
         android:name="com.gcodes.iplayer.video.series.SeriesPlayerFragment"
         android:label="series_player"
         tools:layout="@layout/series_player" />
+    <fragment
+        android:id="@+id/videoSearchFragment"
+        android:name="com.gcodes.iplayer.video.VideoSearchFragment"
+        android:label="VideoSearchFragment"
+        tools:layout="@layout/video_search">
+        <action
+            android:id="@+id/action_videoSearchFragment_to_seriesPlayerFragment"
+            app:destination="@id/seriesPlayerFragment" />
+    </fragment>
 </navigation>

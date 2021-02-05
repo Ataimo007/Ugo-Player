@@ -10,30 +10,26 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
+import android.view.View;
 
+import com.gcodes.iplayer.music.MusicFragment;
 import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.music.player.MusicController;
 import com.gcodes.iplayer.player.PlayerService;
 import com.gcodes.iplayer.player.PlayerManager;
-import com.gcodes.iplayer.video.Series;
-import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.video.model.Series;
 import com.gcodes.iplayer.video.player.VideoController;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.Player;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 import androidx.annotation.NonNull;
@@ -41,7 +37,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.os.HandlerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -66,22 +61,46 @@ import static com.gcodes.iplayer.player.PlayerService.ON_CHECK_PLAYER_MANAGER;
 
 public class MainActivity extends AppCompatActivity
 {
-    private int requestCode = 0;
+    private final int requestCode = 0;
 //    private static AppCompatActivity application;
     Supplier<Boolean> action;
 
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
+    private final BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = this::doSelection;
     private NavigationPager pager;
     private AppPagerAdapter adapter;
     private int currentPage;
 
     private BackAction[] backActions;
-    private MusicBroadCastReceiver musicReceiver;
+    private PlayerBroadCastReceiver musicReceiver;
     private ControllerListener controllerListener;
-    private MusicConnection musicConnection;
+    private PlayerConnection playerConnection;
     private PlayerService.PlayerBinder binder;
-    private PlayerManager playerManager;
+    private BottomNavigationView navigation;
+//    private PlayerManager playerManager;
+
+    public enum AppLoader
+    {
+        TRACK(0), ARTIST(1), ALBUM(2), GENRE(3), MUSIC_FOLDER(4), VIDEO(5), SERIES(6), VIDEO_FOLDER(7), GENRE_MEMBERS(8);
+
+        int id;
+        AppLoader(int id)
+        {
+            this.id = id;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public static AppLoader getInstance(int id)
+        {
+            for ( AppLoader loader : values() )
+                if (loader.getId() == id)
+                    return loader;
+            return null;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,158 +114,30 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onStop() {
         super.onStop();
+        PlayerManager playerManager = getPlayerManager();
+        if (playerManager == null)
+            unRegisterReceiver();
+        else
+            releasePlayerManager(playerManager);
     }
 
-//    @Override
-//    protected void onNewIntent(Intent intent) {
-//        Log.d("Handling_Intent", "On New Intent" );
-//        super.onNewIntent(intent);
-//        Log.d("Handling_Karaoke", "Handling Karaoke Event " + intent.getExtras());
-//        if (intent.getAction() != null && intent.getAction().equals(PLAY_KARAOKE))
-//            handleKaraoke(intent);
-//    }
-
-//    private void handleKaraoke(Intent result)
-//    {
-//        Intent intent = new Intent( this, MusicPlayerActivity.class );
-//        intent.putExtra("music", result.getStringExtra("music"));
-//        intent.putExtra("output", result.getStringExtra("output"));
-//        Log.d("Play_Karaoke", String.format("Play Karaoke music %s file %s", result.getStringExtra("music"), result.getStringExtra("output")));
-//        intent.setAction(result.getAction());
-//        startActivity( intent );
-//    }
-
-    //    private void testSubtitle()
-//    {
-//        new Thread(() -> {
-//            URL serverUrl = null;
-//            try {
-//                OkHttpClient client = CFMobile.createOkHttp3Client();
-////                OkHttpClient.Builder builder = new OkHttpClient.Builder()
-////                        .addInterceptor(new HttpLoggingInterceptor())
-////                        .cache(new Cache(cacheDir, cacheSize));
-////                OkHttpClient client = CFMobile.createOkHttp3Client(builder);
-//
-//                Request request = new Request.Builder()
-//                        .url("https://api.opensubtitles.org/xml-rpc")
-//                        .build();
-//
-//                WebView webView = getWebView();
-//                webView.loadDataWithBaseURL();
-//
-//                try (Response response = client.newCall(request).execute()) {
-//                    String html = Base64.encodeToString(response.body().string().getBytes(), Base64.NO_PADDING);
-//
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//
-//        }).start();
-//    }
-
-//    private WebView getWebView()
-//    {
-//        WebView webView = new WebView(this);
-//        webView.getSettings().setJavaScriptEnabled(true);
-//        WebViewClient client = new WebViewClient() {
-//            @Override
-//            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-//                super.onPageStarted(view, url, favicon);
-//            }
-//
-//            @Override
-//            public void onPageFinished(WebView view, String url) {
-//                super.onPageFinished(view, url);
-//            }
-//
-//            @Override
-//            public void onLoadResource(WebView view, String url) {
-//                super.onLoadResource(view, url);
-//            }
-//
-//            @Nullable
-//            @Override
-//            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-//                return super.shouldInterceptRequest(view, request);
-//            }
-//        };
-//
-//        webView.setWebViewClient(client);
-//        return webView;
-//    }
-
-//    private void testSubtitle()
-//    {
-//        new Thread(() -> {
-//            URL serverUrl = null;
-//            try {
-//                serverUrl = new URL("https", "api.opensubtitles.org", 443, "/xml-rpc");
-//                OpenSubtitlesClient osClient = new OpenSubtitlesClientImpl(serverUrl);
-//
-//                Log.d("Player_Subtitle", "Subtitle Status " + osClient.serverInfo());
-//
-//                // logging in
-//                Response response = osClient.login("username", "password", "en", "TemporaryUserAgent");
-//
-//                // checking login status
-//                Log.d("Player_Subtitle", "Subtitle Login " + response.getStatus());
-//                Log.d("Player_Subtitle", "Subtitle Login " + osClient.isLoggedIn());
-//
-//                // searching by string query + season/episode
-//                ListResponse<SubtitleInfo> resp = osClient.searchSubtitles("eng", "Friends", "1", "1");
-//                List<SubtitleInfo> subtitles = resp.getData();
-//                Log.d("Player_Subtitle", "Subtitle Search " + subtitles);
-//
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//
-//        }).start();
-//    }
-
-//    private void testSubtitle()
-//    {
-//        new Thread(() -> {
-//            OkHttpClient client = new OkHttpClient.Builder()
-//                    .cookieJar(new CookieJar() {
-//                        private final HashMap<HttpUrl, List<Cookie>> cookieStore = new HashMap<>();
-//
-//                        @Override
-//                        public void saveFromResponse(@NonNull HttpUrl url, @NonNull List<Cookie> cookies) {
-//                            cookieStore.put(url, cookies);
-//                        }
-//
-//                        @NonNull
-//                        @Override
-//                        public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
-//                            List<Cookie> cookies = cookieStore.get(url);
-//                            return cookies != null ? cookies : new ArrayList<Cookie>();
-//                        }
-//                    }).followRedirects(true).followSslRedirects(true)
-//                    .build();
-//
-////            OkHttpClient client = new OkHttpClient();
-//
-//            Request request = new Request.Builder()
-//                    .url("https://api.opensubtitles.org/xml-rpc")
-//                    .build();
-//
-//            try (Response response = client.newCall(request).execute()) {
-//                Log.d( "Player_Subtitle", response.body().string() );
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }).start();
-//    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        PlayerManager playerManager = getPlayerManager();
+        if (playerManager == null)
+        {
+            registerReceivers();
+            checkPlayer();
+        }
+        else
+            prepareController(playerManager);
+    }
 
     @Override
     protected void onDestroy() {
         Log.d("Handling_Intent", "On Destroy" );
-        releasePlayerManager();
+//        releasePlayerManager();
         super.onDestroy();
     }
 
@@ -257,6 +148,12 @@ public class MainActivity extends AppCompatActivity
 
     private void processIntent(Intent intent) {
         Log.d("Player_Model", "Processing Broadcast from Player Service" );
+        PlayerManager playerManager = getPlayerManager();
+        if (playerManager != null)
+        {
+            new ViewModelProvider(MainActivity.this).get(PlayerModel.class).playPendings(playerManager);
+            return;
+        }
         if  (intent.getBooleanExtra("has_player", false ))
             obtainPlayerManager();
     }
@@ -264,14 +161,20 @@ public class MainActivity extends AppCompatActivity
     private void obtainPlayerManager() {
         Log.d("Player_Model", "Obtaining Player Manager from Player Service" );
         Intent intent = new Intent(this, PlayerService.class);
-        musicConnection = new MusicConnection();
-        bindService(intent, musicConnection, BIND_IMPORTANT);
+        playerConnection = new PlayerConnection();
+        bindService(intent, playerConnection, BIND_IMPORTANT);
     }
 
-    private void releasePlayerManager() {
+    private void releasePlayerManager(PlayerManager playerManager) {
         Log.d("Player_Model", "release Player Manager from Player Service" );
+//        PlayerManager playerManager = getPlayerManager();
         playerManager.removeListener(controllerListener);
-        unbindService(musicConnection);
+        controllerListener = null;
+//        if (playerManager != null)
+//        {
+//        }
+//        if (playerConnection != null)
+//            unbindService(playerConnection);
     }
 
 //    @Override
@@ -305,16 +208,33 @@ public class MainActivity extends AppCompatActivity
         new ViewModelProvider(this).get(BackStackModel.class).onStackPopped.setValue(popped);
         if ( !popped )
         {
-            super.onBackPressed();
+            if (!moveToDefaultPos())
+                super.onBackPressed();
         }
         new ViewModelProvider(this).get(BackStackModel.class).onStackPopped.setValue(false);
+    }
+
+    private boolean moveToDefaultPos() {
+        if (isInDefaultNav())
+        {
+            if (isInDefaultTab())
+                return false;
+            else
+                goToDefaultTab();
+        }
+        else
+        {
+            goToDefaultNav();
+            goToDefaultTab();
+        }
+        return true;
     }
 
     private void begin()
     {
         setContentView(R.layout.activity_main_default4);
 
-        Toolbar toolbar = findViewById(R.id.app_toolbar);
+        Toolbar toolbar = findViewById(R.id.video_toolbar);
         setSupportActionBar( toolbar );
 
         if ( checkPermissions() )
@@ -322,8 +242,8 @@ public class MainActivity extends AppCompatActivity
         else
             getPermission();
 
-        registerReceivers();
-        checkPlayer();
+//        registerReceivers();
+//        checkPlayer();
 //        obtainPlayerManager();
     }
 
@@ -339,26 +259,31 @@ public class MainActivity extends AppCompatActivity
 
     private void registerReceivers() {
         Log.d("Player_Model", "Registering BroadCast for Player Model" );
-        musicReceiver = new MusicBroadCastReceiver();
+        musicReceiver = new PlayerBroadCastReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(PlayerService.ON_START_PLAYER_MANAGER);
         registerReceiver(musicReceiver, filter);
-//        LocalBroadcastManager.getInstance(this).registerReceiver(musicReceiver, filter);
     }
 
     private void unRegisterReceiver() {
-        unregisterReceiver(musicReceiver);
-//        LocalBroadcastManager.getInstance(this).unregisterReceiver(musicReceiver);
+        if (musicReceiver != null)
+        {
+            unregisterReceiver(musicReceiver);
+            musicReceiver = null;
+        }
     }
 
     private void beginApp()
     {
         initContent();
-
-        BottomNavigationView navigation = findViewById(R.id.navigation);
-
-//        NavController navController = Navigation.findNavController(this, R.id.app_internal_nav);
-//        NavigationUI.setupWithNavController( navigation, navController );
+        navigation = findViewById(R.id.navigation);
+        new ViewModelProvider(this).get(NavigationModel.class).showNavigation.observe(this, aBoolean -> {
+            Log.d("Nav_Visibility", "the visibility is " + aBoolean);
+            if (aBoolean)
+                navigation.setVisibility(View.VISIBLE);
+            else
+                navigation.setVisibility(View.GONE);
+        });
 
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         pager.setCurrentItem(AppPagerAdapter.defaultPage);
@@ -373,9 +298,50 @@ public class MainActivity extends AppCompatActivity
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
                 currentPage = position;
+
+//                FloatingActionButton floating = findViewById(R.id.action_floating);
+//                floating.hide();
             }
         });
         backActions = new BackAction[adapter.getCount()];
+
+    }
+
+    private boolean isInDefaultNav()
+    {
+        return pager.getCurrentItem() == adapter.getDefaultTabPos();
+    }
+
+    private boolean isInDefaultTab()
+    {
+        if (isInDefaultNav())
+        {
+            ViewPager mViewPager = findViewById(R.id.main_content);
+            return mViewPager.getCurrentItem() == MusicFragment.DEFAULT_TAB;
+        }
+        return false;
+    }
+
+    private boolean goToDefaultTab()
+    {
+        if (isInDefaultNav())
+        {
+            ViewPager mViewPager = findViewById(R.id.main_content);
+            mViewPager.setCurrentItem(MusicFragment.DEFAULT_TAB, true);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean goToDefaultNav()
+    {
+        if (!isInDefaultNav())
+        {
+            navigation.setSelectedItemId(R.id.musicFragment);
+//            pager.setCurrentItem(adapter.getDefaultTabPos(), true);
+            return true;
+        }
+        return false;
     }
 
     private boolean doSelection(MenuItem item)
@@ -468,7 +434,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private class MusicConnection implements ServiceConnection
+    private class PlayerConnection implements ServiceConnection
     {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -476,8 +442,16 @@ public class MainActivity extends AppCompatActivity
             Log.d("Player_Model", "Connected to player manager, Initializing PlayerModel" );
             binder = (PlayerService.PlayerBinder) service;
             PlayerManager playerManager = binder.getPlayerManager();
-            if (playerManager != null)
+            if (playerManager != null && playerManager != getPlayerManager())
+            {
                 consumePlayer(playerManager);
+                prepareController(playerManager);
+//                if  ( playerManager.isMusicPlaying() )
+//                    prepareController(playerManager);
+//                if  (playerManager.isVideoPlaying() && playerManager.getVideoManager().isPlayingExternalSource() )
+//                    new ViewModelProvider(MainActivity.this).get(PlayerModel.class).showVideoController(getSupportFragmentManager());
+            }
+            unbindService(this);
         }
 
         @Override
@@ -487,18 +461,23 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void consumePlayer(PlayerManager playerManager) {
-        this.playerManager = playerManager;
+//        this.playerManager = playerManager;
         PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
         playerModel.setPlayerManager(playerManager);
-        prepareController(playerManager);
+    }
+
+    private PlayerManager getPlayerManager()
+    {
+        PlayerModel playerModel = new ViewModelProvider(MainActivity.this).get(PlayerModel.class);
+        return playerModel.getPlayerManager();
     }
 
     private void prepareController(PlayerManager playerManager) {
-        controllerListener = new ControllerListener();
+        controllerListener = new ControllerListener(playerManager);
         playerManager.addListener(controllerListener);
     }
 
-    public class MusicBroadCastReceiver extends BroadcastReceiver
+    public class PlayerBroadCastReceiver extends BroadcastReceiver
     {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -512,24 +491,38 @@ public class MainActivity extends AppCompatActivity
 
     private class ControllerListener implements Player.EventListener {
 
-        public ControllerListener() {
+        public ControllerListener(PlayerManager playerManager) {
             Log.d("Player_Controllers", "Constructing Controller Listener");
-            new ViewModelProvider(MainActivity.this).get(PlayerModel.class).renderController(getSupportFragmentManager());
+//            if  (playerManager.isVideoPlaying() && (playerManager.getVideoManager().isPlayingExternalSource() ||
+//                    (getIntent().hasExtra("controller_check") && getIntent().getBooleanExtra("controller_check", false))))
+//                new ViewModelProvider(MainActivity.this).get(PlayerModel.class).showVideoController(getSupportFragmentManager());
+//            if  (playerManager.isVideoPlaying() && getIntent().hasExtra("controller_check") && getIntent().getBooleanExtra("controller_check", false))
+
+            new ViewModelProvider(MainActivity.this).get(PlayerModel.class).renderController(getSupportFragmentManager(), getIntent());
+            if  (playerManager.isVideoPlaying() && (playerManager.getVideoManager().isPlayingExternalSource() ||
+                    (getIntent().hasExtra("controller_check") && getIntent().getBooleanExtra("controller_check", false))))
+                new ViewModelProvider(MainActivity.this).get(PlayerModel.class).showVideoController(getSupportFragmentManager());
         }
 
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
 //                if ( playing == MediaType.MUSIC && isMusicPlayer() )
+//            Log.d("Player_Controllers2", String.format("player state whenReady %b and state %d", playWhenReady, playbackState));
             if ( playWhenReady )
-            {
                 new ViewModelProvider(MainActivity.this).get(PlayerModel.class).renderMusicController(getSupportFragmentManager());
-            }
+            if (playbackState == ExoPlayer.STATE_IDLE)
+                new ViewModelProvider(MainActivity.this).get(PlayerModel.class).removeController(getSupportFragmentManager());
         }
     }
 
     public static class BackStackModel extends ViewModel
     {
         public MutableLiveData<Boolean> onStackPopped = new MutableLiveData<>(false);
+    }
+
+    public static class NavigationModel extends ViewModel
+    {
+        public MutableLiveData<Boolean> showNavigation = new MutableLiveData<>(true);
     }
 
 //    public static class ConcurrentModel extends ViewModel
@@ -558,22 +551,30 @@ public class MainActivity extends AppCompatActivity
         private Fragment controller;
         private final static String MUSIC_TAG = "MUSIC_CONTROLLER";
         private final static String VIDEO_TAG = "VIDEO_CONTROLLER";
+        private ArrayList<Music> pendingPlaylist;
+        private Series pendingSeries;
 
-        private void renderController(FragmentManager fragmentManager) {
+        private void renderController(FragmentManager fragmentManager, Intent intent) {
             PlayerManager manager = playerManager.getValue();
             Log.d("Player_Controllers", "Rendering Controller Listener");
             Log.d("Player_Controllers", String.format("Render Music Controller playing %b rendered %b", manager.isMusicPlaying(), isMusicRender() ));
             if ( manager.isMusicPlaying() && !isMusicRender() ) {
                 showMusicController(fragmentManager);
             }
-            if ( manager.isVideoPlaying() && !isVideoRender() ) {
-                showVideoController(fragmentManager);
-            }
+//            Log.d("Player_Controllers", String.format("Render Video Controller playing %b rendered %b %b %b", manager.isVideoPlaying(), intent != null,
+//                    intent.hasExtra("controller_check"), intent.getBooleanExtra("controller_check", false) ));
+//            if  (manager.isVideoPlaying() && intent != null && intent.hasExtra("controller_check") && intent.getBooleanExtra("controller_check", false))
+//            {
+//                showVideoController(fragmentManager);
+//            }
+//            if ( manager.isVideoPlaying() && !manager.isInPlayingState() && !isVideoRender() ) {
+//                showVideoController(fragmentManager);
+//            }
         }
 
         private void renderMusicController(FragmentManager fragmentManager) {
             PlayerManager manager = playerManager.getValue();
-            Log.d("Player_Controllers", "Rendering Controller Listener");
+            Log.d("Player_Controllers", "Rendering Music Controller Listener");
             Log.d("Player_Controllers", String.format("Render Music Controller playing %b rendered %b", manager.isMusicPlaying(), isMusicRender() ));
             if ( manager.isMusicPlaying() && !isMusicRender() ) {
                 showMusicController(fragmentManager);
@@ -581,31 +582,37 @@ public class MainActivity extends AppCompatActivity
         }
 
         public void showVideoController(FragmentManager fragmentManager) {
+            PlayerManager manager = playerManager.getValue();
+            Log.d("Player_Controllers", "Rendering Video Controller Listener");
+            Log.d("Player_Controllers", String.format("Render Video Controller playing %b rendered %b", manager.isVideoPlaying(), isVideoRender() ));
             VideoController videoController = new VideoController(playerManager.getValue().getVideoManager());
             render(videoController, fragmentManager, VIDEO_TAG);
         }
 
         public void removeVideoController(FragmentManager fragmentManager) {
+            Log.d("Player_Controllers", "Remove Video Controller" );
             Fragment videoController = fragmentManager.findFragmentByTag(VIDEO_TAG);
             detach(videoController, fragmentManager);
         }
 
         public void removeMusicController(FragmentManager fragmentManager) {
-            Fragment videoController = fragmentManager.findFragmentByTag(VIDEO_TAG);
+            Log.d("Player_Controllers", "Remove Music Controller" );
+            Fragment videoController = fragmentManager.findFragmentByTag(MUSIC_TAG);
             detach(videoController, fragmentManager);
         }
 
         public void removeController(FragmentManager fragmentManager) {
+            Log.d("Player_Controllers", "Remove Controller" );
             if ( controller != null)
                 detach(controller, fragmentManager);
         }
 
-        private boolean isMusicRender()
+        public boolean isMusicRender()
         {
             return controller != null && controller instanceof MusicController;
         }
 
-        private boolean isVideoRender()
+        public boolean isVideoRender()
         {
             return controller != null && controller instanceof VideoController;
         }
@@ -659,6 +666,7 @@ public class MainActivity extends AppCompatActivity
         public synchronized void setPlayerManager(PlayerManager playerManager) {
             if (this.playerManager == null)
                 this.playerManager = new MutableLiveData<>();
+            playPendings(playerManager);
             this.playerManager.setValue(playerManager);
         }
 
@@ -683,74 +691,149 @@ public class MainActivity extends AppCompatActivity
             if (manager != null){
                 manager.getMusicManager().playAll(musics);
                 Log.d("Player_Model", "The manager " + manager );
+
+                Intent intent = new Intent(getApplication().getBaseContext(), PlayerService.class);
+                setPendingPlaylist(musics);
+                intent.putExtra("type", "music" );
+                getApplication().getBaseContext().startService(intent);
             }
             else
             {
                 Log.d("Player_Model", "Manager don't exists" );
-                String[] gMusics = Music.toGson(musics);
+//                String[] gMusics = Music.toGson(musics);
                 Intent intent = new Intent(getApplication().getBaseContext(), PlayerService.class);
-                intent.putExtra("music", gMusics );
+//                intent.putExtra("music", gMusics );
+                setPendingPlaylist(musics);
                 intent.putExtra("broadcast", true );
+                intent.putExtra("type", "music" );
                 getApplication().getBaseContext().startService(intent);
-            }
-        }
-
-        public void initSource(Video...videos) {
-            PlayerManager manager = getPlayerManager();
-            if (manager != null)
-                manager.getVideoManager().initVideoSources(videos);
-            else
-            {
-                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
-                String[] gsonVideos = Video.toGson(videos);
-                intent.putExtra( "video", gsonVideos );
-                intent.putExtra( "media_type", "video" );
-                intent.putExtra("broadcast", true );
-                getApplication().getBaseContext().startService( intent );
-            }
-        }
-
-        public void initSource(Video[] videos, int begin) {
-            PlayerManager manager = getPlayerManager();
-            if (manager != null)
-                manager.getVideoManager().initVideoSources(videos);
-            else
-            {
-                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
-                String[] gsonVideos = Video.toGson(videos);
-                intent.putExtra( "video", gsonVideos );
-                intent.putExtra( "begin", begin );
-                intent.putExtra("broadcast", true );
-                getApplication().getBaseContext().startService( intent );
             }
         }
 
         public void initSource(Series aSeries) {
             PlayerManager manager = getPlayerManager();
             if (manager != null)
+            {
                 manager.getVideoManager().initVideoSources(aSeries);
+
+                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+                intent.putExtra("type", "series" );
+                getApplication().getBaseContext().startService( intent );
+            }
             else
             {
+                setPendingSeries(aSeries);
                 Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
-                String series = aSeries.toGson();
-                intent.putExtra( "series", series );
                 intent.putExtra("broadcast", true );
+                intent.putExtra("type", "series" );
                 getApplication().getBaseContext().startService( intent );
             }
         }
 
-        public void initSource(String url)
+        private void setPendingSeries(Series aSeries) {
+            pendingSeries = aSeries;
+        }
+
+        public Series getPendingSeries() {
+            return pendingSeries;
+        }
+
+        public void clearPendingSeries() {
+            pendingSeries = null;
+        }
+
+        private void setPendingPlaylist(ArrayList<Music> musics) {
+            pendingPlaylist = musics;
+        }
+
+        public ArrayList<Music> getPendingPlaylist() {
+            return pendingPlaylist;
+        }
+
+        public void clearPendingPlaylist() {
+            pendingPlaylist = null;
+        }
+
+        public boolean pendingPlaylistExist() {
+            return pendingPlaylist != null;
+        }
+
+        public boolean pendingSeriesExist() {
+            return pendingSeries != null;
+        }
+
+        public void playPendings(PlayerManager playerManager)
         {
-            PlayerManager manager = getPlayerManager();
-            if (manager != null)
-                manager.getVideoManager().initOnlineSources(url);
+            if (pendingPlaylistExist()){
+                playerManager.getMusicManager().playAll(getPendingPlaylist());
+                clearPendingPlaylist();
+            }
+            if (pendingSeriesExist()){
+                playerManager.getVideoManager().initVideoSources(getPendingSeries());
+                clearPendingSeries();
+            }
+        }
+
+        public void initSource() {
+            if (getPlayerManager() == null)
+            {
+                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+    //                String[] gsonVideos = Video.toGson(videos);
+    //                intent.putExtra( "video", gsonVideos );
+                intent.putExtra( "type", "video" );
+                intent.putExtra("broadcast", true );
+                getApplication().getBaseContext().startService( intent );
+            }
             else
             {
                 Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
-                intent.putExtra( "url", url );
+                intent.putExtra( "type", "video" );
                 getApplication().getBaseContext().startService( intent );
             }
         }
+
+//        public void initSource(Video...videos) {
+//            PlayerManager manager = getPlayerManager();
+//            if (manager != null)
+//                manager.getVideoManager().initVideoSources(videos);
+//            else
+//            {
+//                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+//                String[] gsonVideos = Video.toGson(videos);
+//                intent.putExtra( "video", gsonVideos );
+//                intent.putExtra( "media_type", "video" );
+//                intent.putExtra("broadcast", true );
+//                getApplication().getBaseContext().startService( intent );
+//            }
+//        }
+
+//        public void initSource(Video[] videos, int begin) {
+//            PlayerManager manager = getPlayerManager();
+//            if (manager != null)
+//                manager.getVideoManager().initVideoSources(videos);
+//            else
+//            {
+//                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+//                String[] gsonVideos = Video.toGson(videos);
+//                intent.putExtra( "video", gsonVideos );
+//                intent.putExtra( "begin", begin );
+//                intent.putExtra("broadcast", true );
+//                getApplication().getBaseContext().startService( intent );
+//            }
+//        }
+
+//        public void initSource(String url)
+//        {
+//            PlayerManager manager = getPlayerManager();
+//            if (manager != null)
+//                manager.getVideoManager().initOnlineSources(url);
+//            else
+//            {
+//                Intent intent = new Intent( getApplication().getBaseContext(), PlayerService.class );
+//                intent.putExtra( "url", url );
+//                getApplication().getBaseContext().startService( intent );
+//            }
+//        }
 
         public void play(Music music) {
             play( new ArrayList< Music >(Collections.singletonList(music)) );

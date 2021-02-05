@@ -16,7 +16,7 @@
 //import com.acrcloud.rec.sdk.ACRCloudClient;
 //import com.acrcloud.rec.sdk.ACRCloudConfig;
 //import com.gcodes.iplayer.music.models.Music;
-//import com.gcodes.iplayer.video.Video;
+//import com.gcodes.iplayer.video.model.Video;
 //
 //import java.io.File;
 //import java.io.FileDescriptor;

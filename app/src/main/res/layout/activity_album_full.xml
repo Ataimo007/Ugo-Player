@@ -21,7 +21,7 @@
             android:fitsSystemWindows="true"
             app:collapsedTitleTextAppearance="@style/BottomNav3"
             app:contentScrim="?attr/colorPrimary"
-            app:expandedTitleGravity="bottom|right"
+            app:expandedTitleGravity="bottom|left"
             app:expandedTitleMarginBottom="18dp"
             app:expandedTitleMarginEnd="20dp"
             app:expandedTitleTextAppearance="@style/BottomNav2"
@@ -74,5 +74,22 @@
             android:clipToPadding="true"
             tools:listitem="@layout/item_view" />
     </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fragment_play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:contentDescription="Play All"
+        android:elevation="2dp"
+        android:focusable="true"
+        android:src="@drawable/u_play"
+        app:backgroundTint="@color/colorAccent"
+        app:fabSize="auto"
+        app:layout_anchor="@+id/appbar"
+        app:layout_anchorGravity="bottom|right"
+        app:rippleColor="@color/colorPrimary"
+        app:tint="@color/colorPrimary"
+        app:useCompatPadding="true" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

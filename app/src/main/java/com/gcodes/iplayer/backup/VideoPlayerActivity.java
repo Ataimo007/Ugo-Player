@@ -22,7 +22,7 @@
 //import android.widget.Toast;
 //
 //import com.gcodes.iplayer.R;
-//import com.gcodes.iplayer.video.Video;
+//import com.gcodes.iplayer.video.model.Video;
 //import com.gcodes.iplayer.services.Subtitle;
 //import com.google.android.exoplayer2.C;
 //import com.google.android.exoplayer2.ExoPlayerFactory;

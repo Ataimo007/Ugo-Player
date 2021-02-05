@@ -84,8 +84,8 @@ public class FolderFragment extends Fragment implements MainActivity.BackAction,
     {
         super.onCreate(savedInstanceState);
         setPath("");
-        loader = LoaderManager.getInstance(this);
-        loader.initLoader(0, null, this);
+        loader = LoaderManager.getInstance(requireActivity());
+        loader.initLoader(MainActivity.AppLoader.MUSIC_FOLDER.getId(), null, this);
     }
 
 //    @Override
@@ -252,7 +252,8 @@ public class FolderFragment extends Fragment implements MainActivity.BackAction,
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
         initialize(data);
-        adapter.notifyDataSetChanged();
+        if (adapter != null)
+            adapter.notifyDataSetChanged();
     }
 
     @Override

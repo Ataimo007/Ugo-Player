@@ -16,8 +16,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -29,8 +27,8 @@ import com.gcodes.iplayer.helpers.Helper;
 import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.player.PlayerManager;
 import com.gcodes.iplayer.ui.UIConstance;
-import com.gcodes.iplayer.video.Series;
-import com.gcodes.iplayer.video.Video;
+import com.gcodes.iplayer.video.model.Series;
+import com.gcodes.iplayer.video.model.Video;
 import com.gcodes.iplayer.video.player.VideoPlayerActivity;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Player;
@@ -51,6 +49,7 @@ public class SeriesPlayerFragment extends Fragment
 
     private FloatingActionButton controlButton;
     private View view;
+    private PlayerView control;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -117,6 +116,10 @@ public class SeriesPlayerFragment extends Fragment
         initPlayer( view );
     }
 
+    private void onAttachPlayerAlone(PlayerManager.VideoManager videoManager) {
+        initPlayer( view );
+    }
+
     private void initView(View view) {
         TextView name = view.findViewById(R.id.series_name);
         name.setText( series.getName() );
@@ -136,7 +139,7 @@ public class SeriesPlayerFragment extends Fragment
 
     private void initPlayer(View view) {
         //    private boolean playing = false;
-        PlayerView control = view.findViewById(R.id.video_control_view);
+        control = view.findViewById(R.id.video_control_view);
 
 //        control.setControllerShowTimeoutMs( -1 );
 //        player = VideoPlayer.getInstance();
@@ -196,7 +199,9 @@ public class SeriesPlayerFragment extends Fragment
         super.onActivityResult(requestCode, resultCode, data);
         if ( requestCode == PlayerManager.REQUEST_VIDEO_PLAYER && resultCode == RESULT_OK )
         {
-            getParentFragmentManager().beginTransaction().detach(this).attach(this).commit();
+            Log.d("Series_Player", "reattaching player");
+//            getParentFragmentManager().beginTransaction().detach(this).attach(this).commit();
+            onAttachPlayerAlone(player);
         }
     }
 
@@ -391,7 +396,7 @@ public class SeriesPlayerFragment extends Fragment
         {
             Video video = series.getVideo(position);
             holder.setTitle( video.getName() );
-            holder.setSubtitle( parseDuration( video.getDuration() ) );
+            holder.setSubtitle( video.getDuration() );
             holder.setDate( video.getDateString() );
 
             GlideApp.with( SeriesPlayerFragment.this ).load( new CustomProcessFetcher( video ) )
@@ -401,6 +406,7 @@ public class SeriesPlayerFragment extends Fragment
 //                playerManager.playAt( position );
 //                player.saveState();
 //                VideoPlayer.play( getActivity(), position, video );
+                control.setPlayer(null);
                 showVideoPlayer(position);
             });
         }
@@ -411,16 +417,16 @@ public class SeriesPlayerFragment extends Fragment
             return series.getCount();
         }
 
-        public String parseDuration( long dur )
-        {
-            long h = TimeUnit.MILLISECONDS.toHours(dur);
-            long m = TimeUnit.MILLISECONDS.toMinutes(dur) - TimeUnit.HOURS.toMinutes( h );
-            long s = TimeUnit.MILLISECONDS.toSeconds(dur) - TimeUnit.MINUTES.toSeconds( m ) - TimeUnit.HOURS.toSeconds( h );;
-            String hs = h > 0 ? String.format( "%02d:", h ) : "";
-            String ms = m > 0 || h > 0 ? String.format( "%02d:", m ) : "";
-            String ss = h == 0 && m == 0 ? String.format( "%02d secs", s ) : String.format( "%02d", s );
-            return hs + ms + ss;
-        }
+//        public String parseDuration( long dur )
+//        {
+//            long h = TimeUnit.MILLISECONDS.toHours(dur);
+//            long m = TimeUnit.MILLISECONDS.toMinutes(dur) - TimeUnit.HOURS.toMinutes( h );
+//            long s = TimeUnit.MILLISECONDS.toSeconds(dur) - TimeUnit.MINUTES.toSeconds( m ) - TimeUnit.HOURS.toSeconds( h );;
+//            String hs = h > 0 ? String.format( "%02d:", h ) : "";
+//            String ms = m > 0 || h > 0 ? String.format( "%02d:", m ) : "";
+//            String ss = h == 0 && m == 0 ? String.format( "%02d secs", s ) : String.format( "%02d", s );
+//            return hs + ms + ss;
+//        }
     }
 
     public class ItemHolder extends RecyclerView.ViewHolder

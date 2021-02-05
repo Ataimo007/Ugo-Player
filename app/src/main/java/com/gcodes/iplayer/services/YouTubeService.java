@@ -8,9 +8,7 @@ import android.util.SparseArray;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.util.DateTime;
 import com.google.api.client.util.Joiner;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.YouTubeRequestInitializer;
@@ -43,13 +41,14 @@ public class YouTubeService
     private YouTube youtube;
 
     private static YouTubeService youtubeService;
+    public JacksonFactory jsonFactory;
 
     private YouTubeService()
     {
         initYoutube();
     }
 
-    public static YouTubeService getIntance()
+    public static YouTubeService getInstance()
     {
         if ( youtubeService == null )
             youtubeService = new YouTubeService();
@@ -102,7 +101,7 @@ public class YouTubeService
     private void initYoutube()
     {
         HttpTransport transport = AndroidHttp.newCompatibleTransport();
-        JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+        jsonFactory = JacksonFactory.getDefaultInstance();
 
         YouTubeRequestInitializer initializer = new YouTubeRequestInitializer( apiKey, null );
         youtube = new YouTube.Builder(transport, jsonFactory, request -> {} )
@@ -141,8 +140,8 @@ public class YouTubeService
     }
 
     @SuppressLint("StaticFieldLeak")
-    public static void consumeYoutubeVideo(String id, Consumer<YtFile> consume, Context context) {
-        String youtubeLink = BASE_URL + PATH + id;
+    public static void consumeYoutubeVideo(Video video, Consumer<YtFile> consume, Consumer<Video> consumeOtherwise, Context context) {
+        String youtubeLink = BASE_URL + PATH + video.getId();
         YouTubeExtractor youTubeExtractor = new YouTubeExtractor(context)
         {
 
@@ -153,6 +152,7 @@ public class YouTubeService
                 if (ytFiles == null) {
                     // Something went wrong we got no urls. Always check this.
                     Log.w( YOUTUBE_TAG, "Something went wrong will getting youtube videos" );
+                    consumeOtherwise.accept(video);
                     return;
                 }
                 // Iterate over itags

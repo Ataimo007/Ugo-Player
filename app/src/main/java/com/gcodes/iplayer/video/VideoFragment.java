@@ -13,6 +13,7 @@ import com.gcodes.iplayer.video.folder.FolderFragment;
 import com.gcodes.iplayer.video.series.SeriesFragment;
 import com.gcodes.iplayer.video.videos.AllFragment;
 import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
 import androidx.annotation.NonNull;
@@ -21,10 +22,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.lifecycle.MutableLiveData;
-import androidx.navigation.NavBackStackEntry;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager.widget.ViewPager;
 
@@ -64,7 +61,7 @@ public class VideoFragment extends Fragment
         View content = inflater.inflate(R.layout.video_fragment, container, false);
         mViewPager = content.findViewById( R.id.main_content );
         tabLayout = content.findViewById( R.id.video_tabs );
-        Toolbar appbar = content.findViewById(R.id.app_toolbar);
+        Toolbar appbar = content.findViewById(R.id.video_toolbar);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
@@ -81,7 +78,17 @@ public class VideoFragment extends Fragment
                     app.registerBack((MainActivity.BackAction) fragment);
                 else
                     app.unRegisterBack();
+
             }
+        });
+
+        appbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.main_action_search)
+            {
+                NavHostFragment.findNavController(this).navigate(R.id.action_videoFragment_to_videoSearchFragment);
+                return true;
+            }
+            return false;
         });
 
         NavHostFragment.findNavController( this ).getBackStackEntry(R.id.videoFragment).getSavedStateHandle().getLiveData("Page_Title_Changed").observe( getViewLifecycleOwner(),
@@ -104,7 +111,7 @@ public class VideoFragment extends Fragment
             super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
             views = new Fragment[ 3 ];
             views[ 0 ] = new AllFragment();
-//            views[ 0 ] = new Fragment();
+//            views[ 1 ] = new Fragment();
             views[ 1 ] = new SeriesFragment();
 //            views[ 2 ] = new Fragment();
             views[ 2 ] = new FolderFragment();
@@ -121,6 +128,7 @@ public class VideoFragment extends Fragment
         @Override
         public CharSequence getPageTitle(int position) {
             return (( PageTitle ) views[ position ]).getTitle();
+//            return "Testing";
         }
 
         @Override

@@ -15,6 +15,7 @@ import com.gcodes.iplayer.helpers.ProcessModelLoaderFactory;
 import com.gcodes.iplayer.music.models.Music;
 import com.gcodes.iplayer.music.track.TrackItemHolder;
 import com.gcodes.iplayer.ui.UIConstance;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 
@@ -79,8 +80,18 @@ public class ArtistOnlyFragment extends Fragment
 
         init();
         initView(view);
+        initPlay(view);
 
         return view;
+    }
+
+    private void initPlay(View view) {
+        FloatingActionButton play = view.findViewById(R.id.fragment_play);
+        play.setOnClickListener(v -> {
+            new ViewModelProvider(requireActivity()).get(MainActivity.PlayerModel.class).play(musics);
+        });
+        FloatingActionButton appButton = requireActivity().findViewById(R.id.action_floating);
+        appButton.hide();
     }
 
     private void init() {
